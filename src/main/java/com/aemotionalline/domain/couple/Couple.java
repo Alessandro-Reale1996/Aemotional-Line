@@ -28,4 +28,35 @@ public class Couple
         }
     }
     
+    public Long getId()
+	{
+		return id;
+	}
+
+	public UserId getPartnerOneId()
+	{
+		return partnerOneId;
+	}
+
+	public UserId getPartnerTwoId()
+	{
+		return partnerTwoId;
+	}
+
+	public UserId getTherapistId()
+	{
+		return therapistId;
+	}
+
+	public boolean isPartner(UserId userId)
+    {
+    	return partnerOneId.equals(userId) || partnerTwoId.equals(userId);
+    }
+    
+    public boolean isTherapist(UserId userId)
+    {
+    	return therapistId.equals(userId);
+    }
+    
+    
 }
