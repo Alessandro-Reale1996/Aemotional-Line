@@ -17,11 +17,13 @@ public class Agreement
 	public Agreement(Long id, String text)
 	{
 		
-        if (id == null) {
+        if (id == null) 
+        {
             throw new DomainException("Agreement id cannot be null");
         }
 
-        if (text == null || text.isBlank()) {
+        if (text == null || text.isBlank()) 
+        {
             throw new DomainException("Agreement text cannot be blank");
         }
 		
@@ -52,6 +54,10 @@ public class Agreement
 		return status;
 	}
 
+	public Set<UserId> getApprovals()
+	{
+		return approvals;
+	}
 
 
 	public void accept(UserId userId, Couple couple)
@@ -61,9 +67,15 @@ public class Agreement
 			 throw new DomainException("Only partners can accept the agreement");
 		}
 		
-		approvals.add(userId);
+		this.approvals.add(userId);
 		
-		  if (approvals.contains(couple.getPartnerOneId()) && approvals.contains(couple.getPartnerTwoId())) {
+		if (approvals.isEmpty())
+		{
+			throw new DomainException("userId was not added to approvals.");
+		}
+		
+		  if (approvals.contains(couple.getPartnerOneId()) && approvals.contains(couple.getPartnerTwoId())) 
+		  {
 	            this.status = AgreementStatus.ACCEPTED;
 	        }
 	}

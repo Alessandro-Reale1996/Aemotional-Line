@@ -68,6 +68,8 @@ public class Conversation
 
 	public void acceptAgrement(UserId userId, Couple couple )
 	{
+		this.agreement.accept(userId, couple);
+		
 		if (agreement.isAccepted())
 		{
 			this.status = ConversationStatus.ACTIVE;
