@@ -1,9 +1,14 @@
 package com.aemotionalline.domain.conversation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.aemotionalline.domain.agreement.Agreement;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.user.UserId;
+import com.aemotionalline.domain.constraint.ConstraintAssignment;
+import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 
 public class Conversation
 {
@@ -11,6 +16,7 @@ public class Conversation
 	private final Long coupleId;
 	private final Agreement agreement;
 	private ConversationStatus status;
+	private List<ConstraintAssignment> activeConstraints = new ArrayList<>();
 	
 	public Conversation(Long id, Long coupleId, Agreement agreement)
 	{
@@ -63,8 +69,15 @@ public class Conversation
 	{
 		return status;
 	}
+	
+	
+	public List<ConstraintAssignment> getActiveConstraints()
+	{
+		return activeConstraints;
+	}
 
-
+	
+	
 
 	public void acceptAgrement(UserId userId, Couple couple )
 	{
@@ -87,6 +100,18 @@ public class Conversation
 		{
 			throw new DomainException("User cannot send messages in the current conversation state");
 		}
+	}
+	
+	public void applyConstraints(ConstraintChangeRequest request, Couple couple) 
+	{
+
+	    if (!request.isFullyApproved(couple)) 
+	    {
+	        throw new DomainException("Constraints not fully approved");
+	    }
+
+	    activeConstraints.clear();
+	    activeConstraints.addAll(request.assignments());
 	}
 	
 }

@@ -49,7 +49,7 @@ public class ConversationTest
 	}
 	
 	@Test
-	void shouldNotAlloowTherapistToSendMessageAsPartner()
+	void shouldNotAllowTherapistToSendMessageAsPartner()
 	{
 		
 		UserId partnerOne = new UserId(10L);
