@@ -13,6 +13,11 @@ public class Constraint
 	        this.description = description;
 	    }
 
+	  public boolean isSatisfied(ConstraintContext context) 
+	  {
+	        return true;
+	    }
+	  
 	  public String getDescription()
 	  {
 		  return description;

@@ -9,6 +9,7 @@ import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
+import com.aemotionalline.domain.constraint.ConstraintContext;
 
 public class Conversation
 {
@@ -111,7 +112,37 @@ public class Conversation
 	    }
 
 	    activeConstraints.clear();
+	    
+	    if (!activeConstraints.isEmpty())
+		{
+			throw new DomainException("The conversation with id " + id + "didn't clear his activeConstraints's list.");
+		}
+	    
 	    activeConstraints.addAll(request.assignments());
+	}
+	
+	private void ensureConstraintsAreSatisfied(UserId userId, ConstraintContext context) 
+	{
+
+	    activeConstraints.stream()
+	        .filter(a -> a.getUserId().equals(userId))
+	        .forEach(a -> 
+	        						{
+							            if (!a.getConstraint().isSatisfied(context)) 
+							            {
+							                throw new DomainException("Constraint violated");
+							            }
+        							}
+    						 );
+	}
+	
+	public void sendMessage(UserId userId, Couple couple, ConstraintContext context) 
+	{
+
+	    ensureCanSendMessage(userId, couple);
+	    ensureConstraintsAreSatisfied(userId, context);
+
+	    // TODO: Add message
 	}
 	
 }

@@ -69,7 +69,7 @@ public class Agreement
 		
 		this.approvals.add(userId);
 		
-		if (approvals.isEmpty())
+		if (!approvals.contains(userId))
 		{
 			throw new DomainException("userId was not added to approvals.");
 		}

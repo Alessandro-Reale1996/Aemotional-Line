@@ -35,6 +35,11 @@ public class ConstraintChangeRequest
         }
 
         approvals.add(userId);
+        
+        if (!approvals.contains(userId))
+		{
+			throw new DomainException("userId was not added to approvals.");
+		}
     }
 
     public boolean isFullyApproved(Couple couple) 
