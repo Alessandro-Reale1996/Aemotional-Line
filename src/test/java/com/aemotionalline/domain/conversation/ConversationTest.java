@@ -1,10 +1,10 @@
 package com.aemotionalline.domain.conversation;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.agreement.Agreement;
 import com.aemotionalline.domain.common.DomainException;
-import com.aemotionalline.domain.constraint.Constraint;
+import com.aemotionalline.domain.constraint.TimeConstraint;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
@@ -113,7 +113,7 @@ public class ConversationTest
 		Agreement agreement = new Agreement(1L, "Initial agreement");
 		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
 		
-		Constraint constraint = new Constraint("Test String");
+		TimeConstraint constraint = new TimeConstraint(LocalTime.of(22, 0));
 		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, constraint);
 		
 		List <ConstraintAssignment>assignments = new ArrayList<>();
@@ -137,8 +137,8 @@ public class ConversationTest
 		Agreement agreement = new Agreement(1L, "Initial agreement");
 		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
 		
-		Constraint failConstraint = 
-				new Constraint("Test String")
+		TimeConstraint failConstraint = 
+				new TimeConstraint(LocalTime.of(22, 0))
 				{
 					@Override
 					public boolean isSatisfied(ConstraintContext context) 
@@ -158,7 +158,7 @@ public class ConversationTest
 		
 		conversation.applyConstraints(constraintChangeRequest, couple);
 		
-		  assertThrows( DomainException.class, () -> conversation.sendMessage(partnerOne, couple, new ConstraintContext(10)));
+		  assertThrows( DomainException.class, () -> conversation.sendMessage(partnerOne, couple, new ConstraintContext(LocalTime.of(22, 0))));
 	}
 	
 }

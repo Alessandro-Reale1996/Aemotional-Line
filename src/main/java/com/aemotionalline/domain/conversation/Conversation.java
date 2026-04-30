@@ -10,6 +10,7 @@ import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
+import com.aemotionalline.domain.constraint.ConstraintSet;
 
 public class Conversation
 {
@@ -17,7 +18,7 @@ public class Conversation
 	private final Long coupleId;
 	private final Agreement agreement;
 	private ConversationStatus status;
-	private List<ConstraintAssignment> activeConstraints = new ArrayList<>();
+	private final ConstraintSet constraintSet;
 	
 	public Conversation(Long id, Long coupleId, Agreement agreement)
 	{
@@ -41,6 +42,7 @@ public class Conversation
 		this.coupleId = coupleId;
 		this.agreement = agreement;
 		this.status = ConversationStatus.PENDING_AGREEMENT;
+		this.constraintSet = null;
 	}
 	
 	
@@ -72,13 +74,6 @@ public class Conversation
 	}
 	
 	
-	public List<ConstraintAssignment> getActiveConstraints()
-	{
-		return activeConstraints;
-	}
-
-	
-	
 
 	public void acceptAgrement(UserId userId, Couple couple )
 	{
@@ -105,42 +100,20 @@ public class Conversation
 	
 	public void applyConstraints(ConstraintChangeRequest request, Couple couple) 
 	{
-
 	    if (!request.isFullyApproved(couple)) 
 	    {
 	        throw new DomainException("Constraints not fully approved");
 	    }
 
-	    activeConstraints.clear();
-	    
-	    if (!activeConstraints.isEmpty())
-		{
-			throw new DomainException("The conversation with id " + id + "didn't clear his activeConstraints's list.");
-		}
-	    
-	    activeConstraints.addAll(request.assignments());
+	    constraintSet.replaceWith(request.assignments());
 	}
 	
-	private void ensureConstraintsAreSatisfied(UserId userId, ConstraintContext context) 
-	{
-
-	    activeConstraints.stream()
-	        .filter(a -> a.getUserId().equals(userId))
-	        .forEach(a -> 
-	        						{
-							            if (!a.getConstraint().isSatisfied(context)) 
-							            {
-							                throw new DomainException("Constraint violated");
-							            }
-        							}
-    						 );
-	}
+	
 	
 	public void sendMessage(UserId userId, Couple couple, ConstraintContext context) 
 	{
 
 	    ensureCanSendMessage(userId, couple);
-	    ensureConstraintsAreSatisfied(userId, context);
 
 	    // TODO: Add message
 	}

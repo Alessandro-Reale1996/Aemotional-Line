@@ -3,6 +3,7 @@ package com.aemotionalline.domain.constraint;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class ConstraintChangeRequestTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		
-		Constraint constraint = new Constraint("Test String");
+		TimeConstraint constraint = new TimeConstraint(LocalTime.of(22, 0));
 		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, constraint);
 		
 		List <ConstraintAssignment>assignments = new ArrayList<>();
@@ -41,7 +42,7 @@ public class ConstraintChangeRequestTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		
-		Constraint constraint = new Constraint("Test String");
+		TimeConstraint constraint = new TimeConstraint(LocalTime.of(22, 0));
 		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, constraint);
 		
 		List <ConstraintAssignment>assignments = new ArrayList<>();
@@ -64,7 +65,7 @@ public class ConstraintChangeRequestTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		
-		Constraint constraint = new Constraint("Test String");
+		TimeConstraint constraint = new TimeConstraint(LocalTime.of(22, 0));
 		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, constraint);
 		
 		List <ConstraintAssignment>assignments = new ArrayList<>();
@@ -84,7 +85,7 @@ public class ConstraintChangeRequestTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		
-		Constraint constraint = new Constraint("Test String");
+		TimeConstraint constraint = new TimeConstraint(LocalTime.of(22, 0));
 		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, constraint);
 		
 		List <ConstraintAssignment>assignments = new ArrayList<>();

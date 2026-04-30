@@ -1,27 +1,8 @@
 package com.aemotionalline.domain.constraint;
 
-public class Constraint
+public interface Constraint
 {
-	private final String description;
-	
-	  public Constraint(String description) 
-	  {
-	        if (description == null || description.isBlank())
-	        {
-	            throw new IllegalArgumentException("Constraint description cannot be blank");
-	        }
-	        this.description = description;
-	    }
+    boolean isSatisfied(ConstraintContext context);
 
-	  public boolean isSatisfied(ConstraintContext context) 
-	  {
-	        return true;
-	    }
-	  
-	  public String getDescription()
-	  {
-		  return description;
-	  }
-	  
-	  
+    String getDescription();
 }

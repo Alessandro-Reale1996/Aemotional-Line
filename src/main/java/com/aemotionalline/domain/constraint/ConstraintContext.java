@@ -1,18 +1,20 @@
 package com.aemotionalline.domain.constraint;
 
+import java.time.LocalTime;
+
 public class ConstraintContext
 {
-	private final int hour;
+    private final LocalTime time;
 
-    public ConstraintContext(int hour) 
+    public ConstraintContext(LocalTime time)
     {
-        this.hour = hour;
+        this.time = time;
     }
 
-	public int getHour()
-	{
-		return hour;
-	}
-    
-    
+    public LocalTime time() 
+    {
+        return time;
+    }
 }
+    
+
