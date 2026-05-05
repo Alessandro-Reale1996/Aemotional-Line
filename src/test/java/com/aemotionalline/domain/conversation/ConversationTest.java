@@ -127,7 +127,7 @@ public class ConversationTest
 	}
 	
 	@Test
-	void houldBlockMessageWhenConstraintFails()
+	void shouldBlockMessageWhenConstraintFails()
 	{
 		UserId partnerOne = new UserId(10L);
 		UserId partnerTwo = new UserId(20L);
