@@ -42,7 +42,13 @@ public class Conversation
 		this.coupleId = coupleId;
 		this.agreement = agreement;
 		this.status = ConversationStatus.PENDING_AGREEMENT;
-		this.constraintSet = null;
+		this.constraintSet = new ConstraintSet();
+		
+		if (constraintSet == null)
+        {
+            throw new DomainException("ConstraintSet cannot be null");
+        }
+		
 	}
 	
 	
@@ -74,6 +80,12 @@ public class Conversation
 	}
 	
 	
+	
+	public ConstraintSet getConstraintSet() {
+		return constraintSet;
+	}
+
+
 
 	public void acceptAgrement(UserId userId, Couple couple )
 	{

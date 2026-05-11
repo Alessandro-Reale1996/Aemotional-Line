@@ -5,9 +5,9 @@ import com.aemotionalline.domain.user.UserId;
 public class ConstraintAssignment {
 
     private final UserId userId;
-    private final TimeConstraint constraint;
+    private final Constraint constraint;
 
-    public ConstraintAssignment(UserId userId, TimeConstraint constraint) 
+    public ConstraintAssignment(UserId userId, Constraint constraint) 
     {
 	    if (userId == null || constraint == null) 
 	    {
@@ -23,7 +23,7 @@ public class ConstraintAssignment {
 		return userId;
 	}
 
-	public TimeConstraint getConstraint()
+	public Constraint getConstraint()
 	{
 		return constraint;
 	}

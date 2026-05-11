@@ -33,7 +33,7 @@ public class ConstraintSet
         assignments.clear();
         if (!assignments.isEmpty())
 		{
-			throw new DomainException("The list of costraints wasn't clear.");
+			throw new DomainException("The list of costraints wasn't cleared.");
 		}
         assignments.addAll(newAssignments);
     }

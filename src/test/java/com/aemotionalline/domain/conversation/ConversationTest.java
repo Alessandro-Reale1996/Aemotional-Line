@@ -2,6 +2,7 @@ package com.aemotionalline.domain.conversation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalTime;
@@ -16,6 +17,7 @@ import com.aemotionalline.domain.constraint.TimeConstraint;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
+import com.aemotionalline.domain.constraint.ConstraintSet;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.user.UserId;
 
@@ -25,11 +27,11 @@ public class ConversationTest
 	void shouldStartInPendeingAgreementStatus()
 	{
 		Couple couple = new Couple(
-																1L,
-																new UserId(10L),
-																new UserId(20L),
-																new UserId(30L)
-																);
+									1L,
+									new UserId(10L),
+									new UserId(20L),
+									new UserId(30L)
+									);
 		Agreement agreement = new Agreement(1L, "Initial Agrement");
 		
 		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
@@ -37,6 +39,22 @@ public class ConversationTest
 		assertFalse(conversation.canSendMessage(new UserId(10L), couple));
 		
 		}
+	
+	@Test
+	void shouldCreateConversationWithEmptyConstraintSet()
+	{
+	    UserId partnerOne = new UserId(10L);
+	    UserId partnerTwo = new UserId(20L);
+	    UserId therapist = new UserId(30L);
+
+	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+	    Agreement agreement = new Agreement(1L, "Initial agreement");
+
+	    Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+
+	    assertNotNull(conversation.getConstraintSet());
+	}
+	
 	
 	@Test
 	void shouldActivateConversationWhenBothPartnersAcceptAgreement()
