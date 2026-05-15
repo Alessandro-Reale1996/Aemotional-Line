@@ -19,6 +19,10 @@ import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.ConstraintSet;
 import com.aemotionalline.domain.couple.Couple;
+import com.aemotionalline.domain.message.Message;
+import com.aemotionalline.domain.message.Paragraph;
+import com.aemotionalline.domain.message.ParagraphType;
+import com.aemotionalline.domain.message.SimpleParagraph;
 import com.aemotionalline.domain.user.UserId;
 
 public class ConversationTest
@@ -155,15 +159,11 @@ public class ConversationTest
 		Agreement agreement = new Agreement(1L, "Initial agreement");
 		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
 		
-		TimeConstraint failConstraint = 
-				new TimeConstraint(LocalTime.of(22, 0))
-				{
-					@Override
-					public boolean isSatisfied(ConstraintContext context) 
-					{
-						return false;
-					}
-				};
+		conversation.acceptAgrement(partnerOne, couple);
+		conversation.acceptAgrement(partnerTwo, couple);
+		
+		TimeConstraint failConstraint = new TimeConstraint(LocalTime.of(23, 0));
+
 		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, failConstraint);
 		
 		List <ConstraintAssignment>assignments = new ArrayList<>();
@@ -176,7 +176,87 @@ public class ConversationTest
 		
 		conversation.applyConstraints(constraintChangeRequest, couple);
 		
-		  assertThrows( DomainException.class, () -> conversation.sendMessage(partnerOne, couple, new ConstraintContext(LocalTime.of(22, 0))));
+		Message message = new Message(partnerOne);
+		
+		  assertThrows( DomainException.class, () -> conversation.sendMessage(message, couple, new ConstraintContext(LocalTime.of(22, 0))));
+	}
+	
+	@Test
+	void shouldAddMessageToConversation()
+	{
+		UserId partnerOne = new UserId(10L);
+		UserId partnerTwo = new UserId(20L);
+		UserId therapist = new UserId(30L);
+		
+		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+		Agreement agreement = new Agreement(1L, "Initial agreement");
+		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		
+		conversation.acceptAgrement(partnerOne, couple);
+		conversation.acceptAgrement(partnerTwo, couple);
+		
+		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
+				
+		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, Constraint);
+		
+		List <ConstraintAssignment>assignments = new ArrayList<>();
+		assignments.add(constraintAssignment);
+		
+		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		
+		constraintChangeRequest.approve(partnerOne, couple);
+		constraintChangeRequest.approve(partnerTwo, couple);
+		
+		conversation.applyConstraints(constraintChangeRequest, couple);
+		
+		Message message = new Message(partnerOne);
+		
+		Paragraph paragraph = new SimpleParagraph(ParagraphType.SIMPLE, "title", "subtitle", "body");
+		
+		message.addParagraph(paragraph);
+		
+		conversation.sendMessage(message, couple, new ConstraintContext(LocalTime.of(23, 0)));
+		
+	    assertEquals(1, conversation.getMessages().size());
+	}
+	
+	@Test
+	void shuldNotSendEmptyMessage()
+	{
+		UserId partnerOne = new UserId(10L);
+		UserId partnerTwo = new UserId(20L);
+		UserId therapist = new UserId(30L);
+		
+		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+		Agreement agreement = new Agreement(1L, "Initial agreement");
+		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		
+		conversation.acceptAgrement(partnerOne, couple);
+		conversation.acceptAgrement(partnerTwo, couple);
+		
+		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
+				
+		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, Constraint);
+		
+		List <ConstraintAssignment>assignments = new ArrayList<>();
+		assignments.add(constraintAssignment);
+		
+		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		
+		constraintChangeRequest.approve(partnerOne, couple);
+		constraintChangeRequest.approve(partnerTwo, couple);
+		
+		conversation.applyConstraints(constraintChangeRequest, couple);
+		
+		Message message = new Message(partnerOne);
+		
+		  assertThrows(DomainException.class,
+				  () -> conversation.sendMessage(
+		                    message,
+		                    couple,
+		                    new ConstraintContext(LocalTime.of(23, 0))
+		            )
+		    );
 	}
 	
 }

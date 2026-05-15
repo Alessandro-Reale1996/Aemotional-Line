@@ -6,6 +6,7 @@ import java.util.List;
 import com.aemotionalline.domain.agreement.Agreement;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
+import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
@@ -19,6 +20,7 @@ public class Conversation
 	private final Agreement agreement;
 	private ConversationStatus status;
 	private final ConstraintSet constraintSet;
+	private final List<Message> messages;
 	
 	public Conversation(Long id, Long coupleId, Agreement agreement)
 	{
@@ -43,6 +45,7 @@ public class Conversation
 		this.agreement = agreement;
 		this.status = ConversationStatus.PENDING_AGREEMENT;
 		this.constraintSet = new ConstraintSet();
+		this.messages = new ArrayList<>();
 		
 		if (constraintSet == null)
         {
@@ -84,6 +87,11 @@ public class Conversation
 	public ConstraintSet getConstraintSet() {
 		return constraintSet;
 	}
+	
+	public List<Message> getMessages()
+	{
+		return List.copyOf(messages);
+	}
 
 
 
@@ -122,12 +130,20 @@ public class Conversation
 	
 	
 	
-	public void sendMessage(UserId userId, Couple couple, ConstraintContext context) 
+	public void sendMessage(Message message, Couple couple, ConstraintContext context) 
 	{
+		if (message == null)
+		{
+			throw new DomainException("Message can't be null.");
+		}
+		
+		message.ensureReadyToSend();
 
-	    ensureCanSendMessage(userId, couple);
+	    ensureCanSendMessage(message.getSenderId(), couple);
 
-	    // TODO: Add message
+	    constraintSet.ensureSatisfiedBy(message.getSenderId(), context);
+	    
+	    messages.add(message);
 	}
 	
 }

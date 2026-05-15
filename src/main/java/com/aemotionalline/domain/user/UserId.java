@@ -1,22 +1,13 @@
 package com.aemotionalline.domain.user;
 
-public class UserId
-{
-	private Long value;
+import java.util.Objects;
 
-	public UserId(Long value)
-	{
-		if (value == null)
-		{
-			throw new IllegalArgumentException("User id cannot be null");
-		}
-		super();
-		this.value = value;
-	}
-	
-	public Long getId()
-	{
-		return this.value;
-	}
-	
+public record UserId(Long value) 
+{
+
+    public UserId 
+    {
+        Objects.requireNonNull(value);
+    }
+    
 }
