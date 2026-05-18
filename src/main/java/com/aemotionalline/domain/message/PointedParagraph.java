@@ -1,18 +1,21 @@
 package com.aemotionalline.domain.message;
 
+import java.util.List;
+
 public class PointedParagraph extends Paragraph
 {
-	private final ParagraphType type = ParagraphType.POINTED;
-
-	public PointedParagraph(ParagraphType type, String title, String subtitle, String body)
-	{
-		super(type, title, subtitle, body);
-	}
 	
-	@Override
-    public ParagraphType getType() 
+	
+	public PointedParagraph(ParagraphId id, ParagraphType type, String title,
+			String subtitle, String body)
 	{
-        return type;
-    }
+		super(id, type, title, subtitle, body);
+	}
+
+	@Override
+	public ParagraphType getType() 
+	{
+	    return ParagraphType.POINTED;
+	}
 	
 }

@@ -21,6 +21,7 @@ import com.aemotionalline.domain.constraint.ConstraintSet;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
+import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.ParagraphType;
 import com.aemotionalline.domain.message.SimpleParagraph;
 import com.aemotionalline.domain.user.UserId;
@@ -211,7 +212,8 @@ public class ConversationTest
 		
 		Message message = new Message(partnerOne);
 		
-		Paragraph paragraph = new SimpleParagraph(ParagraphType.SIMPLE, "title", "subtitle", "body");
+		
+		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		

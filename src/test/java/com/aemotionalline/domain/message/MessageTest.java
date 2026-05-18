@@ -38,7 +38,7 @@ public class MessageTest
 		
 		Message message = new Message(user);
 		
-		Paragraph paragraph = new SimpleParagraph(ParagraphType.SIMPLE, "title", "subtitle", "body");
+		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		
@@ -64,13 +64,14 @@ public class MessageTest
 		
 		Message message = new Message(user);
 		
-		Paragraph paragraph = new SimpleParagraph(ParagraphType.SIMPLE, "title", "subtitle", "body");
+		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		
 		assertEquals(1, message.getParagraphs().size());
 	
 	}
+	
 	
 	
 	

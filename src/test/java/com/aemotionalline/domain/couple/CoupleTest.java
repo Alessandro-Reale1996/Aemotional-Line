@@ -26,7 +26,7 @@ public class CoupleTest
     void shouldReconizePartner()
     {
         UserId partnerOne = new UserId(10L);
-        UserId partnerTwo = new UserId(10L);
+        UserId partnerTwo = new UserId(20L);
         UserId therapist = new UserId(30L);
         
         UserId notPartner = new UserId(45L);
@@ -43,7 +43,7 @@ public class CoupleTest
     void shouldReconizeTherapist()
     {
         UserId partnerOne = new UserId(10L);
-        UserId partnerTwo = new UserId(10L);
+        UserId partnerTwo = new UserId(20L);
         UserId therapist = new UserId(30L);
         
         UserId notTherapist = new UserId(45L);
@@ -60,7 +60,7 @@ public class CoupleTest
     void schouldCreateCoupleWithAllElements()
     {
         UserId partnerOne = new UserId(10L);
-        UserId partnerTwo = new UserId(10L);
+        UserId partnerTwo = new UserId(20L);
         UserId therapist = new UserId(30L);
         
         assertThrows(NullPointerException.class, () -> new Couple(null, partnerOne, partnerTwo, therapist));
