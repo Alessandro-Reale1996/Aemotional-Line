@@ -35,6 +35,77 @@ public class ConversationGraph
 		}
 	}
 	
+	public List<Paragraph> findRootParagraphs()
+	{
+	    return paragraphs.stream()
+	        .filter(p -> p.getReferences().isEmpty())
+	        .toList();
+	}
+	
+	public List<Paragraph> findConversationBranchContaining(Paragraph paragraph)
+	{
+	    Objects.requireNonNull(paragraph, "Paragraph cannot be null");
+
+	    Paragraph root = findRootOf(paragraph);
+
+	    List<Paragraph> branch = new ArrayList<>();
+	    branch.add(root);
+	    branch.addAll(findEntireDiscussionTree(root));
+
+	    return List.copyOf(branch);
+	}
+	
+	private List<Paragraph> findEntireDiscussionTree(Paragraph root)
+	{
+	    Objects.requireNonNull(root, "Root paragraph cannot be null");
+	    
+	    if(!root.getReferences().isEmpty())
+	    {
+	    	throw new DomainException("The paragraph to find the discussion tree is must be root.");
+	    }
+
+	    List<Paragraph> result = new ArrayList<>();
+
+	    collectRepliesRecursively(root, result);
+
+	    return List.copyOf(result);
+	}
+	
+	private void collectRepliesRecursively(Paragraph paragraph, List<Paragraph> result)
+	{
+	    List<Paragraph> directReplies = findRepliesTo(paragraph);
+
+	    for (Paragraph reply : directReplies)
+	    {
+	        result.add(reply);
+
+	        collectRepliesRecursively(reply, result);
+	    }
+	}
+	
+	
+	private Paragraph findRootOf(Paragraph paragraph)
+	{
+	    Paragraph current = paragraph;
+
+	    while (!current.getReferences().isEmpty())
+	    {
+	        ParagraphReference firstReference = current.getReferences().get(0);
+
+	        current = findById(firstReference.referencedParagraphId());
+	    }
+
+	    return current;
+	}
+	
+	private Paragraph findById(ParagraphId id)
+	{
+	    return paragraphs.stream()
+	        .filter(p -> p.getId().equals(id))
+	        .findFirst()
+	        .orElseThrow(() -> new DomainException("Referenced paragraph not found"));
+	}
+	
 	public List<Paragraph> findRepliesTo(Paragraph paragraph)
 	{
 	    Objects.requireNonNull(paragraph);

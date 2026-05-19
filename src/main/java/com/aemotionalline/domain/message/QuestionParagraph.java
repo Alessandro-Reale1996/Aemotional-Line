@@ -17,4 +17,9 @@ public class QuestionParagraph extends Paragraph
         return ParagraphType.QUESTION;
     }
 	
+	public boolean requiresAnswer()
+	{
+	    return true;
+	}
+	
 }
