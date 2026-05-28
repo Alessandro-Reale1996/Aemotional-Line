@@ -4,43 +4,34 @@ import java.util.List;
 import java.util.Objects;
 
 import com.aemotionalline.domain.message.Paragraph;
-import com.aemotionalline.domain.message.QuestionParagraph;
 
 public class DiscussionAnalyzer
 {
-	private final ConversationGraph graph;
+    private final ConversationGraph graph;
 
-	public DiscussionAnalyzer(ConversationGraph graph)
-	{
-		this.graph = graph;
-	}
-	
-	public DiscussionAnalysis analyze(Paragraph root)
-	{
-		Objects.nonNull(root);
-		
-		List<Paragraph> tree = graph.findConversationBranchContaining(root);
-		
-		DiscussionStatus status = determineStatus(root, tree);
-		
-		DiscussionAnalysis retvalue = new DiscussionAnalysis(root, tree, status)
-		
-		return retvalue;
-		
-	}
-	
-	  private DiscussionStatus determineStatus(Paragraph root, List<Paragraph> tree)
-	    {
-	        if (tree.isEmpty())
-	        {
-	            return DiscussionStatus.UNANSWERED;
-	        }
+    public DiscussionAnalyzer(ConversationGraph graph)
+    {
+        this.graph = Objects.requireNonNull(graph, "Conversation graph cannot be null");
+    }
 
-	        if (root instanceof QuestionParagraph)
-	        {
-	            return DiscussionStatus.OPEN;
-	        }
+    public DiscussionAnalysis analyze(Paragraph paragraph)
+    {
+    	Objects.requireNonNull(paragraph, "Paragraph cannot be null");
 
-	        return DiscussionStatus.RESOLVED;
-	    }
+	    List<Paragraph> branch = graph.findConversationBranchContaining(paragraph);
+
+	    DiscussionStatus status = determineStatus(branch);
+
+	    return new DiscussionAnalysis(paragraph, branch, status);
+    }
+
+    private DiscussionStatus determineStatus(List<Paragraph> tree)
+    {
+        if (tree.isEmpty())
+        {
+            return DiscussionStatus.UNANSWERED;
+        }
+
+        return DiscussionStatus.ACTIVE;
+    }
 }
