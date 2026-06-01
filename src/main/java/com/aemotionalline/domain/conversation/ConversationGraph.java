@@ -84,7 +84,7 @@ public class ConversationGraph
 	}
 	
 	
-	private Paragraph findRootOf(Paragraph paragraph)
+	public Paragraph findRootOf(Paragraph paragraph)
 	{
 	    Paragraph current = paragraph;
 

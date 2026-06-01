@@ -16,13 +16,13 @@ public class DiscussionAnalyzer
 
     public DiscussionAnalysis analyze(Paragraph paragraph)
     {
-    	Objects.requireNonNull(paragraph, "Paragraph cannot be null");
+    	Paragraph root = graph.findRootOf(Objects.requireNonNull(paragraph, "Paragraph cannot be null"));
 
 	    List<Paragraph> branch = graph.findConversationBranchContaining(paragraph);
 
 	    DiscussionStatus status = determineStatus(branch);
 
-	    return new DiscussionAnalysis(paragraph, branch, status);
+	    return new DiscussionAnalysis(root, branch, status);
     }
 
     private DiscussionStatus determineStatus(List<Paragraph> tree)
