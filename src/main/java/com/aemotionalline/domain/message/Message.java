@@ -9,14 +9,23 @@ import com.aemotionalline.domain.user.UserId;
 
 public class Message
 {
+	private final MessageId id;
 	private final UserId senderId;
 	private final List<Paragraph> paragraphs;
 	
-	public Message(UserId senderId)
+	public Message(MessageId id, UserId senderId)
 	{
 		super();
+		this.id = Objects.requireNonNull(id);
 		this.senderId = Objects.requireNonNull(senderId, "Sender id cannot be null");
 		this.paragraphs = new ArrayList<Paragraph>();
+	}
+	
+	
+
+	public MessageId getId()
+	{
+		return id;
 	}
 
 	public UserId getSenderId()
