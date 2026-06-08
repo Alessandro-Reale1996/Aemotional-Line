@@ -47,6 +47,11 @@ public class Message
 		
 		this.paragraphs.add(paragraph);
 		
+		if(!paragraphs.contains(paragraph))
+		{
+			throw new DomainException("Paragraph was not added in the message.")
+		}
+		
 	}
 	
 	public boolean ensureReadyToSend()

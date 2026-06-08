@@ -16,7 +16,7 @@ public class MessageTest
 	{
 		UserId user = new UserId(1L);
 		
-		Message message = new Message(user);
+		Message message = new Message(new MessageId(100L), user);
 		
 		assertThrows(UnsupportedOperationException.class, () -> message.getParagraphs().clear());
 	}
@@ -26,7 +26,7 @@ public class MessageTest
 	{
 		UserId user = new UserId(1L);
 		
-		Message message = new Message(user);
+		Message message = new Message(new MessageId(100L), user);
 		
 		assertThrows(DomainException.class, () -> message.ensureReadyToSend());
 	}
@@ -36,7 +36,7 @@ public class MessageTest
 	{
 		UserId user = new UserId(1L);
 		
-		Message message = new Message(user);
+		Message message = new Message(new MessageId(100L), user);
 		
 		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
 		
@@ -50,7 +50,7 @@ public class MessageTest
 	{
 		UserId user = new UserId(1L);
 		
-		Message message = new Message(user);
+		Message message = new Message(new MessageId(100L), user);
 		
 		Paragraph paragraph = null;
 		
@@ -62,7 +62,7 @@ public class MessageTest
 	{
 		UserId user = new UserId(1L);
 		
-		Message message = new Message(user);
+		Message message = new Message(new MessageId(100L), user);
 		
 		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
 		
