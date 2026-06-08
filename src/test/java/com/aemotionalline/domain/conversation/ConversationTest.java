@@ -20,6 +20,7 @@ import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.ConstraintSet;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.message.Message;
+import com.aemotionalline.domain.message.MessageId;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.ParagraphType;
@@ -177,7 +178,7 @@ public class ConversationTest
 		
 		conversation.applyConstraints(constraintChangeRequest, couple);
 		
-		Message message = new Message(partnerOne);
+		Message message = new Message(new MessageId(110L),partnerOne);
 		
 		  assertThrows( DomainException.class, () -> conversation.sendMessage(message, couple, new ConstraintContext(LocalTime.of(22, 0))));
 	}
@@ -210,7 +211,7 @@ public class ConversationTest
 		
 		conversation.applyConstraints(constraintChangeRequest, couple);
 		
-		Message message = new Message(partnerOne);
+		Message message = new Message(new MessageId(110L),partnerOne);
 		
 		
 		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
@@ -250,7 +251,7 @@ public class ConversationTest
 		
 		conversation.applyConstraints(constraintChangeRequest, couple);
 		
-		Message message = new Message(partnerOne);
+		Message message = new Message(new MessageId(110L), partnerOne);
 		
 		  assertThrows(DomainException.class,
 				  () -> conversation.sendMessage(

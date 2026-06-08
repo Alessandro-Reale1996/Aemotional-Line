@@ -6,6 +6,7 @@ import com.aemotionalline.domain.message.MessageId;
 
 public class Discussion
 {
+	private final 
 	private final HashSet<MessageId> messageIds;
 	
 	public Discussion
