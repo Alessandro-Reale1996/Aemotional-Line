@@ -19,8 +19,9 @@ public class Conversation
 	private final Long coupleId;
 	private final Agreement agreement;
 	private ConversationStatus status;
+	private final ConversationGraph conversationGraph;
 	private final ConstraintSet constraintSet;
-	private final List<Message> messages;
+	private final List<Discussion> discussions;
 	
 	public Conversation(Long id, Long coupleId, Agreement agreement)
 	{
@@ -44,8 +45,9 @@ public class Conversation
 		this.coupleId = coupleId;
 		this.agreement = agreement;
 		this.status = ConversationStatus.PENDING_AGREEMENT;
+		this.conversationGraph = new ConversationGraph();
 		this.constraintSet = new ConstraintSet();
-		this.messages = new ArrayList<>();
+		this.discussions = new ArrayList<>();
 		
 		if (constraintSet == null)
         {
@@ -62,12 +64,10 @@ public class Conversation
 	}
 
 
-
 	public Long getCoupleId()
 	{
 		return coupleId;
 	}
-
 
 
 	public Agreement getAgreement()
@@ -76,21 +76,26 @@ public class Conversation
 	}
 
 
-
 	public ConversationStatus getStatus()
 	{
 		return status;
 	}
 	
-	
-	
-	public ConstraintSet getConstraintSet() {
+		
+	public ConversationGraph getConversationGraph()
+	{
+		return conversationGraph;
+	}
+
+
+	public ConstraintSet getConstraintSet() 
+	{
 		return constraintSet;
 	}
 	
-	public List<Message> getMessages()
+	public List<Discussion> getDiscussions()
 	{
-		return List.copyOf(messages);
+		return List.copyOf(discussions);
 	}
 
 
@@ -102,6 +107,7 @@ public class Conversation
 		if (agreement.isAccepted())
 		{
 			this.status = ConversationStatus.ACTIVE;
+			this.discussions.add(new Discussion(new DiscussionId(0L)));
 		}
 	}
 	
@@ -130,7 +136,7 @@ public class Conversation
 	
 	
 	
-	public void sendMessage(Message message, Couple couple, ConstraintContext context) 
+	public void sendMessage(Message message, Couple couple,DiscussionId discussionid, ConstraintContext context) 
 	{
 		if (message == null)
 		{
@@ -143,7 +149,25 @@ public class Conversation
 
 	    constraintSet.ensureSatisfiedBy(message.getSenderId(), context);
 	    
-	    messages.add(message);
+	    Discussion discussion = findDiscussion(discussionid);
+	    
+	    discussion.addMessage(message);
+	    
+	    conversationGraph.addAllParagraphsInMessage(message);
+	    
+	    if (!discussion.getMessages().contains(message))
+		{
+			throw new DomainException("Message was not added to relative discussion.");
+		}
 	}
+	
+	public Discussion findDiscussion(DiscussionId discussionId)
+	{
+		return	discussions.stream()
+				.filter(d -> d.getId().equals(discussionId))
+				.findFirst()
+				.orElseThrow(() -> new DomainException("Discussion not found"));
+	}
+	
 	
 }

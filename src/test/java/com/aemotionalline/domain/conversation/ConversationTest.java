@@ -180,7 +180,7 @@ public class ConversationTest
 		
 		Message message = new Message(new MessageId(110L),partnerOne);
 		
-		  assertThrows( DomainException.class, () -> conversation.sendMessage(message, couple, new ConstraintContext(LocalTime.of(22, 0))));
+		  assertThrows( DomainException.class, () -> conversation.sendMessage(message, couple, new DiscussionId(0L), new ConstraintContext(LocalTime.of(22, 0))));
 	}
 	
 	@Test
@@ -218,9 +218,9 @@ public class ConversationTest
 		
 		message.addParagraph(paragraph);
 		
-		conversation.sendMessage(message, couple, new ConstraintContext(LocalTime.of(23, 0)));
+		conversation.sendMessage(message, couple, new DiscussionId(0L), new ConstraintContext(LocalTime.of(23, 0)));
 		
-	    assertEquals(1, conversation.getMessages().size());
+	    assertEquals(1, conversation.findDiscussion(new DiscussionId(0L)).getMessages().size());
 	}
 	
 	@Test
@@ -257,6 +257,7 @@ public class ConversationTest
 				  () -> conversation.sendMessage(
 		                    message,
 		                    couple,
+		                    new DiscussionId(0L),
 		                    new ConstraintContext(LocalTime.of(23, 0))
 		            )
 		    );

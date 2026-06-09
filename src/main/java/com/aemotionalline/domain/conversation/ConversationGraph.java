@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.ParagraphReference;
@@ -21,6 +22,14 @@ public class ConversationGraph
 	public List<Paragraph> getParagraphs()
 	{
 		return List.copyOf(paragraphs);
+	}
+	
+	public void addAllParagraphsInMessage(Message message)
+	{
+		for(Paragraph paragraph : message.getParagraphs())
+		{
+			addParagraph(paragraph);
+		}
 	}
 	
 	public void addParagraph(Paragraph paragraph)

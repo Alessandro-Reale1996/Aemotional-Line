@@ -5,8 +5,8 @@ import java.util.List;
 public class QuestionParagraph extends Paragraph
 {
 	
-	public QuestionParagraph(ParagraphId id, ParagraphType type, String title,
-			String subtitle, String body)
+	public QuestionParagraph
+	(ParagraphId id, ParagraphType type, String title, String subtitle, String body)
 	{
 		super(id, type, title, subtitle, body);
 	}
@@ -17,9 +17,17 @@ public class QuestionParagraph extends Paragraph
         return ParagraphType.QUESTION;
     }
 	
-	public boolean requiresAnswer()
+	public boolean isAnswered()
 	{
-	    return true;
+		boolean retvalue = false;
+				
+	    if(!getReferences().isEmpty())
+	    {
+	    	retvalue = true;
+	    }
+	    
+	    return retvalue;
 	}
+	
 	
 }

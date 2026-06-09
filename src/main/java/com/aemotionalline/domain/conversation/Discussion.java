@@ -9,12 +9,12 @@ import com.aemotionalline.domain.message.Message;
 public class Discussion
 {
 	private final DiscussionId id;
-	private final List<Message> messageIds;
+	private final List<Message> messages;
 	
 	public Discussion(DiscussionId id)
 	{
 		this.id = id;
-		this.messageIds = new ArrayList<Message>();
+		this.messages = new ArrayList<Message>();
 	}
 
 	public DiscussionId getId()
@@ -22,9 +22,9 @@ public class Discussion
 		return id;
 	}
 
-	public List<Message> getMessageIds()
+	public List<Message> getMessages()
 	{
-		return List.copyOf(messageIds);
+		return List.copyOf(messages);
 	}
 	
 	public void addMessage(Message message)
@@ -35,9 +35,9 @@ public class Discussion
 		}
 		
 		message.ensureReadyToSend();
-		this.messageIds.add(message);
+		this.messages.add(message);
 		
-		if(!messageIds.contains(message))
+		if(!messages.contains(message))
 		{
 			throw new DomainException("Paragraph was not added in the message.");
 		}
