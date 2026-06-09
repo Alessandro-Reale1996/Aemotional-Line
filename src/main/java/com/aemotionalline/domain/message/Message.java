@@ -49,7 +49,7 @@ public class Message
 		
 		if(!paragraphs.contains(paragraph))
 		{
-			throw new DomainException("Paragraph was not added in the message.")
+			throw new DomainException("Paragraph was not added in the message.");
 		}
 		
 	}

@@ -34,6 +34,7 @@ public class Discussion
 			throw new DomainException("Message can't be null.");
 		}
 		
+		message.ensureReadyToSend();
 		this.messageIds.add(message);
 		
 		if(!messageIds.contains(message))
