@@ -1,12 +1,15 @@
 package com.aemotionalline.domain.conversation;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.aemotionalline.domain.agreement.Agreement;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.message.Message;
+import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
@@ -21,7 +24,7 @@ public class Conversation
 	private ConversationStatus status;
 	private final ConversationGraph conversationGraph;
 	private final ConstraintSet constraintSet;
-	private final List<Discussion> discussions;
+	private final Set<Discussion> discussions;
 	
 	public Conversation(Long id, Long coupleId, Agreement agreement)
 	{
@@ -47,7 +50,7 @@ public class Conversation
 		this.status = ConversationStatus.PENDING_AGREEMENT;
 		this.conversationGraph = new ConversationGraph();
 		this.constraintSet = new ConstraintSet();
-		this.discussions = new ArrayList<>();
+		this.discussions = new HashSet<>();
 		
 		if (constraintSet == null)
         {
@@ -97,7 +100,19 @@ public class Conversation
 	{
 		return List.copyOf(discussions);
 	}
-
+ 
+	public void addDiscussion(Discussion discussion)
+	{
+		if(!this.discussions.add(discussion))
+		{
+			throw new DomainException("Discussion alredy exist in conversation.");
+		};
+		
+		if(!discussions.contains(discussion))
+		{
+			throw new DomainException("DIscussion was not added to the conversation.");
+		}
+	}
 
 
 	public void acceptAgrement(UserId userId, Couple couple )
@@ -159,6 +174,8 @@ public class Conversation
 		{
 			throw new DomainException("Message was not added to relative discussion.");
 		}
+	    
+	    verifyParagrapshWasAddedToGraph(message);
 	}
 	
 	public Discussion findDiscussion(DiscussionId discussionId)
@@ -169,5 +186,15 @@ public class Conversation
 				.orElseThrow(() -> new DomainException("Discussion not found"));
 	}
 	
+	private void verifyParagrapshWasAddedToGraph(Message message)
+	{	
+		for(Paragraph paragraph : message.getParagraphs())
+		{
+			if(!this.conversationGraph.getParagraphs().contains(paragraph))
+			{
+				throw new DomainException("Message's paragraphs wasn't added to graph.");
+			}
+		}		
+	}
 	
 }

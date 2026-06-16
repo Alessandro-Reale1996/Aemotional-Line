@@ -100,6 +100,46 @@ public class ConversationTest
 	}
 	
 	@Test
+	void shouldAddDiscussionToConversation()
+	{
+		UserId partnerOne = new UserId(10L);
+		UserId partnerTwo = new UserId(20L);
+		UserId therapist = new UserId (30L);
+		
+		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+		Agreement agreement = new Agreement(1L, "Initial agreement");
+		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		
+		Discussion discussion = new Discussion(new DiscussionId(1L));
+		
+		conversation.addDiscussion(discussion);
+		
+		assertEquals(1, conversation.getDiscussions().size());
+		assertEquals(discussion, conversation.getDiscussions().getFirst());
+	}
+	
+	@Test
+	void shouldNotAddSameDiscussionToConversation()
+	{
+		UserId partnerOne = new UserId(10L);
+		UserId partnerTwo = new UserId(20L);
+		UserId therapist = new UserId (30L);
+		
+		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+		Agreement agreement = new Agreement(1L, "Initial agreement");
+		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		
+		Discussion discussion = new Discussion(new DiscussionId(1L));
+		Discussion sameDiscussion = new Discussion(new DiscussionId(1L));
+		
+		conversation.addDiscussion(discussion);
+		
+		assertThrows(DomainException.class, () -> {
+			conversation.addDiscussion(sameDiscussion);
+		});
+	}
+	
+	@Test
 	void therapistShouldNotAcceptAgreement()
 	{
 		UserId partnerOne = new UserId(10L);
@@ -221,6 +261,44 @@ public class ConversationTest
 		conversation.sendMessage(message, couple, new DiscussionId(0L), new ConstraintContext(LocalTime.of(23, 0)));
 		
 	    assertEquals(1, conversation.findDiscussion(new DiscussionId(0L)).getMessages().size());
+	}
+	
+	@Test
+	void shouldthrowExceptionWhenMessageIsNotAddedToDIscussion()
+	{
+		UserId partnerOne = new UserId(10L);
+		UserId partnerTwo = new UserId(20L);
+		UserId therapist = new UserId(30L);
+		
+		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+		Agreement agreement = new Agreement(1L, "Initial agreement");
+		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		
+		conversation.acceptAgrement(partnerOne, couple);
+		conversation.acceptAgrement(partnerTwo, couple);
+		
+		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
+				
+		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, Constraint);
+		
+		List <ConstraintAssignment>assignments = new ArrayList<>();
+		assignments.add(constraintAssignment);
+		
+		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		
+		constraintChangeRequest.approve(partnerOne, couple);
+		constraintChangeRequest.approve(partnerTwo, couple);
+		
+		conversation.applyConstraints(constraintChangeRequest, couple);
+		
+		Message message = new Message(new MessageId(110L),partnerOne);
+		
+		
+		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
+		
+		message.addParagraph(paragraph);
+		
+		conversation.sendMessage(message, couple, new DiscussionId(0L), new ConstraintContext(LocalTime.of(23, 0)));
 	}
 	
 	@Test

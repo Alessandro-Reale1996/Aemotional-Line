@@ -2,6 +2,7 @@ package com.aemotionalline.domain.conversation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.message.Message;
@@ -25,6 +26,28 @@ public class Discussion
 	public List<Message> getMessages()
 	{
 		return List.copyOf(messages);
+	}
+	
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o)
+		{
+			return true;
+		}
+
+		if (!(o instanceof Discussion other))
+		{
+			return false;
+		}
+
+		return Objects.equals(id, other.id);
+	}
+	
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(id);
 	}
 	
 	public void addMessage(Message message)
