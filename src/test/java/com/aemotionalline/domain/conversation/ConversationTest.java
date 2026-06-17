@@ -114,7 +114,7 @@ public class ConversationTest
 		
 		conversation.addDiscussion(discussion);
 		
-		assertEquals(1, conversation.getDiscussions().size());
+		assertEquals(2, conversation.getDiscussions().size());
 		assertEquals(discussion, conversation.getDiscussions().getFirst());
 	}
 	
@@ -234,6 +234,12 @@ public class ConversationTest
 		Agreement agreement = new Agreement(1L, "Initial agreement");
 		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
 		
+
+		DiscussionId discussionId = new DiscussionId(0L);
+		
+		Discussion discussion = new Discussion(discussionId);
+		
+		
 		conversation.acceptAgrement(partnerOne, couple);
 		conversation.acceptAgrement(partnerTwo, couple);
 		
@@ -258,9 +264,9 @@ public class ConversationTest
 		
 		message.addParagraph(paragraph);
 		
-		conversation.sendMessage(message, couple, new DiscussionId(0L), new ConstraintContext(LocalTime.of(23, 0)));
+		conversation.sendMessage(message, couple, discussionId, new ConstraintContext(LocalTime.of(23, 0)));
 		
-	    assertEquals(1, conversation.findDiscussion(new DiscussionId(0L)).getMessages().size());
+	    assertEquals(message, conversation.findDiscussion(discussion.getId()).getMessages().getFirst());
 	}
 	
 	@Test
@@ -298,11 +304,12 @@ public class ConversationTest
 		
 		message.addParagraph(paragraph);
 		
-		conversation.sendMessage(message, couple, new DiscussionId(0L), new ConstraintContext(LocalTime.of(23, 0)));
+		assertThrows(DomainException.class, ()-> conversation.sendMessage(message, couple, new DiscussionId(3L), new ConstraintContext(LocalTime.of(23, 0))));
+		
 	}
 	
 	@Test
-	void shuldNotSendEmptyMessage()
+	void shouldNotSendEmptyMessage()
 	{
 		UserId partnerOne = new UserId(10L);
 		UserId partnerTwo = new UserId(20L);

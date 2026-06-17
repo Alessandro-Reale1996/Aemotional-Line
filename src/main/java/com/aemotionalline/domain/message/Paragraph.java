@@ -1,7 +1,8 @@
 package com.aemotionalline.domain.message;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
 
@@ -9,11 +10,11 @@ public  abstract class Paragraph
 {
 	private final ParagraphId id;
 	private final ParagraphType type;
-	private final List<ParagraphReference> references;
-    private final String title;
-    private final String subtitle;
-    private final String body;
-	
+	private final Set<Paragraph> references;
+ 
+	private final String title;
+	private final String subtitle;
+	private final String body;
     
     
     public Paragraph(ParagraphId id, ParagraphType type, String title, String subtitle, String body)
@@ -38,10 +39,12 @@ public  abstract class Paragraph
 		
         this.id = id;
 		this.type = type;
-		this.references = new ArrayList<ParagraphReference>();
+		this.references = new HashSet<Paragraph>();
+		
 		this.title = title;
 		this.subtitle = subtitle;
 		this.body = body;
+		
 	}
     
     
@@ -56,7 +59,7 @@ public  abstract class Paragraph
 		return type;
 	}
     
-	public List<ParagraphReference> getReferences()
+	public List<Paragraph> getReferences()
 	{
 		return List.copyOf(references);
 	}
@@ -78,14 +81,11 @@ public  abstract class Paragraph
 	
 	
 	
-	public void addReference(ParagraphReference reference)
+	public void addReference(Paragraph reference)
 	{
-		if (reference == null)
-		{
-			throw new DomainException("Reference can't ne null.");
-		}
+		validateReference(reference);
 		
-		if (reference.referencedParagraphId().equals(this.id))
+		if (reference.getId().equals(this.id))
 		{
 			throw new DomainException("Paragraph can't reference it self.");
 		}
@@ -97,12 +97,43 @@ public  abstract class Paragraph
 		
 	    references.add(reference);
 	    
-	    if (this.references.isEmpty())
+	    if (!this.references.contains(reference))
 		{
 			throw new DomainException("Reference failed to be added.");
 		}
 	}
 
+	protected void validateReference(Paragraph reference)
+	{
+	    if(reference == null)
+	    {
+	        throw new DomainException("Reference can't be null.");
+	    }
+	}
 	
+	
+	@Override
+	public boolean equals(Object obj)
+	{
+	    if(this == obj)
+	    {
+	        return true;
+	    }
+
+	    if(obj == null || getClass() != obj.getClass())
+	    {
+	        return false;
+	    }
+
+	    Paragraph paragraph = (Paragraph) obj;
+
+	    return id.equals(paragraph.id);
+	}
+
+	@Override
+	public int hashCode()
+	{
+	    return id.hashCode();
+	}
     
 }

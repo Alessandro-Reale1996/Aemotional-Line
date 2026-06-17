@@ -1,14 +1,44 @@
 package com.aemotionalline.domain.message;
 
-import java.util.List;
+import com.aemotionalline.domain.common.DomainException;
 
 public class SimpleParagraph extends Paragraph
 {
 	
-	public SimpleParagraph(ParagraphId id, ParagraphType type, String title,
-			String subtitle, String body)
+	private static final int MAX_TITLE_LENGTH = 100;
+	private static final int MAX_SUBTITLE_LENGTH = 200;
+	private static final int MAX_BODY_LENGTH = 800;
+	
+	public SimpleParagraph
+	(ParagraphId id, ParagraphType type, String title, String subtitle, String body)
 	{
 		super(id, type, title, subtitle, body);
+		
+		
+		if(title != null && title.length() > MAX_TITLE_LENGTH)
+        {
+            throw new DomainException(
+                "Paragraph body cannot exceed "
+                + MAX_TITLE_LENGTH
+                + " characters");
+        }
+		
+		if(subtitle != null && subtitle.length() > MAX_SUBTITLE_LENGTH)
+        {
+            throw new DomainException(
+                "Paragraph body cannot exceed "
+                + MAX_SUBTITLE_LENGTH
+                + " characters");
+        }
+		
+		if(body != null && body.length() > MAX_BODY_LENGTH)
+        {
+            throw new DomainException(
+                "Paragraph body cannot exceed "
+                + MAX_BODY_LENGTH
+                + " characters");
+        }		
+
 	}
 
 	@Override
@@ -16,5 +46,19 @@ public class SimpleParagraph extends Paragraph
 	{
 	    return ParagraphType.SIMPLE;
 	}
+	
+	@Override
+	public void addReference(Paragraph reference)
+	{
+		validateReference(reference);
+		
+		if (reference.getType().equals(ParagraphType.QUESTION))
+		{
+			throw new DomainException("PointedPAragraph can reference only Question.");
+		}
+		
+		super.addReference(reference);
+	}
+	
 	
 }

@@ -52,6 +52,8 @@ public class Conversation
 		this.constraintSet = new ConstraintSet();
 		this.discussions = new HashSet<>();
 		
+		discussions.add(new Discussion(new DiscussionId(0L)));
+		
 		if (constraintSet == null)
         {
             throw new DomainException("ConstraintSet cannot be null");

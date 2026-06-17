@@ -32,17 +32,19 @@ public class ParagraphTest
 				new SimpleParagraph(new ParagraphId(20L), ParagraphType.SIMPLE, "TItle", "SubTitle", "Body");
 		
 		
-		paragraph.addReference(new ParagraphReference(new ParagraphId(10L)));
+		SimpleParagraph referencingParagraph = new SimpleParagraph(new ParagraphId(10L), ParagraphType.SIMPLE, "text", "text", "text");
 		
+		paragraph.addReference(referencingParagraph);		
 		assertEquals(1, paragraph.getReferences().size()); 
 	}
-	
 	 @Test
 	 void shouldThrowExceptionWhenSelfRefenced()
 	 {
 			var paragraph = new SimpleParagraph(new ParagraphId(10L), ParagraphType.SIMPLE, "TItle", "SubTitle", "Body");
 			
-			assertThrows(DomainException.class, () -> paragraph.addReference(new ParagraphReference(new ParagraphId(10L))));
+			SimpleParagraph referencingParagraph = new SimpleParagraph(new ParagraphId(10L), ParagraphType.SIMPLE, "text", "text", "text");
+			
+			assertThrows(DomainException.class, () -> paragraph.addReference(referencingParagraph));
 	 }
 	 
 	 @Test
@@ -50,9 +52,13 @@ public class ParagraphTest
 	 {
 			var paragraph = new SimpleParagraph(new ParagraphId(10L), ParagraphType.SIMPLE, "TItle", "SubTitle", "Body");
 			
-			paragraph.addReference(new ParagraphReference(new ParagraphId(20L)));
+			SimpleParagraph firstReferencingParagraph = new SimpleParagraph(new ParagraphId(20L), ParagraphType.SIMPLE, "text", "text", "text");
 			
-			assertThrows(DomainException.class, () -> paragraph.addReference(new ParagraphReference(new ParagraphId(20L))));
+			SimpleParagraph secondReferencingParagraph = new SimpleParagraph(new ParagraphId(20L), ParagraphType.SIMPLE, "text", "text", "text");
+			
+			paragraph.addReference(firstReferencingParagraph);
+			
+			assertThrows(DomainException.class, () -> paragraph.addReference(secondReferencingParagraph));
 	 }
 	 
 }

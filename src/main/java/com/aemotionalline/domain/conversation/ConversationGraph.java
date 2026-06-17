@@ -8,7 +8,6 @@ import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.ParagraphId;
-import com.aemotionalline.domain.message.ParagraphReference;
 
 public class ConversationGraph
 {
@@ -99,9 +98,9 @@ public class ConversationGraph
 
 	    while (!current.getReferences().isEmpty())
 	    {
-	        ParagraphReference firstReference = current.getReferences().get(0);
+	        Paragraph firstReference = current.getReferences().get(0);
 
-	        current = findById(firstReference.referencedParagraphId());
+	        current = findById(firstReference.getId());
 	    }
 
 	    return current;
@@ -129,7 +128,7 @@ public class ConversationGraph
 	private boolean hasReferenceTo(Paragraph paragraph, ParagraphId targetId)
 	{
 	    return paragraph.getReferences().stream()
-	        .map(ParagraphReference::referencedParagraphId)
+	        .map(Paragraph :: getId)
 	        .anyMatch(id -> id.equals(targetId));
 	}
 	
