@@ -7,7 +7,7 @@ import com.aemotionalline.domain.message.QuestionParagraph;
 
 public class Analyzer
 {
-	public static List<QuestionParagraph> conversationNotAnsweredQuetions(Conversation conversation)
+	public static List<QuestionParagraph> conversationNotAnsweredQuestions(Conversation conversation)
 	{
 		return	conversation.getConversationGraph().getParagraphs()
 			.stream()

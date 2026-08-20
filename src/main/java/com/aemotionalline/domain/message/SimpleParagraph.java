@@ -54,7 +54,7 @@ public class SimpleParagraph extends Paragraph
 		
 		if (reference.getType().equals(ParagraphType.QUESTION))
 		{
-			throw new DomainException("PointedPAragraph can reference only Question.");
+			throw new DomainException("Only PointedPAragraphs can reference a Question.");
 		}
 		
 		super.addReference(reference);

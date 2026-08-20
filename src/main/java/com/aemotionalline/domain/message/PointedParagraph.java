@@ -33,7 +33,7 @@ public class PointedParagraph extends Paragraph
 		
 		if (!reference.getType().equals(ParagraphType.QUESTION))
 		{
-			throw new DomainException("PointedPAragraph can reference only Question.");
+			throw new DomainException("PointedPAragraphs can reference only Questions.");
 		}
 		
 		super.addReference(reference);
