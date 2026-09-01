@@ -160,14 +160,17 @@ public class Conversation
 			throw new DomainException("Message can't be null.");
 		}
 		
+		UserId sender = message.getSenderId();
+		
 		message.ensureReadyToSend();
 
-	    ensureCanSendMessage(message.getSenderId(), couple);
+	    ensureCanSendMessage(sender, couple);
 
 	    constraintSet.ensureSatisfiedBy(message.getSenderId(), context);
 	    
 	    Discussion discussion = findDiscussion(discussionid);
 	    
+	    discussion.setLastSender(sender);
 	    discussion.addMessage(message);
 	    
 	    conversationGraph.addAllParagraphsInMessage(message);

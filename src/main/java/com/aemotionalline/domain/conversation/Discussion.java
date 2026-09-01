@@ -6,11 +6,13 @@ import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.message.Message;
+import com.aemotionalline.domain.user.UserId;
 
 public class Discussion
 {
 	private final DiscussionId id;
 	private final List<Message> messages;
+	private UserId LastSender;
 	
 	public Discussion(DiscussionId id)
 	{
@@ -28,6 +30,28 @@ public class Discussion
 		return List.copyOf(messages);
 	}
 	
+	
+	
+	public UserId getLastSender() 
+	{
+		return LastSender;
+	}
+
+	public void setLastSender(UserId lastSender) 
+	{
+		if (lastSender.equals(this.LastSender)) 
+		{
+			throw new DomainException("A new message can't be send, if an aswer wasn't recived.");
+		}
+		
+		LastSender = lastSender;
+		
+		if(lastSender != this.LastSender)
+		{
+			throw new DomainException("The sender wan't appoited as last sender in the discussion.");
+		}
+	}
+
 	@Override
 	public boolean equals(Object o)
 	{

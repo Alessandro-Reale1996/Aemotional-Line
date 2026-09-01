@@ -270,7 +270,52 @@ public class ConversationTest
 	}
 	
 	@Test
-	void shouldthrowExceptionWhenMessageIsNotAddedToDIscussion()
+	void shouldthrowExceptionWhenSenderIsTheSameAsLastSender()
+	{
+		UserId partnerOne = new UserId(10L);
+		UserId partnerTwo = new UserId(20L);
+		UserId therapist = new UserId(30L);
+		
+		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+		Agreement agreement = new Agreement(1L, "Initial agreement");
+		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		
+		conversation.acceptAgrement(partnerOne, couple);
+		conversation.acceptAgrement(partnerTwo, couple);
+		
+		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
+				
+		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, Constraint);
+		
+		List <ConstraintAssignment>assignments = new ArrayList<>();
+		assignments.add(constraintAssignment);
+		
+		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		
+		constraintChangeRequest.approve(partnerOne, couple);
+		constraintChangeRequest.approve(partnerTwo, couple);
+		
+		conversation.applyConstraints(constraintChangeRequest, couple);
+		
+		Message message = new Message(new MessageId(110L),partnerOne);
+		
+		
+		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
+		
+		message.addParagraph(paragraph);
+		
+		DiscussionId discussionId = new DiscussionId(0L);
+		
+		conversation.sendMessage(message, couple, discussionId, new ConstraintContext(LocalTime.of(23, 0)));
+		
+		Message secondMessage = new Message(new MessageId(120L),partnerOne);
+		
+		assertThrows(DomainException.class, ()-> conversation.sendMessage(secondMessage, couple, discussionId, new ConstraintContext(LocalTime.of(23, 0))));
+		
+	}
+	
+	@Test
+	void shouldthrowExceptionWhenMessageIsNotAddedToDiscussion()
 	{
 		UserId partnerOne = new UserId(10L);
 		UserId partnerTwo = new UserId(20L);

@@ -21,4 +21,15 @@ public class DiscussionTest
 		assertThrows(DomainException.class, ()-> discussion.addMessage(message));
 	}
 	
+	@Test
+	public void shouldThrowExceptionIfUserIdIsTheSameAsLAstSender()
+	{
+	
+		Discussion discussion = new Discussion(new DiscussionId(50L));
+		
+		discussion.setLastSender(new UserId(0L));
+		
+		assertThrows(DomainException.class, ()-> discussion.setLastSender(new UserId(0L)));
+	}
+	
 }
