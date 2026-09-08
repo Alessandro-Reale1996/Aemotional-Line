@@ -25,7 +25,7 @@ public class Proposal
         this.justification = justification;
         this.sentAt = Objects.requireNonNull(sentAt); 
         
-        this.proposalStatus = ProposalStatus.DRAFT;
+        this.proposalStatus = proposalStatus;
     }
     
     public static Proposal create( ProposalId proposalId, UserId author, String text, String justification, Clock clock, ProposalStatus proposalStatus) 
@@ -73,7 +73,7 @@ public class Proposal
 	
 	public void setProposalStatus(ProposalStatus proposalStatus)
 	{
-		this.proposalStatus = proposalStatus;
+		this.proposalStatus = Objects.requireNonNull(proposalStatus);
 	}
  
 }

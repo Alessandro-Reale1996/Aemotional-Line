@@ -172,4 +172,26 @@ public class Negotiation
             throw new IllegalStateException("It is not this user's turn");
         }
     }	
+    
+    @Override
+    public boolean equals(Object o) 
+    {
+        if (this == o) 
+        {
+            return true;
+        }
+
+        if (!(o instanceof Negotiation other)) 
+        {
+            return false;
+        }
+
+        return id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() 
+    {
+        return id.hashCode();
+    }
 }
