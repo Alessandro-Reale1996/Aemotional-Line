@@ -32,11 +32,14 @@ public final class NegotiationArchive
         }
     }
 
-    public Optional<Negotiation> findById(NegotiationId id) 
+    public Negotiation findById(NegotiationId id) 
     {
         return negotiations.stream()
                 .filter(negotiation -> negotiation.getId().equals(id))
-                .findFirst();
+                .findFirst()
+                .orElseThrow(() -> 
+                    new DomainException("Negotiation not found.")
+                );
     }
 
     public Set<Negotiation> getNegotiations() 
