@@ -1,11 +1,8 @@
 package com.aemotionalline.domain.negotiation;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.user.UserId;
@@ -159,17 +156,17 @@ public class Negotiation
         
         if (proposals.getLast().getProposalStatus() == ProposalStatus.ACCEPTED)
         {
-        	throw new DomainException("User can't keep sending proposal if the last was accepted.");
+        	throw new IllegalStateException("User can't keep sending proposal if the last was accepted.");
         }
 
         if (!this.couple.isPartner(user)) 
         {
-            throw new IllegalArgumentException("User does not belong to the couple");
+            throw new DomainException("User does not belong to the couple");
         }
 
         if (!currentResponder.equals(user)) 
         {
-            throw new IllegalStateException("It is not this user's turn");
+            throw new DomainException("It is not this user's turn");
         }
     }	
     

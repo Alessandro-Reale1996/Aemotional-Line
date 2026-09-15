@@ -71,6 +71,13 @@ public class NegotiationArchiveTest
 		
 	}
 	
+	@Test
+	void shouldThrowExceptionWhenIDNotFound()
+	{
+		NegotiationArchive archive = new NegotiationArchive();
+		
+		assertThrows(DomainException.class, () -> archive.findById(new NegotiationId(1L)));
+	}
 	
 	
 }
