@@ -24,6 +24,39 @@ public class NegotiationTest
 	
 	// TESTING ensureCanRespond() METHOD USING acceptNegotiation():
 	
+	@Test
+	void shouldThrowExceptionIfNegotiationStatusIsRefused()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+		
+		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone(), ProposalStatus.DRAFT);
+		
+		Negotiation negotiation = Negotiation.start(new NegotiationId(100L), couple, proposal, couple.getPartnerTwoId());
+		
+		negotiation.refuseNegotiation(couple.getPartnerTwoId());
+		
+		assertThrows(IllegalStateException.class, ()-> negotiation.acceptNegotiation(couple.getPartnerTwoId()));
+		
+	}
+	
+	@Test
+	void shouldThrowExceptionIfProposalStatusIsAccepted()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+		
+		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone(), ProposalStatus.DRAFT);
+		
+		Negotiation negotiation = Negotiation.start(new NegotiationId(100L), couple, proposal, couple.getPartnerTwoId());
+		
+		negotiation.acceptNegotiation(couple.getPartnerTwoId());
+		
+		negotiation.sendProposal(couple.getPartnerOneId());
+		
+		negotiation.acceptProposal(couple.getPartnerTwoId());
+		
+		assertThrows(IllegalStateException.class, ()-> negotiation.acceptNegotiation(couple.getPartnerTwoId()));
+		
+	}
 	
 	
 	

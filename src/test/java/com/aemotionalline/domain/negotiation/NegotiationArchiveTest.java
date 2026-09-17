@@ -50,7 +50,7 @@ public class NegotiationArchiveTest
 	}
 	
 	@Test
-	void shuoldFindRightID()
+	void shouldFindRightID()
 	{
 		var archive = new NegotiationArchive();
 		

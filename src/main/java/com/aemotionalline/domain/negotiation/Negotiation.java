@@ -27,23 +27,25 @@ public class Negotiation
 		this.currentProposal = initialProposal;
 		this.proposals = new ArrayList<Proposal>();
 		this.negotiationStatus = NegotiationStatus.DRAFT;
-		
-		
 	}
 
-	public NegotiationId getId() {
+	public NegotiationId getId() 
+	{
 		return id;
 	}
 
-	public Couple getCouple() {
+	public Couple getCouple() 
+	{
 		return couple;
 	}
 
-	public List<Proposal> getProposals() {
+	public List<Proposal> getProposals() 
+	{
 		return List.copyOf(proposals);
 	}
 
-	public NegotiationStatus getNegotiationStatus() {
+	public NegotiationStatus getNegotiationStatus() 
+	{
 		return negotiationStatus;
 	}
 	
@@ -71,9 +73,9 @@ public class Negotiation
             throw new IllegalArgumentException("Responder does not belong to the couple");
         }
 
-        if (initialProposal.getAuthor().equals(currentResponder)) 
+        if (initialProposal.getAuthor().equals(currentResponder))
         {
-            throw new IllegalArgumentException("The author of the initial proposal cannot be its responder");
+            throw new IllegalArgumentException("The author of the initial proposal can't be the responder");
         }
 
         return new Negotiation (negotiationId, couple, initialProposal, currentResponder);
@@ -86,6 +88,8 @@ public class Negotiation
         ensureCanRespond(user);
 
         negotiationStatus = NegotiationStatus.ACCEPTED;
+        
+        switchCurrentResponder();
     }
 	
     public void refuseNegotiation(UserId user) 
@@ -96,13 +100,17 @@ public class Negotiation
         negotiationStatus = NegotiationStatus.REFUSED;
     }
     
-    public void acceptProposal()
+    public void acceptProposal(UserId user)
     {
+    	ensureCanRespond(user);
+    	
     	proposals.getLast().setProposalStatus(ProposalStatus.ACCEPTED);
     }
     
-    public void refuseProposal()
+    public void refuseProposal(UserId user)
     {
+    	ensureCanRespond(user);
+    	
     	proposals.getLast().setProposalStatus(ProposalStatus.REFUSED);
     }
     
@@ -126,20 +134,14 @@ public class Negotiation
     
     public void sendProposal(UserId user)
     {
+    	
     	ensureCanRespond(user);
     	
     	currentProposal.setProposalStatus(ProposalStatus.WAITING_FOR_RESPONSE);
     	
     	proposals.add(currentProposal);
     	
-    	if(currentResponder.equals(couple.getPartnerOneId()))
-    	{
-    		currentResponder = couple.getPartnerTwoId();
-    	}
-    	else if (currentResponder.equals(couple.getPartnerTwoId()))
-    	{
-    		currentResponder = couple.getPartnerOneId();
-    	}
+    	switchCurrentResponder();
 
     }
 
@@ -154,7 +156,7 @@ public class Negotiation
             throw new IllegalStateException("Negotiation is refused");
         }
         
-        if (proposals.getLast().getProposalStatus() == ProposalStatus.ACCEPTED)
+        if (!proposals.isEmpty() && proposals.getLast().getProposalStatus() == ProposalStatus.ACCEPTED)
         {
         	throw new IllegalStateException("User can't keep sending proposal if the last was accepted.");
         }
@@ -169,6 +171,18 @@ public class Negotiation
             throw new DomainException("It is not this user's turn");
         }
     }	
+    
+    private void switchCurrentResponder()
+    {
+    	if(currentResponder.equals(this.couple.getPartnerOneId()))
+    	{
+    		currentResponder = this.couple.getPartnerTwoId();
+    	}
+    	else if (currentResponder.equals(this.couple.getPartnerTwoId()))
+    	{
+    		currentResponder = this.couple.getPartnerOneId();
+    	}
+    }
     
     @Override
     public boolean equals(Object o) 
@@ -191,4 +205,6 @@ public class Negotiation
     {
         return id.hashCode();
     }
+    
+   
 }
