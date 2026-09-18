@@ -49,6 +49,15 @@ public class Negotiation
 		return negotiationStatus;
 	}
 	
+	public UserId getCurrentResponder() 
+	{
+		return currentResponder;
+	}
+
+	public Proposal getCurrentProposal() 
+	{
+		return currentProposal;
+	}
 
 	public static Negotiation start
     		(
@@ -85,7 +94,7 @@ public class Negotiation
     public void acceptNegotiation(UserId user) 
     {
 
-        ensureCanRespond(user);
+    	ensureCanAct(user);
 
         negotiationStatus = NegotiationStatus.ACCEPTED;
         
@@ -95,21 +104,21 @@ public class Negotiation
     public void refuseNegotiation(UserId user) 
     {
 
-        ensureCanRespond(user);
+    	ensureCanAct(user);
 
         negotiationStatus = NegotiationStatus.REFUSED;
     }
     
     public void acceptProposal(UserId user)
     {
-    	ensureCanRespond(user);
+    	ensureCanAct(user);
     	
     	proposals.getLast().setProposalStatus(ProposalStatus.ACCEPTED);
     }
     
     public void refuseProposal(UserId user)
     {
-    	ensureCanRespond(user);
+    	ensureCanAct(user);
     	
     	proposals.getLast().setProposalStatus(ProposalStatus.REFUSED);
     }
@@ -135,7 +144,7 @@ public class Negotiation
     public void sendProposal(UserId user)
     {
     	
-    	ensureCanRespond(user);
+    	ensureCanAct(user);
     	
     	currentProposal.setProposalStatus(ProposalStatus.WAITING_FOR_RESPONSE);
     	
@@ -146,7 +155,7 @@ public class Negotiation
     }
 
     
-    private void ensureCanRespond(UserId user) 
+    private void ensureCanAct(UserId user) 
     {
 
         Objects.requireNonNull(user);
