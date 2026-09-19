@@ -1,7 +1,5 @@
 package com.aemotionalline.domain.negotiation;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
@@ -11,7 +9,7 @@ public class Negotiation
 {	
 	private final NegotiationId id;
 	private final Couple couple;
-	private final List<Proposal> proposals;
+	private final ProposalArchive proposals;
 	
 	private NegotiationStatus negotiationStatus;
 	
@@ -25,7 +23,7 @@ public class Negotiation
 		this.couple = couple;
 		this.currentResponder = currentResponder; 
 		this.currentProposal = initialProposal;
-		this.proposals = new ArrayList<Proposal>();
+		this.proposals = new ProposalArchive();
 		this.negotiationStatus = NegotiationStatus.DRAFT;
 	}
 
@@ -39,9 +37,9 @@ public class Negotiation
 		return couple;
 	}
 
-	public List<Proposal> getProposals() 
+	public ProposalArchive getProposals() 
 	{
-		return List.copyOf(proposals);
+		return proposals;
 	}
 
 	public NegotiationStatus getNegotiationStatus() 

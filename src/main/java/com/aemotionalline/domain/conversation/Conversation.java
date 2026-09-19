@@ -1,6 +1,5 @@
 package com.aemotionalline.domain.conversation;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,7 +10,6 @@ import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.user.UserId;
-import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.ConstraintSet;
@@ -19,14 +17,16 @@ import com.aemotionalline.domain.constraint.ConstraintSet;
 public class Conversation
 {
 	private final Long id;
-	private final Long coupleId;
-	private final Agreement agreement;
-	private ConversationStatus status;
+	private final Couple couple ;
 	private final ConversationGraph conversationGraph;
-	private final ConstraintSet constraintSet;
+	
 	private final Set<Discussion> discussions;
 	
-	public Conversation(Long id, Long coupleId, Agreement agreement)
+	private Agreement agreement;
+	private ConversationStatus status;
+	private ConstraintSet constraintSet;
+	
+	public Conversation(Long id, Couple couple, Agreement agreement)
 	{
 		
         if (id == null) 
@@ -34,7 +34,7 @@ public class Conversation
             throw new DomainException("Conversation id cannot be null");
         }
 
-        if (coupleId == null) 
+        if (couple == null) 
         {
             throw new DomainException("Couple id cannot be null");
         }
@@ -45,7 +45,7 @@ public class Conversation
         }
 		
 		this.id = id;
-		this.coupleId = coupleId;
+		this.couple = couple;
 		this.agreement = agreement;
 		this.status = ConversationStatus.PENDING_AGREEMENT;
 		this.conversationGraph = new ConversationGraph();
@@ -69,9 +69,9 @@ public class Conversation
 	}
 
 
-	public Long getCoupleId()
+	public Couple getCouple()
 	{
-		return coupleId;
+		return couple;
 	}
 
 
