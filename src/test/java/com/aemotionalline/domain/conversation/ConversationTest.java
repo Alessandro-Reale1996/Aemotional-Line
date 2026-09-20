@@ -40,9 +40,9 @@ public class ConversationTest
 									);
 		Agreement agreement = new Agreement(1L, "Initial Agrement");
 		
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
-		assertFalse(conversation.canSendMessage(new UserId(10L), couple));
+		assertFalse(conversation.canSendMessage(new UserId(10L)));
 		
 		}
 	
@@ -56,7 +56,7 @@ public class ConversationTest
 	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 	    Agreement agreement = new Agreement(1L, "Initial agreement");
 
-	    Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+	    Conversation conversation = new Conversation(1L, couple, agreement);
 
 	    assertNotNull(conversation.getConstraintSet());
 	}
@@ -71,12 +71,12 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
-		conversation.acceptAgrement(partnerOne, couple);
+		conversation.acceptAgrement(partnerOne);
 		assertEquals(ConversationStatus.PENDING_AGREEMENT, conversation.getStatus());
 		 
-		conversation.acceptAgrement(partnerTwo, couple);
+		conversation.acceptAgrement(partnerTwo);
 		assertEquals(ConversationStatus.ACTIVE, conversation.getStatus());
 	}
 	
@@ -90,12 +90,12 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
-		conversation.acceptAgrement(partnerOne, couple);
-		conversation.acceptAgrement(partnerTwo, couple);
+		conversation.acceptAgrement(partnerOne);
+		conversation.acceptAgrement(partnerTwo);
 		
-		assertFalse(conversation.canSendMessage(therapist, couple));
+		assertFalse(conversation.canSendMessage(therapist));
 			
 	}
 	
@@ -108,7 +108,7 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
 		Discussion discussion = new Discussion(new DiscussionId(1L));
 		
@@ -127,7 +127,7 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
 		Discussion discussion = new Discussion(new DiscussionId(1L));
 		Discussion sameDiscussion = new Discussion(new DiscussionId(1L));
@@ -161,9 +161,9 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
-		assertThrows(DomainException.class, () -> conversation.ensureCanSendMessage(partnerOne, couple));
+		assertThrows(DomainException.class, () -> conversation.ensureCanSendMessage(partnerOne));
 	}
 	
 	@Test
@@ -175,7 +175,7 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
 		TimeConstraint constraint = new TimeConstraint(LocalTime.of(22, 0));
 		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, constraint);
@@ -187,7 +187,7 @@ public class ConversationTest
 		
 		constraintChangeRequest.approve(partnerOne, couple);
 		
-		assertThrows(DomainException.class, () -> conversation.applyConstraints(constraintChangeRequest, couple));
+		assertThrows(DomainException.class, () -> conversation.applyConstraints(constraintChangeRequest));
 	}
 	
 	@Test
@@ -199,10 +199,10 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
-		conversation.acceptAgrement(partnerOne, couple);
-		conversation.acceptAgrement(partnerTwo, couple);
+		conversation.acceptAgrement(partnerOne);
+		conversation.acceptAgrement(partnerTwo);
 		
 		TimeConstraint failConstraint = new TimeConstraint(LocalTime.of(23, 0));
 
@@ -216,11 +216,11 @@ public class ConversationTest
 		constraintChangeRequest.approve(partnerOne, couple);
 		constraintChangeRequest.approve(partnerTwo, couple);
 		
-		conversation.applyConstraints(constraintChangeRequest, couple);
+		conversation.applyConstraints(constraintChangeRequest);
 		
 		Message message = new Message(new MessageId(110L),partnerOne);
 		
-		  assertThrows( DomainException.class, () -> conversation.sendMessage(message, couple, new DiscussionId(0L), new ConstraintContext(LocalTime.of(22, 0))));
+		  assertThrows( DomainException.class, () -> conversation.sendMessage(message,new DiscussionId(0L), new ConstraintContext(LocalTime.of(22, 0))));
 	}
 	
 	@Test
@@ -232,7 +232,7 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
 
 		DiscussionId discussionId = new DiscussionId(0L);
@@ -240,8 +240,8 @@ public class ConversationTest
 		Discussion discussion = new Discussion(discussionId);
 		
 		
-		conversation.acceptAgrement(partnerOne, couple);
-		conversation.acceptAgrement(partnerTwo, couple);
+		conversation.acceptAgrement(partnerOne);
+		conversation.acceptAgrement(partnerTwo);
 		
 		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
 				
@@ -255,7 +255,7 @@ public class ConversationTest
 		constraintChangeRequest.approve(partnerOne, couple);
 		constraintChangeRequest.approve(partnerTwo, couple);
 		
-		conversation.applyConstraints(constraintChangeRequest, couple);
+		conversation.applyConstraints(constraintChangeRequest);
 		
 		Message message = new Message(new MessageId(110L),partnerOne);
 		
@@ -264,7 +264,7 @@ public class ConversationTest
 		
 		message.addParagraph(paragraph);
 		
-		conversation.sendMessage(message, couple, discussionId, new ConstraintContext(LocalTime.of(23, 0)));
+		conversation.sendMessage(message, discussionId, new ConstraintContext(LocalTime.of(23, 0)));
 		
 	    assertEquals(message, conversation.findDiscussion(discussion.getId()).getMessages().getFirst());
 	}
@@ -278,10 +278,10 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
-		conversation.acceptAgrement(partnerOne, couple);
-		conversation.acceptAgrement(partnerTwo, couple);
+		conversation.acceptAgrement(partnerOne);
+		conversation.acceptAgrement(partnerTwo);
 		
 		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
 				
@@ -295,7 +295,7 @@ public class ConversationTest
 		constraintChangeRequest.approve(partnerOne, couple);
 		constraintChangeRequest.approve(partnerTwo, couple);
 		
-		conversation.applyConstraints(constraintChangeRequest, couple);
+		conversation.applyConstraints(constraintChangeRequest);
 		
 		Message message = new Message(new MessageId(110L),partnerOne);
 		
@@ -306,11 +306,11 @@ public class ConversationTest
 		
 		DiscussionId discussionId = new DiscussionId(0L);
 		
-		conversation.sendMessage(message, couple, discussionId, new ConstraintContext(LocalTime.of(23, 0)));
+		conversation.sendMessage(message, discussionId, new ConstraintContext(LocalTime.of(23, 0)));
 		
 		Message secondMessage = new Message(new MessageId(120L),partnerOne);
 		
-		assertThrows(DomainException.class, ()-> conversation.sendMessage(secondMessage, couple, discussionId, new ConstraintContext(LocalTime.of(23, 0))));
+		assertThrows(DomainException.class, ()-> conversation.sendMessage(secondMessage, discussionId, new ConstraintContext(LocalTime.of(23, 0))));
 		
 	}
 	
@@ -323,10 +323,10 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
-		conversation.acceptAgrement(partnerOne, couple);
-		conversation.acceptAgrement(partnerTwo, couple);
+		conversation.acceptAgrement(partnerOne);
+		conversation.acceptAgrement(partnerTwo);
 		
 		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
 				
@@ -340,7 +340,7 @@ public class ConversationTest
 		constraintChangeRequest.approve(partnerOne, couple);
 		constraintChangeRequest.approve(partnerTwo, couple);
 		
-		conversation.applyConstraints(constraintChangeRequest, couple);
+		conversation.applyConstraints(constraintChangeRequest);
 		
 		Message message = new Message(new MessageId(110L),partnerOne);
 		
@@ -349,7 +349,7 @@ public class ConversationTest
 		
 		message.addParagraph(paragraph);
 		
-		assertThrows(DomainException.class, ()-> conversation.sendMessage(message, couple, new DiscussionId(3L), new ConstraintContext(LocalTime.of(23, 0))));
+		assertThrows(DomainException.class, ()-> conversation.sendMessage(message, new DiscussionId(3L), new ConstraintContext(LocalTime.of(23, 0))));
 		
 	}
 	
@@ -362,10 +362,10 @@ public class ConversationTest
 		
 		Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
 		Agreement agreement = new Agreement(1L, "Initial agreement");
-		Conversation conversation = new Conversation(1L, couple.getId(), agreement);
+		Conversation conversation = new Conversation(1L, couple, agreement);
 		
-		conversation.acceptAgrement(partnerOne, couple);
-		conversation.acceptAgrement(partnerTwo, couple);
+		conversation.acceptAgrement(partnerOne);
+		conversation.acceptAgrement(partnerTwo);
 		
 		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
 				
@@ -379,14 +379,13 @@ public class ConversationTest
 		constraintChangeRequest.approve(partnerOne, couple);
 		constraintChangeRequest.approve(partnerTwo, couple);
 		
-		conversation.applyConstraints(constraintChangeRequest, couple);
+		conversation.applyConstraints(constraintChangeRequest);
 		
 		Message message = new Message(new MessageId(110L), partnerOne);
 		
 		  assertThrows(DomainException.class,
 				  () -> conversation.sendMessage(
 		                    message,
-		                    couple,
 		                    new DiscussionId(0L),
 		                    new ConstraintContext(LocalTime.of(23, 0))
 		            )

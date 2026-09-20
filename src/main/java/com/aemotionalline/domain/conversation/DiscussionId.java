@@ -1,12 +1,18 @@
 package com.aemotionalline.domain.conversation;
 
-import java.util.Objects;
-
-public record DiscussionId(Long value)
+public record DiscussionId(long conversationId, long discussionNumber)
 {
 	public DiscussionId
 	{	
-		Objects.requireNonNull(value);
+		if (conversationId < 0) 
+        {
+            throw new IllegalArgumentException("Conversation ID cannot be negative.");
+        }
+
+        if (discussionNumber < 0) 
+        {
+            throw new IllegalArgumentException("Negotiation number cannot be negative.");
+        }
 	}
 	
 }

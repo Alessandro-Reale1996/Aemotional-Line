@@ -1,6 +1,9 @@
 package com.aemotionalline.domain.negotiation;
 
 import java.util.Objects;
+
+import org.springframework.boot.webmvc.autoconfigure.WebMvcProperties.Apiversion.Use;
+
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.user.UserId;
@@ -16,15 +19,33 @@ public class Negotiation
 	private UserId currentResponder;
 	private Proposal currentProposal;
 
-	private Negotiation(NegotiationId id, Couple couple, Proposal initialProposal, UserId currentResponder) 
+	private Negotiation(NegotiationId id, Couple couple, Proposal initialProposal, UserId initialResponder) 
 	{
 		super();
 		this.id = id;
 		this.couple = couple;
-		this.currentResponder = currentResponder; 
 		this.currentProposal = initialProposal;
+		
+		this.currentResponder = initialResponder; 
 		this.proposals = new ProposalArchive();
 		this.negotiationStatus = NegotiationStatus.DRAFT;
+	}
+	
+	public static Negotiation start(NegotiationId id, Couple couple, Proposal initialProposal)
+	{
+		Objects.requireNonNull(id);
+		Objects.requireNonNull(couple);
+		Objects.requireNonNull(initialProposal);
+		
+		
+		Negotiation negotiation = new Negotiation(id, couple, initialProposal, setFirstCurrentResponder(couple, initialProposal));
+		
+		if(negotiation.currentResponder.equals(initialProposal.getAuthor()))
+		{
+			throw new DomainException("The author of the initial proposal can't be the initial responder.");
+		}
+		
+		return negotiation;
 	}
 
 	public NegotiationId getId() 
@@ -57,37 +78,6 @@ public class Negotiation
 		return currentProposal;
 	}
 
-	public static Negotiation start
-    		(
-    		NegotiationId negotiationId, 
-    		Couple couple, 
-    		Proposal initialProposal, 
-    		UserId currentResponder
-    		) 
-    {
-    	Objects.requireNonNull(negotiationId);
-        Objects.requireNonNull(couple);
-        Objects.requireNonNull(initialProposal);
-        Objects.requireNonNull(currentResponder);
-
-        if (!couple.isPartner(initialProposal.getAuthor())) 
-        {
-            throw new IllegalArgumentException("Proposal author does not belong to the couple");
-        }
-
-        if (!couple.isPartner(currentResponder)) 
-        {
-            throw new IllegalArgumentException("Responder does not belong to the couple");
-        }
-
-        if (initialProposal.getAuthor().equals(currentResponder))
-        {
-            throw new IllegalArgumentException("The author of the initial proposal can't be the responder");
-        }
-
-        return new Negotiation (negotiationId, couple, initialProposal, currentResponder);
-    }
-    
     
     public void acceptNegotiation(UserId user) 
     {
@@ -188,6 +178,18 @@ public class Negotiation
     	else if (currentResponder.equals(this.couple.getPartnerTwoId()))
     	{
     		currentResponder = this.couple.getPartnerOneId();
+    	}
+    }
+    
+    private  static UserId setFirstCurrentResponder(Couple couple, Proposal initialProposal)
+    {
+    	if(couple.getPartnerOneId().equals(initialProposal.getAuthor()))
+    	{
+    		return couple.getPartnerTwoId();
+    	}
+    	else
+    	{
+    		return couple.getPartnerOneId();
     	}
     }
     

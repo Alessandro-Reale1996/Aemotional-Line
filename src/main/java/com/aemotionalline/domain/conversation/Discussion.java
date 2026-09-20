@@ -6,17 +6,22 @@ import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.message.Message;
+import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
 
 public class Discussion
 {
 	private final DiscussionId id;
 	private final List<Message> messages;
-	private UserId LastSender;
 	
-	public Discussion(DiscussionId id)
+	private UserId LastSender;
+	private Proposal agreement;
+	
+	public Discussion(DiscussionId id, Proposal agreement)
 	{
 		this.id = id;
+		this.agreement = agreement;
+		
 		this.messages = new ArrayList<Message>();
 	}
 

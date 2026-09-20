@@ -4,12 +4,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.aemotionalline.domain.agreement.Agreement;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
+import com.aemotionalline.domain.negotiation.Negotiation;
+import com.aemotionalline.domain.negotiation.NegotiationArchive;
+import com.aemotionalline.domain.negotiation.NegotiationId;
+import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
+import com.sun.tools.javac.comp.ThisEscapeAnalyzer;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.ConstraintSet;
@@ -19,14 +23,15 @@ public class Conversation
 	private final Long id;
 	private final Couple couple ;
 	private final ConversationGraph conversationGraph;
+	private final NegotiationArchive NegotiationArchive;
 	
 	private final Set<Discussion> discussions;
 	
-	private Agreement agreement;
+	private Proposal agreement;
 	private ConversationStatus status;
 	private ConstraintSet constraintSet;
 	
-	public Conversation(Long id, Couple couple, Agreement agreement)
+	public Conversation(Long id, Couple couple, Proposal agreement)
 	{
 		
         if (id == null) 
@@ -47,12 +52,14 @@ public class Conversation
 		this.id = id;
 		this.couple = couple;
 		this.agreement = agreement;
+		
 		this.status = ConversationStatus.PENDING_AGREEMENT;
 		this.conversationGraph = new ConversationGraph();
 		this.constraintSet = new ConstraintSet();
 		this.discussions = new HashSet<>();
+		this.NegotiationArchive = new NegotiationArchive();
 		
-		discussions.add(new Discussion(new DiscussionId(0L)));
+		opernDiscussion();
 		
 		if (constraintSet == null)
         {
@@ -75,7 +82,7 @@ public class Conversation
 	}
 
 
-	public Agreement getAgreement()
+	public Proposal getAgreement()
 	{
 		return agreement;
 	}
@@ -102,46 +109,42 @@ public class Conversation
 	{
 		return List.copyOf(discussions);
 	}
- 
-	public void addDiscussion(Discussion discussion)
-	{
-		if(!this.discussions.add(discussion))
-		{
-			throw new DomainException("Discussion alredy exist in conversation.");
-		};
-		
-		if(!discussions.contains(discussion))
-		{
-			throw new DomainException("DIscussion was not added to the conversation.");
-		}
-	}
-
-
-	public void acceptAgrement(UserId userId, Couple couple )
-	{
-		this.agreement.accept(userId, couple);
-		
-		if (agreement.isAccepted())
-		{
-			this.status = ConversationStatus.ACTIVE;
-			this.discussions.add(new Discussion(new DiscussionId(0L)));
-		}
-	}
 	
-	public boolean canSendMessage(UserId userId, Couple couple)
+	
+ 
+	public void opernDiscussion()
+	{
+		Proposal initialProposal = Proposal.create(null, null, null, null, null)
+		
+		Negotiation negotiation = 
+				Negotiation.start
+							(
+							generateNegotiationId(), 
+							couple, 
+							initialProposal
+							);
+		
+		Discussion discussion = new Discussion(generateDiscussionId(), negotiation.getLastProposal());
+		
+		discussions.add(discussion);
+		
+		NegotiationArchive.add(negotiation);
+	}
+
+	public boolean canSendMessage(UserId userId)
 	{
 		return  couple.isPartner(userId) && status == ConversationStatus.ACTIVE && agreement.isAccepted();	
 	}
 	
-	public void ensureCanSendMessage(UserId userId, Couple couple)
+	public void ensureCanSendMessage(UserId userId)
 	{
-		if (!canSendMessage(userId, couple))
+		if (!canSendMessage(userId))
 		{
 			throw new DomainException("User cannot send messages in the current conversation state");
 		}
 	}
 	
-	public void applyConstraints(ConstraintChangeRequest request, Couple couple) 
+	public void applyConstraints(ConstraintChangeRequest request) 
 	{
 	    if (!request.isFullyApproved(couple)) 
 	    {
@@ -153,7 +156,7 @@ public class Conversation
 	
 	
 	
-	public void sendMessage(Message message, Couple couple,DiscussionId discussionid, ConstraintContext context) 
+	public void sendMessage(Message message,DiscussionId discussionid, ConstraintContext context) 
 	{
 		if (message == null)
 		{
@@ -164,7 +167,7 @@ public class Conversation
 		
 		message.ensureReadyToSend();
 
-	    ensureCanSendMessage(sender, couple);
+	    ensureCanSendMessage(sender);
 
 	    constraintSet.ensureSatisfiedBy(message.getSenderId(), context);
 	    
@@ -200,6 +203,29 @@ public class Conversation
 				throw new DomainException("Message's paragraphs wasn't added to graph.");
 			}
 		}		
+	}
+	
+	private void addDiscussion(Discussion discussion)
+	{
+		if(!this.discussions.add(discussion))
+		{
+			throw new DomainException("Discussion alredy exist in conversation.");
+		};
+		
+		if(!discussions.contains(discussion))
+		{
+			throw new DomainException("DIscussion was not added to the conversation.");
+		}
+	}
+	
+	private NegotiationId generateNegotiationId()
+	{
+		return new NegotiationId(this.id, this.NegotiationArchive.getNegotiations().size());
+	}
+	
+	private DiscussionId generateDiscussionId()
+	{
+		return new DiscussionId(this.id, this.NegotiationArchive.getNegotiations().size());
 	}
 	
 }

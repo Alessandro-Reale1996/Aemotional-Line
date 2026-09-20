@@ -17,7 +17,14 @@ public class Proposal
     
     private  ProposalStatus proposalStatus;
 
-    private Proposal (ProposalId id, UserId author, String text, String justification, Instant sentAt, ProposalStatus proposalStatus) 
+    private Proposal 	
+		    	(
+				ProposalId id, 
+				UserId author, 
+				String text, 
+				String justification, 
+				Instant sentAt
+				) 
     {
     	this.id = id;
         this.author = Objects.requireNonNull(author);
@@ -25,18 +32,24 @@ public class Proposal
         this.justification = justification;
         this.sentAt = Objects.requireNonNull(sentAt); 
         
-        this.proposalStatus = proposalStatus;
+        this.proposalStatus = ProposalStatus.DRAFT;
     }
     
-    public static Proposal create( ProposalId proposalId, UserId author, String text, String justification, Clock clock, ProposalStatus proposalStatus) 
+    public static Proposal create
+    					( 	
+    					ProposalId proposalId, 
+    					UserId author, 
+    					String text, 
+    					String justification, 
+    					Clock clock
+    					) 
     {
         return new Proposal(
             proposalId,
             author,
             text,
             justification,
-            Instant.now(clock),
-            proposalStatus
+            Instant.now(clock)
         );
     }
 
@@ -74,6 +87,11 @@ public class Proposal
 	public void setProposalStatus(ProposalStatus proposalStatus)
 	{
 		this.proposalStatus = Objects.requireNonNull(proposalStatus);
+	}
+	
+	public boolean isAccepted()
+	{
+		return this.proposalStatus == ProposalStatus.ACCEPTED;
 	}
  
 }
