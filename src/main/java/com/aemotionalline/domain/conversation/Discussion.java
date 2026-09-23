@@ -35,11 +35,14 @@ public class Discussion
 		return List.copyOf(messages);
 	}
 	
-	
-	
 	public UserId getLastSender() 
 	{
 		return LastSender;
+	}
+	
+	public Proposal getAgreement() 
+	{
+		return agreement;
 	}
 
 	public void setLastSender(UserId lastSender) 
@@ -56,6 +59,8 @@ public class Discussion
 			throw new DomainException("The sender wan't appoited as last sender in the discussion.");
 		}
 	}
+	
+	
 
 	@Override
 	public boolean equals(Object o)

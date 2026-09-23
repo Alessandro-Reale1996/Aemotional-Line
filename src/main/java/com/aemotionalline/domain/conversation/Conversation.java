@@ -2,6 +2,7 @@ package com.aemotionalline.domain.conversation;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
@@ -13,7 +14,6 @@ import com.aemotionalline.domain.negotiation.NegotiationArchive;
 import com.aemotionalline.domain.negotiation.NegotiationId;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
-import com.sun.tools.javac.comp.ThisEscapeAnalyzer;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.ConstraintSet;
@@ -23,7 +23,7 @@ public class Conversation
 	private final Long id;
 	private final Couple couple ;
 	private final ConversationGraph conversationGraph;
-	private final NegotiationArchive NegotiationArchive;
+	private final NegotiationArchive negotiationArchive;
 	
 	private final Set<Discussion> discussions;
 	
@@ -31,41 +31,37 @@ public class Conversation
 	private ConversationStatus status;
 	private ConstraintSet constraintSet;
 	
-	public Conversation(Long id, Couple couple, Proposal agreement)
+	private Conversation(Long id, Couple couple)
 	{
-		
-        if (id == null) 
-        {
-            throw new DomainException("Conversation id cannot be null");
-        }
-
-        if (couple == null) 
-        {
-            throw new DomainException("Couple id cannot be null");
-        }
-
-        if (agreement == null)
-        {
-            throw new DomainException("Agreement cannot be null");
-        }
 		
 		this.id = id;
 		this.couple = couple;
-		this.agreement = agreement;
 		
 		this.status = ConversationStatus.PENDING_AGREEMENT;
 		this.conversationGraph = new ConversationGraph();
 		this.constraintSet = new ConstraintSet();
 		this.discussions = new HashSet<>();
-		this.NegotiationArchive = new NegotiationArchive();
+		this.negotiationArchive = new NegotiationArchive();
 		
-		opernDiscussion();
+	}
+	
+	public Conversation start(Long id, Couple couple, Proposal initialProposal)
+	{
+		Objects.requireNonNull(id);
+		Objects.requireNonNull(couple);
+		Objects.requireNonNull(initialProposal);
 		
-		if (constraintSet == null)
-        {
-            throw new DomainException("ConstraintSet cannot be null");
-        }
+		Conversation conversation = new Conversation(id, couple);
 		
+		openDiscussion(initialProposal);
+		
+		Proposal firstAgreement = conversation.getDiscussions().getFirst().getAgreement();
+		
+		Objects.requireNonNull(firstAgreement);
+		
+		setAgreement(firstAgreement);
+		
+		return conversation;
 	}
 	
 	
@@ -110,11 +106,25 @@ public class Conversation
 		return List.copyOf(discussions);
 	}
 	
-	
- 
-	public void opernDiscussion()
+	private void setAgreement(Proposal agreement) 
 	{
-		Proposal initialProposal = Proposal.create(null, null, null, null, null)
+		this.agreement = agreement;
+	}
+	
+	public void modifyAgreement(Proposal proposal)
+	{
+		Negotiation negotiation = Negotiation.start(generateNegotiationId(), couple, proposal);
+		
+		Proposal newAgreement = negotiation.getLastProposal();
+		
+		setAgreement(newAgreement);
+		
+		this.negotiationArchive.add(negotiation);
+	}
+	
+
+	public void openDiscussion(Proposal initialProposal)
+	{
 		
 		Negotiation negotiation = 
 				Negotiation.start
@@ -126,9 +136,9 @@ public class Conversation
 		
 		Discussion discussion = new Discussion(generateDiscussionId(), negotiation.getLastProposal());
 		
-		discussions.add(discussion);
+		addDiscussion(discussion);
 		
-		NegotiationArchive.add(negotiation);
+		negotiationArchive.add(negotiation);
 	}
 
 	public boolean canSendMessage(UserId userId)
@@ -220,12 +230,12 @@ public class Conversation
 	
 	private NegotiationId generateNegotiationId()
 	{
-		return new NegotiationId(this.id, this.NegotiationArchive.getNegotiations().size());
+		return new NegotiationId(this.id, this.negotiationArchive.getNegotiations().size());
 	}
 	
 	private DiscussionId generateDiscussionId()
 	{
-		return new DiscussionId(this.id, this.NegotiationArchive.getNegotiations().size());
+		return new DiscussionId(this.id, this.negotiationArchive.getNegotiations().size());
 	}
 	
 }
