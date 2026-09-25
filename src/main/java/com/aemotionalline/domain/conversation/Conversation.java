@@ -28,7 +28,6 @@ public class Conversation
 	private final Set<Discussion> discussions;
 	
 	private Proposal agreement;
-	private ConversationStatus status;
 	private ConstraintSet constraintSet;
 	
 	private Conversation(Long id, Couple couple)
@@ -37,7 +36,6 @@ public class Conversation
 		this.id = id;
 		this.couple = couple;
 		
-		this.status = ConversationStatus.PENDING_AGREEMENT;
 		this.conversationGraph = new ConversationGraph();
 		this.constraintSet = new ConstraintSet();
 		this.discussions = new HashSet<>();
@@ -45,21 +43,17 @@ public class Conversation
 		
 	}
 	
-	public Conversation start(Long id, Couple couple, Proposal initialProposal)
+	public static Conversation start(Long id, Couple couple, Negotiation negotiation)
 	{
 		Objects.requireNonNull(id);
 		Objects.requireNonNull(couple);
-		Objects.requireNonNull(initialProposal);
+		Objects.requireNonNull(negotiation);
 		
 		Conversation conversation = new Conversation(id, couple);
 		
-		openDiscussion(initialProposal);
+		conversation.openDiscussion(negotiation);	
 		
-		Proposal firstAgreement = conversation.getDiscussions().getFirst().getAgreement();
-		
-		Objects.requireNonNull(firstAgreement);
-		
-		setAgreement(firstAgreement);
+		conversation.setAgreement(negotiation.getLastProposal());
 		
 		return conversation;
 	}
@@ -81,14 +75,7 @@ public class Conversation
 	public Proposal getAgreement()
 	{
 		return agreement;
-	}
-
-
-	public ConversationStatus getStatus()
-	{
-		return status;
-	}
-	
+	}	
 		
 	public ConversationGraph getConversationGraph()
 	{
@@ -111,39 +98,57 @@ public class Conversation
 		this.agreement = agreement;
 	}
 	
-	public void modifyAgreement(Proposal proposal)
-	{
-		Negotiation negotiation = Negotiation.start(generateNegotiationId(), couple, proposal);
+	public void modifyAgreement(Negotiation negotiation)
+	{	
+		Objects.requireNonNull(negotiation);
+
+	    if (!negotiation.isAccepted())
+	    {
+	        throw new DomainException("Cannot modify agreement with an unaccepted negotiation.");
+	    }
 		
-		Proposal newAgreement = negotiation.getLastProposal();
-		
-		setAgreement(newAgreement);
+		if (negotiation.getLastProposal().isAccepted())
+		{
+			
+		setAgreement(negotiation.getLastProposal());
 		
 		this.negotiationArchive.add(negotiation);
+		
+		}
+		else
+		{
+			throw new DomainException("Can't modify agreement if the negotiation's proposal is not accepted.");
+		}
 	}
 	
 
-	public void openDiscussion(Proposal initialProposal)
+	public void openDiscussion(Negotiation negotiation)
 	{
+		Objects.requireNonNull(negotiation);
+
+	    if (!negotiation.isAccepted())
+	    {
+	        throw new DomainException("Cannot open new discussion with an unaccepted negotiation.");
+	    }
 		
-		Negotiation negotiation = 
-				Negotiation.start
-							(
-							generateNegotiationId(), 
-							couple, 
-							initialProposal
-							);
+		if (negotiation.getLastProposal().isAccepted())
+		{
 		
 		Discussion discussion = new Discussion(generateDiscussionId(), negotiation.getLastProposal());
 		
 		addDiscussion(discussion);
 		
 		negotiationArchive.add(negotiation);
+		}
+		else
+		{
+			throw new DomainException("Can't open a new discussion if the negotiation's proposal is not accepted.");
+		}
 	}
 
 	public boolean canSendMessage(UserId userId)
 	{
-		return  couple.isPartner(userId) && status == ConversationStatus.ACTIVE && agreement.isAccepted();	
+		return  couple.isPartner(userId) && agreement.isAccepted();	
 	}
 	
 	public void ensureCanSendMessage(UserId userId)
@@ -228,10 +233,6 @@ public class Conversation
 		}
 	}
 	
-	private NegotiationId generateNegotiationId()
-	{
-		return new NegotiationId(this.id, this.negotiationArchive.getNegotiations().size());
-	}
 	
 	private DiscussionId generateDiscussionId()
 	{
