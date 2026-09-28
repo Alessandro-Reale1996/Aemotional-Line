@@ -5,6 +5,10 @@ import java.util.Objects;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.user.UserId;
 
+/**
+ * The two partners and the therapist who supervises them. It is the authority on who may do what:
+ * partners talk and approve, the therapist proposes constraints, and nobody else takes part.
+ */
 public class Couple
 {
     private final Long id;

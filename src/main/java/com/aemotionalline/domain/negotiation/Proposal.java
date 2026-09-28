@@ -7,6 +7,10 @@ import java.util.Objects;
 
 import com.aemotionalline.domain.user.UserId;
 
+/**
+ * One version of the agreement text, with the author's justification for the edit.
+ * The clock is injected at creation so that timestamps are deterministic under test.
+ */
 public class Proposal 
 {
 	private final ProposalId id;

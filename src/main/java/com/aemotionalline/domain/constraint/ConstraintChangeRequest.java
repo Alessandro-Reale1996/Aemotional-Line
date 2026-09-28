@@ -8,6 +8,10 @@ import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.user.UserId;
 
+/**
+ * A therapist's proposal to change the constraints. Only the therapist may create it, but it changes nothing
+ * on its own: both partners must approve first, because the constraints limit them, not the therapist.
+ */
 public class ConstraintChangeRequest 
 {
 

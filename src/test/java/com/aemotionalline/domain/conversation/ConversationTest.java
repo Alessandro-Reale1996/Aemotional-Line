@@ -22,7 +22,6 @@ import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.MessageId;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.ParagraphId;
-import com.aemotionalline.domain.message.ParagraphType;
 import com.aemotionalline.domain.message.SimpleParagraph;
 import com.aemotionalline.domain.negotiation.Negotiation;
 import com.aemotionalline.domain.negotiation.NegotiationId;
@@ -109,7 +108,9 @@ public class ConversationTest
 
 	    Conversation conversation = Conversation.start(321L, couple, conversationNegotiation);
 	 
-	    Negotiation discussionNegotiation = Negotiation.start(new NegotiationId(70L), couple,initialProposal);
+	    Proposal discussionProposal = Proposal.create(new ProposalId(124L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION", Clock.systemDefaultZone());
+
+	    Negotiation discussionNegotiation = Negotiation.start(new NegotiationId(70L), couple, discussionProposal);
 	    
 	    discussionNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -146,7 +147,7 @@ public class ConversationTest
 
 	    Conversation conversation = Conversation.start(321L, couple, conversationNegotiation);
 		
-		assertThrows(DomainException.class, () -> conversation.ensureCanSendMessage(partnerOne));
+		assertThrows(DomainException.class, () -> conversation.ensureCanSendMessage(therapist));
 	}
 	
 	@Test
@@ -222,7 +223,12 @@ public class ConversationTest
 		
 		DiscussionId discussionId = conversation.getDiscussions().getFirst().getId();
 		
-		  assertThrows( DomainException.class, () -> conversation.sendMessage(message, discussionId, new ConstraintContext(LocalTime.of(22, 0))));
+		message.addParagraph(new SimpleParagraph(new ParagraphId(1L), "title", "subtitle", "body"));
+
+		// The message is valid, so the only reason left to reject it is the time constraint.
+		DomainException exception = assertThrows(DomainException.class, () -> conversation.sendMessage(message, discussionId, new ConstraintContext(LocalTime.of(22, 0))));
+
+		assertEquals("Constraint violated", exception.getMessage());
 	}
 	
 	@Test
@@ -263,7 +269,7 @@ public class ConversationTest
 		Message message = new Message(new MessageId(110L),partnerOne);
 		
 		
-		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
+		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		
@@ -312,7 +318,7 @@ public class ConversationTest
 		Message message = new Message(new MessageId(110L),partnerOne);
 		
 		
-		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
+		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		
@@ -321,8 +327,13 @@ public class ConversationTest
 		conversation.sendMessage(message, discussionId, new ConstraintContext(LocalTime.of(23, 0)));
 		
 		Message secondMessage = new Message(new MessageId(120L),partnerOne);
+
+		secondMessage.addParagraph(new SimpleParagraph(new ParagraphId(2L), "title", "subtitle", "body"));
 		
-		assertThrows(DomainException.class, ()-> conversation.sendMessage(secondMessage, discussionId, new ConstraintContext(LocalTime.of(23, 0))));
+		// The second message is valid and satisfies the constraint, so only the turn-taking rule can reject it.
+		DomainException exception = assertThrows(DomainException.class, ()-> conversation.sendMessage(secondMessage, discussionId, new ConstraintContext(LocalTime.of(23, 0))));
+
+		assertEquals("A new message can't be sent if an answer wasn't received.", exception.getMessage());
 		
 	}
 	

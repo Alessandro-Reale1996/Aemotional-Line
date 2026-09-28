@@ -14,7 +14,7 @@ import com.aemotionalline.domain.user.UserId;
 
 public class NegotiationTest 
 {
-	// TESTING ensureCanRespond() METHOD USING acceptNegotiation():
+	// ensureCanAct() is private, so its guards are exercised through acceptNegotiation().
 	
 	@Test
 	void shouldThrowExceptionIfNegotiationStatusIsRefused()
@@ -74,8 +74,6 @@ public class NegotiationTest
 		assertThrows(DomainException.class, ()-> negotiation.acceptNegotiation(couple.getPartnerOneId()));
 	}
 	
-	// 
-	
 	@Test 
 	void shouldSwitchCurrentResponderAfterAnActionOfTheCorresponder()
 	{
@@ -87,6 +85,7 @@ public class NegotiationTest
 		
 		negotiation.acceptNegotiation(couple.getPartnerTwoId());
 		
+		// The turn returns to the author of the initial proposal, who must now send it.
 		assertEquals(negotiation.getCurrentResponder(), couple.getPartnerOneId());
 		
 		negotiation.sendProposal(couple.getPartnerOneId());

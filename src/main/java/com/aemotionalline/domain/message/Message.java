@@ -7,6 +7,10 @@ import java.util.Objects;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.user.UserId;
 
+/**
+ * What one partner sends in a single turn: an ordered list of paragraphs and nothing else
+ * (no attachments), so the whole content of the exchange stays readable and analysable as text.
+ */
 public class Message
 {
 	private final MessageId id;

@@ -2,14 +2,18 @@ package com.aemotionalline.domain.message;
 
 import com.aemotionalline.domain.common.DomainException;
 
+/**
+ * A direct answer to a question. It may reference only {@link QuestionParagraph}s, and this is the only
+ * paragraph kind allowed to do so, which makes "who answered which question" unambiguous in the graph.
+ */
 public class PointedParagraph extends Paragraph
 {
 	private static final int MAX_BODY_LENGTH = 500;
 	
 	public PointedParagraph
-	(ParagraphId id, ParagraphType type, String title, String body)
+	(ParagraphId id, String title, String body)
 	{
-		super(id, type, title, null, body);
+		super(id, ParagraphType.POINTED, title, null, body);
 		
 		if(body != null && body.length() > MAX_BODY_LENGTH)
         {
@@ -21,19 +25,13 @@ public class PointedParagraph extends Paragraph
 	}
 
 	@Override
-	public ParagraphType getType() 
-	{
-	    return ParagraphType.POINTED;
-	}
-	
-	@Override
 	public void addReference(Paragraph reference)
 	{
 		validateReference(reference);
 		
 		if (!reference.getType().equals(ParagraphType.QUESTION))
 		{
-			throw new DomainException("PointedPAragraphs can reference only Questions.");
+			throw new DomainException("PointedParagraphs can reference only Questions.");
 		}
 		
 		super.addReference(reference);

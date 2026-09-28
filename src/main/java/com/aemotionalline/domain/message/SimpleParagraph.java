@@ -2,6 +2,10 @@ package com.aemotionalline.domain.message;
 
 import com.aemotionalline.domain.common.DomainException;
 
+/**
+ * A free-form paragraph with the most generous limits. It can reply to any paragraph except a question:
+ * answering a question requires a {@link PointedParagraph}, so a plain reply can never close one by accident.
+ */
 public class SimpleParagraph extends Paragraph
 {
 	
@@ -10,15 +14,15 @@ public class SimpleParagraph extends Paragraph
 	private static final int MAX_BODY_LENGTH = 800;
 	
 	public SimpleParagraph
-	(ParagraphId id, ParagraphType type, String title, String subtitle, String body)
+	(ParagraphId id, String title, String subtitle, String body)
 	{
-		super(id, type, title, subtitle, body);
+		super(id, ParagraphType.SIMPLE, title, subtitle, body);
 		
 		
 		if(title != null && title.length() > MAX_TITLE_LENGTH)
         {
             throw new DomainException(
-                "Paragraph body cannot exceed "
+                "Paragraph title cannot exceed "
                 + MAX_TITLE_LENGTH
                 + " characters");
         }
@@ -26,7 +30,7 @@ public class SimpleParagraph extends Paragraph
 		if(subtitle != null && subtitle.length() > MAX_SUBTITLE_LENGTH)
         {
             throw new DomainException(
-                "Paragraph body cannot exceed "
+                "Paragraph subtitle cannot exceed "
                 + MAX_SUBTITLE_LENGTH
                 + " characters");
         }
@@ -42,19 +46,13 @@ public class SimpleParagraph extends Paragraph
 	}
 
 	@Override
-	public ParagraphType getType() 
-	{
-	    return ParagraphType.SIMPLE;
-	}
-	
-	@Override
 	public void addReference(Paragraph reference)
 	{
 		validateReference(reference);
-		
+
 		if (reference.getType().equals(ParagraphType.QUESTION))
 		{
-			throw new DomainException("Only PointedPAragraphs can reference a Question.");
+			throw new DomainException("Only PointedParagraphs can reference a Question.");
 		}
 		
 		super.addReference(reference);

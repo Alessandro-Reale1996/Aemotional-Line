@@ -11,13 +11,17 @@ import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.negotiation.Negotiation;
 import com.aemotionalline.domain.negotiation.NegotiationArchive;
-import com.aemotionalline.domain.negotiation.NegotiationId;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.ConstraintSet;
 
+/**
+ * Aggregate root of the couple's supervised exchange. Every state change goes through this class
+ * so that the agreement, the therapist-approved constraints and the turn-taking rules
+ * are always evaluated together and can never be bypassed by touching a {@link Discussion} directly.
+ */
 public class Conversation
 {
 	private final Long id;
@@ -51,6 +55,7 @@ public class Conversation
 		
 		Conversation conversation = new Conversation(id, couple);
 		
+		// A conversation is never empty: the negotiation that authorised it also opens its first discussion.
 		conversation.openDiscussion(negotiation);	
 		
 		conversation.setAgreement(negotiation.getLastProposal());
@@ -122,6 +127,10 @@ public class Conversation
 	}
 	
 
+	/**
+	 * Opens a new topic-specific branch ("discorso specifico"). Like a change of agreement, it requires
+	 * a negotiation the partners have both settled, so no branch can start on a text one of them has not accepted.
+	 */
 	public void openDiscussion(Negotiation negotiation)
 	{
 		Objects.requireNonNull(negotiation);
@@ -134,6 +143,7 @@ public class Conversation
 		if (negotiation.getLastProposal().isAccepted())
 		{
 		
+		// The id is derived from the archive size, so the negotiation must be archived only after the id is generated.
 		Discussion discussion = new Discussion(generateDiscussionId(), negotiation.getLastProposal());
 		
 		addDiscussion(discussion);
@@ -159,6 +169,10 @@ public class Conversation
 		}
 	}
 	
+	/**
+	 * Constraints are imposed by the therapist but bind the partners, so they take effect only
+	 * once both partners have approved the request.
+	 */
 	public void applyConstraints(ConstraintChangeRequest request) 
 	{
 	    if (!request.isFullyApproved(couple)) 
@@ -171,6 +185,10 @@ public class Conversation
 	
 	
 	
+	/**
+	 * The single entry point for sending. Checks run cheapest and most fundamental first
+	 * (message shape, sender permission, constraints) so that a rejected message leaves the discussion untouched.
+	 */
 	public void sendMessage(Message message,DiscussionId discussionid, ConstraintContext context) 
 	{
 		if (message == null)
@@ -188,6 +206,7 @@ public class Conversation
 	    
 	    Discussion discussion = findDiscussion(discussionid);
 	    
+	    // Turn-taking is checked by the discussion itself: the same partner cannot write twice without a reply.
 	    discussion.setLastSender(sender);
 	    discussion.addMessage(message);
 	    
@@ -198,7 +217,7 @@ public class Conversation
 			throw new DomainException("Message was not added to relative discussion.");
 		}
 	    
-	    verifyParagrapshWasAddedToGraph(message);
+	    verifyParagraphsWereAddedToGraph(message);
 	}
 	
 	public Discussion findDiscussion(DiscussionId discussionId)
@@ -209,7 +228,7 @@ public class Conversation
 				.orElseThrow(() -> new DomainException("Discussion not found"));
 	}
 	
-	private void verifyParagrapshWasAddedToGraph(Message message)
+	private void verifyParagraphsWereAddedToGraph(Message message)
 	{	
 		for(Paragraph paragraph : message.getParagraphs())
 		{
@@ -224,12 +243,12 @@ public class Conversation
 	{
 		if(!this.discussions.add(discussion))
 		{
-			throw new DomainException("Discussion alredy exist in conversation.");
+			throw new DomainException("Discussion already exists in the conversation.");
 		};
 		
 		if(!discussions.contains(discussion))
 		{
-			throw new DomainException("DIscussion was not added to the conversation.");
+			throw new DomainException("Discussion was not added to the conversation.");
 		}
 	}
 	

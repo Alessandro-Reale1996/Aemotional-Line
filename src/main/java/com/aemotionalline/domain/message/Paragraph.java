@@ -6,6 +6,11 @@ import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
 
+/**
+ * The smallest unit of a message and a node of the conversation graph. A paragraph replies to earlier ones
+ * through {@link #addReference}; subclasses decide which kinds of paragraph they may reference
+ * and how long their text may be, which keeps every message short and focused.
+ */
 public  abstract class Paragraph 
 {
 	private final ParagraphId id;
@@ -112,6 +117,7 @@ public  abstract class Paragraph
 	}
 	
 	
+	// Identity is the id alone; the exact class check stops two paragraph kinds sharing an id from being equal.
 	@Override
 	public boolean equals(Object obj)
 	{

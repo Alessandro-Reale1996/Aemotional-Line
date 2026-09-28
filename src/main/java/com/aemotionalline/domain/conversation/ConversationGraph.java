@@ -9,6 +9,11 @@ import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.ParagraphId;
 
+/**
+ * Every paragraph ever sent in a conversation, stored flat. The tree structure is not stored:
+ * it is recovered from each paragraph's references, which keeps the graph consistent with the messages
+ * and supports the archive's "history by topic" without a second source of truth.
+ */
 public class ConversationGraph
 {
 	private final List<Paragraph> paragraphs;
@@ -39,7 +44,7 @@ public class ConversationGraph
 		
 		if (paragraphs.isEmpty())
 		{
-			throw new DomainException("Paragraph non added at ConversationGraph's paragraphs."); 
+			throw new DomainException("Paragraph was not added to the ConversationGraph."); 
 		}
 	}
 	
@@ -63,6 +68,7 @@ public class ConversationGraph
 	    return List.copyOf(branch);
 	}
 	
+	// Only a root can seed the walk: starting mid-tree would silently drop the paragraphs above it.
 	private List<Paragraph> findEntireDiscussionTree(Paragraph root)
 	{
 	    Objects.requireNonNull(root, "Root paragraph cannot be null");

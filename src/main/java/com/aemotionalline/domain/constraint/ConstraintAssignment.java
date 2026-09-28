@@ -2,6 +2,7 @@ package com.aemotionalline.domain.constraint;
 
 import com.aemotionalline.domain.user.UserId;
 
+/** Binds a constraint to one partner, because the therapist may restrict each partner differently. */
 public class ConstraintAssignment {
 
     private final UserId userId;

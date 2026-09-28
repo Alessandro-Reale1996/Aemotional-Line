@@ -2,12 +2,15 @@ package com.aemotionalline.domain.negotiation;
 
 import java.util.Objects;
 
-import org.springframework.boot.webmvc.autoconfigure.WebMvcProperties.Apiversion.Use;
-
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.user.UserId;
 
+/**
+ * The "stipula" of the agreement: the partners alternate turns exchanging {@link Proposal}s until one is accepted.
+ * Two statuses are tracked independently: {@link NegotiationStatus} says whether the request to talk was accepted,
+ * while {@link ProposalStatus} says whether the agreement text itself was accepted.
+ */
 public class Negotiation 
 {	
 	private final NegotiationId id;
@@ -79,6 +82,7 @@ public class Negotiation
 	}
 
     
+    // Accepting the request to talk hands the turn back to the author, who must now send the first proposal.
     public void acceptNegotiation(UserId user) 
     {
 
@@ -143,6 +147,8 @@ public class Negotiation
     }
 
     
+    // Terminal states (refused, or last proposal accepted) throw IllegalStateException because no user could ever act again;
+    // membership and turn violations throw DomainException because a different user could still act.
     private void ensureCanAct(UserId user) 
     {
 
@@ -181,6 +187,7 @@ public class Negotiation
     	}
     }
     
+    // The partner who did not write the initial proposal answers first, so an author can never respond to their own proposal.
     private  static UserId setFirstCurrentResponder(Couple couple, Proposal initialProposal)
     {
     	if(couple.getPartnerOneId().equals(initialProposal.getAuthor()))

@@ -7,6 +7,10 @@ import java.util.Objects;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.user.UserId;
 
+/**
+ * The constraints currently in force for a conversation. Updates replace the whole set instead of merging,
+ * so the set always equals the last change request both partners approved.
+ */
 public class ConstraintSet
 {
 	private final List<ConstraintAssignment> assignments;
@@ -33,11 +37,12 @@ public class ConstraintSet
         assignments.clear();
         if (!assignments.isEmpty())
 		{
-			throw new DomainException("The list of costraints wasn't cleared.");
+			throw new DomainException("The list of constraints wasn't cleared.");
 		}
         assignments.addAll(newAssignments);
     }
 	
+	  // Only the sender's own assignments are evaluated: a constraint on one partner never blocks the other.
 	  public void ensureSatisfiedBy(UserId userId, ConstraintContext context) 
 	  {
 	        Objects.requireNonNull(userId, "User id cannot be null");

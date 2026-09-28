@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Objects;
 import com.aemotionalline.domain.common.DomainException;
 
+/**
+ * Ordered history of every proposal that was sent, in the order the partners exchanged them.
+ * The last entry is the one the negotiation's outcome is decided on.
+ */
 public class ProposalArchive 
 {
 	private final List<Proposal> proposals;

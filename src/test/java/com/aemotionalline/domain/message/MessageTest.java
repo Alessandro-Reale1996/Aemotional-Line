@@ -38,7 +38,7 @@ public class MessageTest
 		
 		Message message = new Message(new MessageId(100L), user);
 		
-		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
+		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		
@@ -64,7 +64,7 @@ public class MessageTest
 		
 		Message message = new Message(new MessageId(100L), user);
 		
-		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), ParagraphType.SIMPLE, "title", "subtitle", "body");
+		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		

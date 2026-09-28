@@ -2,6 +2,10 @@ package com.aemotionalline.domain.message;
 
 import com.aemotionalline.domain.common.DomainException;
 
+/**
+ * A question addressed to the other partner. It stays "open" until a {@link PointedParagraph} references it,
+ * which is what {@code Analyzer} uses to report unanswered questions.
+ */
 public class QuestionParagraph extends Paragraph
 {
 	
@@ -9,14 +13,14 @@ public class QuestionParagraph extends Paragraph
 	private static final int MAX_BODY_LENGTH = 350;
 	
 	public QuestionParagraph
-	(ParagraphId id, ParagraphType type, String title, String body)
+	(ParagraphId id, String title, String body)
 	{
-		super(id, type, title, null, body);
-		
-		if(title != null && title.length() > MAX_BODY_LENGTH)
+		super(id, ParagraphType.QUESTION, title, null, body);
+
+		if(title != null && title.length() > MAX_TITLE_LENGTH)
         {
             throw new DomainException(
-                "Paragraph body cannot exceed "
+                "Paragraph title cannot exceed "
                 + MAX_TITLE_LENGTH
                 + " characters");
         }
@@ -30,12 +34,6 @@ public class QuestionParagraph extends Paragraph
         }
 	}
 
-	@Override
-    public ParagraphType getType() 
-	{
-        return ParagraphType.QUESTION;
-    }
-	
 	public boolean isAnswered()
 	{
 		boolean retvalue = false;
@@ -55,7 +53,7 @@ public class QuestionParagraph extends Paragraph
 		
 		if (reference.getType().equals(ParagraphType.QUESTION))
 		{
-			throw new DomainException("Only PointedPAragraph can reference a Question.");
+			throw new DomainException("Only PointedParagraphs can reference a Question.");
 		}
 		
 		super.addReference(reference);

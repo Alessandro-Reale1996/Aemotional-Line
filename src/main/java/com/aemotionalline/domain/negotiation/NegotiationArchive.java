@@ -7,6 +7,10 @@ import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
 
+/**
+ * Record of every negotiation that led to a discussion or a change of agreement. Its size also numbers
+ * the discussions of a conversation, so entries must never be removed.
+ */
 public final class NegotiationArchive 
 {
 
@@ -23,12 +27,12 @@ public final class NegotiationArchive
 
         if (!negotiations.add(negotiation)) 
         {
-            throw new DomainException(negotiation.getId() + "was alredy in the archive.");
+            throw new DomainException(negotiation.getId() + " was already in the archive.");
         }
         
         if (!negotiations.contains(negotiation))
         {
-        	throw new DomainException(negotiation.getId() + "wasn't added in the archive.");
+        	throw new DomainException(negotiation.getId() + " wasn't added in the archive.");
         }
     }
 
