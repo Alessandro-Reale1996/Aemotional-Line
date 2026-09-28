@@ -14,11 +14,11 @@ public class ProposalTest
 	@Test
 	public void shouldSetTheRightStatus()
 	{
-		Proposal proposalDraft = Proposal.create(new ProposalId(0L), new UserId(0L), "TEST TEXT", "TEST JUSTIFICATION", Clock.systemUTC(), ProposalStatus.DRAFT);
+		Proposal proposalDraft = Proposal.create(new ProposalId(0L), new UserId(0L), "TEST TEXT", "TEST JUSTIFICATION", Clock.systemUTC());
 		
 		assertEquals(proposalDraft.getProposalStatus(), ProposalStatus.DRAFT);
 		
-		Proposal proposalWFR = Proposal.create(new ProposalId(0L), new UserId(0L), "TEST TEXT", "TEST JUSTIFICATION", Clock.systemUTC(), ProposalStatus.WAITING_FOR_RESPONSE);
+		Proposal proposalWFR = Proposal.create(new ProposalId(0L), new UserId(0L), "TEST TEXT", "TEST JUSTIFICATION", Clock.systemUTC());
 		
 		assertEquals(proposalWFR.getProposalStatus(), ProposalStatus.WAITING_FOR_RESPONSE);
 		
