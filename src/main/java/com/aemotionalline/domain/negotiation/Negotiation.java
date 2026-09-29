@@ -85,8 +85,9 @@ public class Negotiation
     // Accepting the request to talk hands the turn back to the author, who must now send the first proposal.
     public void acceptNegotiation(UserId user) 
     {
-
     	ensureCanAct(user);
+    	
+    	ensureNegotiationStatus(NegotiationStatus.DRAFT);
 
         negotiationStatus = NegotiationStatus.ACCEPTED;
         
@@ -95,8 +96,9 @@ public class Negotiation
 	
     public void refuseNegotiation(UserId user) 
     {
-
     	ensureCanAct(user);
+    	
+    	ensureNegotiationStatus(NegotiationStatus.DRAFT);
 
         negotiationStatus = NegotiationStatus.REFUSED;
     }
@@ -105,12 +107,20 @@ public class Negotiation
     {
     	ensureCanAct(user);
     	
+    	ensureNegotiationStatus(NegotiationStatus.ACCEPTED);
+    	
+    	ensureProposalAwaitsResponse();
+    	
     	proposals.getLast().setProposalStatus(ProposalStatus.ACCEPTED);
     }
     
     public void refuseProposal(UserId user)
     {
     	ensureCanAct(user);
+    	
+    	ensureNegotiationStatus(NegotiationStatus.ACCEPTED);
+    	
+    	ensureProposalAwaitsResponse();
     	
     	proposals.getLast().setProposalStatus(ProposalStatus.REFUSED);
     }
@@ -123,11 +133,18 @@ public class Negotiation
     
     public  Proposal getLastProposal()
     {
+    	if(this.proposals.isEmpty())
+    	{
+    		throw new DomainException("No proposal has been sent yet.");
+    	}
+    	
     	return proposals.getLast();
     }
     
     public void setCurrentProposal(Proposal proposal)
     {
+    	ensureNegotiationStatus(NegotiationStatus.ACCEPTED);
+    	
     	Objects.requireNonNull(proposal);	
     	
     	this.currentProposal = proposal;
@@ -135,8 +152,9 @@ public class Negotiation
     
     public void sendProposal(UserId user)
     {
-    	
     	ensureCanAct(user);
+    	
+    	ensureNegotiationStatus(NegotiationStatus.ACCEPTED);
     	
     	currentProposal.setProposalStatus(ProposalStatus.WAITING_FOR_RESPONSE);
     	
@@ -147,8 +165,8 @@ public class Negotiation
     }
 
     
-    // Terminal states (refused, or last proposal accepted) throw IllegalStateException because no user could ever act again;
-    // membership and turn violations throw DomainException because a different user could still act.
+    // Every rule violation throws DomainException, so the REST layer can map them all to one client error.
+    // Terminal states (refused, or last proposal accepted) are checked first: once reached, nobody can act again.
     private void ensureCanAct(UserId user) 
     {
 
@@ -156,12 +174,12 @@ public class Negotiation
 
         if ( negotiationStatus == NegotiationStatus.REFUSED) 
         {
-            throw new IllegalStateException("Negotiation is refused");
+            throw new DomainException("The negotiation was refused.");
         }
         
         if (!proposals.isEmpty() && proposals.getLast().getProposalStatus() == ProposalStatus.ACCEPTED)
         {
-        	throw new IllegalStateException("User can't keep sending proposal if the last was accepted.");
+        	throw new DomainException("The negotiation is concluded: the last proposal was accepted.");
         }
 
         if (!this.couple.isPartner(user)) 
@@ -184,6 +202,23 @@ public class Negotiation
     	else if (currentResponder.equals(this.couple.getPartnerTwoId()))
     	{
     		currentResponder = this.couple.getPartnerOneId();
+    	}
+    }
+    
+    // getLastProposal() already rejects an empty archive, so only the status needs checking here.
+    private void ensureProposalAwaitsResponse()
+    {
+    	if (getLastProposal().getProposalStatus() != ProposalStatus.WAITING_FOR_RESPONSE)
+    	{
+    		throw new DomainException("The last proposal is not waiting for a response.");
+    	}
+    }
+    
+    private void ensureNegotiationStatus(NegotiationStatus expected)
+    {
+    	if(this.negotiationStatus != expected)
+    	{
+    		throw new DomainException("The current negotiation status doesn't allow this operation: " + expected + " was expected, " + negotiationStatus + " was found.");
     	}
     }
     

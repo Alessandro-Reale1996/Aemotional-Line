@@ -23,7 +23,7 @@ mvn spring-boot:run
 
 ## Domain architecture
 
-The domain layer is plain Java (should not depend on Spring) and throws `DomainException` for rule violations (`IllegalStateException` is used in a few `Negotiation` guards). IDs are small records (`UserId`, `ParagraphId`, `NegotiationId`, `DiscussionId(conversationId, discussionNumber)`, …). Tests live in mirrored packages under `src/test/java/com/aemotionalline/domain/` and construct aggregates directly (no Spring context), passing a `Clock` where time matters.
+The domain layer is plain Java (should not depend on Spring) and throws `DomainException` for every rule violation (one type, so the future REST layer can map all of them to one client error). IDs are small records (`UserId`, `ParagraphId`, `NegotiationId`, `DiscussionId(conversationId, discussionNumber)`, …). Tests live in mirrored packages under `src/test/java/com/aemotionalline/domain/` and construct aggregates directly (no Spring context), passing a `Clock` where time matters.
 
 Key concepts and how they connect:
 

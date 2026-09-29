@@ -27,7 +27,7 @@ public class NegotiationTest
 		
 		negotiation.refuseNegotiation(couple.getPartnerTwoId());
 		
-		assertThrows(IllegalStateException.class, ()-> negotiation.acceptNegotiation(couple.getPartnerTwoId()));
+		assertThrows(DomainException.class, ()-> negotiation.acceptNegotiation(couple.getPartnerTwoId()));
 		
 	}
 	
@@ -46,7 +46,7 @@ public class NegotiationTest
 		
 		negotiation.acceptProposal(couple.getPartnerTwoId());
 		
-		assertThrows(IllegalStateException.class, ()-> negotiation.acceptNegotiation(couple.getPartnerTwoId()));
+		assertThrows(DomainException.class, ()-> negotiation.acceptNegotiation(couple.getPartnerTwoId()));
 		
 	}
 	
@@ -92,5 +92,133 @@ public class NegotiationTest
 		
 		assertEquals(negotiation.getCurrentResponder(), couple.getPartnerTwoId());
 	}
-	
+
+	// PROPOSALS CAN ONLY BE ANSWERED ONCE SENT:
+
+	@Test
+	void shouldThrowExceptionWhenGettingLastProposalBeforeAnyIsSent()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+
+		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone());
+
+		Negotiation negotiation = Negotiation.start(new NegotiationId(100L), couple, proposal);
+
+		assertThrows(DomainException.class, ()-> negotiation.getLastProposal());
+	}
+
+	@Test
+	void shouldThrowExceptionWhenAcceptingProposalBeforeAnyIsSent()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+
+		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone());
+
+		Negotiation negotiation = Negotiation.start(new NegotiationId(100L), couple, proposal);
+
+		negotiation.acceptNegotiation(couple.getPartnerTwoId());
+
+		// It is partner one's turn, but the archive is still empty: there is nothing to accept.
+		assertThrows(DomainException.class, ()-> negotiation.acceptProposal(couple.getPartnerOneId()));
+	}
+
+	@Test
+	void shouldThrowExceptionWhenRefusingProposalBeforeAnyIsSent()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+
+		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone());
+
+		Negotiation negotiation = Negotiation.start(new NegotiationId(100L), couple, proposal);
+
+		negotiation.acceptNegotiation(couple.getPartnerTwoId());
+
+		assertThrows(DomainException.class, ()-> negotiation.refuseProposal(couple.getPartnerOneId()));
+	}
+
+	@Test
+	void shouldThrowExceptionWhenAcceptingARefusedProposal()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+
+		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone());
+
+		Negotiation negotiation = Negotiation.start(new NegotiationId(100L), couple, proposal);
+
+		negotiation.acceptNegotiation(couple.getPartnerTwoId());
+
+		negotiation.sendProposal(couple.getPartnerOneId());
+
+		negotiation.refuseProposal(couple.getPartnerTwoId());
+
+		assertThrows(DomainException.class, ()-> negotiation.acceptProposal(couple.getPartnerTwoId()));
+	}
+
+	// PROPOSALS ARE EXCHANGED ONLY AFTER THE NEGOTIATION IS ACCEPTED:
+
+	@Test
+	void shouldThrowExceptionWhenSendingProposalBeforeNegotiationIsAccepted()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+
+		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone());
+
+		Negotiation negotiation = Negotiation.start(new NegotiationId(100L), couple, proposal);
+
+		// Partner two holds the turn but must first accept or refuse the request to talk.
+		assertThrows(DomainException.class, ()-> negotiation.sendProposal(couple.getPartnerTwoId()));
+
+		assertEquals(NegotiationStatus.DRAFT, negotiation.getNegotiationStatus());
+	}
+
+	@Test
+	void shouldThrowExceptionWhenSettingProposalBeforeNegotiationIsAccepted()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+
+		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone());
+
+		Negotiation negotiation = Negotiation.start(new NegotiationId(100L), couple, proposal);
+
+		Proposal counterProposal = Proposal.create(new ProposalId(1L), couple.getPartnerTwoId(), "OTHER TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone());
+
+		assertThrows(DomainException.class, ()-> negotiation.setCurrentProposal(counterProposal));
+	}
+
+	@Test
+	void shouldThrowExceptionWhenAcceptingNegotiationTwice()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+
+		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone());
+
+		Negotiation negotiation = Negotiation.start(new NegotiationId(100L), couple, proposal);
+
+		negotiation.acceptNegotiation(couple.getPartnerTwoId());
+
+		// Partner one now holds the turn; a second acceptance would only flip it back and skip the turn.
+		assertThrows(DomainException.class, ()-> negotiation.acceptNegotiation(couple.getPartnerOneId()));
+
+		assertEquals(couple.getPartnerOneId(), negotiation.getCurrentResponder());
+	}
+
+	@Test
+	void shouldAcceptProposalAfterNegotiationIsAccepted()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+
+		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEXT", "JUSTIFICATION TEXT", Clock.systemDefaultZone());
+
+		Negotiation negotiation = Negotiation.start(new NegotiationId(100L), couple, proposal);
+
+		negotiation.acceptNegotiation(couple.getPartnerTwoId());
+
+		negotiation.sendProposal(couple.getPartnerOneId());
+
+		negotiation.acceptProposal(couple.getPartnerTwoId());
+
+		assertEquals(NegotiationStatus.ACCEPTED, negotiation.getNegotiationStatus());
+		assertEquals(ProposalStatus.ACCEPTED, negotiation.getLastProposal().getProposalStatus());
+	}
+
 }
