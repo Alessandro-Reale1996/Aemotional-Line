@@ -2,7 +2,6 @@ package com.aemotionalline.domain.conversation;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.time.Clock;
 
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +19,7 @@ public class DiscussionTest
 	{
 		Message message = new Message(new MessageId(1L), new UserId(10L));
 		
-		Proposal proposal = Proposal.create(new ProposalId(0L), new UserId(10L), "TEXT", "JUSTIFICATION", Clock.systemDefaultZone());
+		Proposal proposal = new Proposal(new ProposalId(0L), new UserId(10L), "TEXT");
 		
 		Discussion discussion = new Discussion(new DiscussionId(50L, 60L), proposal);
 		
@@ -31,7 +30,7 @@ public class DiscussionTest
 	public void shouldThrowExceptionIfUserIdIsTheSameAsLAstSender()
 	{
 	
-		Proposal proposal = Proposal.create(new ProposalId(0L), new UserId(10L), "TEXT", "JUSTIFICATION", Clock.systemDefaultZone());
+		Proposal proposal = new Proposal(new ProposalId(0L), new UserId(10L), "TEXT");
 		
 		Discussion discussion = new Discussion(new DiscussionId(50L, 60L), proposal);
 		

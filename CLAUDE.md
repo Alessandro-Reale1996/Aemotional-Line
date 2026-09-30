@@ -48,7 +48,7 @@ The user fixes the issues themselves and wants to be guided, not handed code. Fo
 Domain diagnostic and fix plan (written 2026-09-29 against `df1e867`): https://claude.ai/code/artifact/f2484746-ec41-47c7-b839-95c15769b5a8 — read it for the full description of each issue. Fix steps, in order:
 
 1. Build — ✅ done (Maven wrapper added).
-2. Negotiation state machine (A2–A6) — in progress.
+2. Negotiation state machine (A2–A6) — in progress (A5 left).
 3. Couple: reject therapist == partner, `equals`/`hashCode`, check the negotiation's couple in `Conversation` (A7, A8).
 4. Graph and questions: "answered" = has a POINTED reply in the graph; walk references with a visited set; ordered references (A1, A9, A10).
 5. `Conversation.sendMessage` validation: references must be sent and in the same discussion, no duplicate paragraphs, POINTED only in replies, freeze sent messages, null context allowed without constraints (A11, A12).
@@ -65,8 +65,23 @@ Spec gaps (section C: pointed-paragraph semantics, new constraint types, "discor
 | A4 `acceptNegotiation` repeatable to skip a turn | ✅ fixed | `59c2d6d` |
 | A6 refused proposal can still be accepted | ✅ fixed | `59c2d6d` |
 | Exceptions: every rule violation in `Negotiation` is a `DomainException` | ✅ decided | `59c2d6d` |
-| A5 sender not checked against proposal author; `setCurrentProposal` has no turn check | ⏭ next | |
+| A5 proposals not tied to author/turn | 🔧 in progress — see below | (this commit) |
 | A1, A7–A12, B, D | open | |
 
+### A5 — decisions and state
+Decided (2026-09-30): the stipula is a back-and-forth of the same text. Refusing a proposal = entering edit mode: `refuseProposal(user, newId)` marks the received proposal REFUSED and creates the refuser's draft (new id, author = refuser, text copied from the refused proposal). The refuser is then forced to send a counter-proposal; re-sending the same text is allowed, but always as a new object with a new id. Justification and `sentAt` are set in `sendProposal(user, justification)`, and the draft becomes `null` after sending. Refusing and creating the draft stay a single call, so nobody can stop halfway.
+
+Done: `refuseProposal` creates the draft; `sendProposal` takes the justification, sets `sentAt`, clears the draft, and rejects sending when there is no draft. `Proposal.create(..., Clock)` was replaced by a public constructor `new Proposal(id, author, text)`; all tests were updated to the new API.
+
+Still open in `Negotiation`/`Proposal` (reproduced with a probe):
+1. No way to edit the draft's text (`text` is final, no edit method), so a counter-proposal can only repeat the received text.
+2. `setCurrentProposal` is unchanged and bypasses every rule: out-of-turn replacement, re-sending an already-sent proposal (same object archived twice, justification overwritten), countering without refusing. Planned: remove it once editing exists.
+3. `refuseProposal` accepts a duplicate id (archive ends with ids `[1, 1]`).
+4. `refuseProposal(user, null)` throws `NullPointerException` *after* marking the proposal REFUSED: the negotiation is then stuck forever (no draft, can't refuse again, can't send). Validate parameters before changing state.
+5. `setJustification`, `setSentAt`, `setProposalStatus` are public: anyone can rewrite archived proposals. Make them package-private.
+6. `sendProposal` uses `Instant.now()` instead of an injected `Clock` (untestable; `Proposal` Javadoc still mentions the clock).
+7. Pre-existing: `start` accepts an initial proposal authored by a non-partner.
+8. Typo in the new message: "The is not a proposal to send."
+
 ### Next
-A5: `Negotiation.sendProposal` must reject a sender who isn't the current proposal's author, and a proposal already sent must not be re-sent; `setCurrentProposal(Proposal)` has no `UserId`, so its turn check has to go through `proposal.getAuthor()`, and it must refuse while another proposal awaits a response.
+Continue A5 in the order above: draft editing (1) → remove `setCurrentProposal` (2) → parameter/duplicate-id checks before any state change (3, 4) → package-private setters and `Clock` (5, 6), then add regression tests for each.

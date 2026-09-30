@@ -1,8 +1,6 @@
 package com.aemotionalline.domain.negotiation;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 import com.aemotionalline.domain.user.UserId;
@@ -16,46 +14,25 @@ public class Proposal
 	private final ProposalId id;
 	private final UserId author;
     private final String text;
-    private final String justification;
-    private final Instant sentAt;
+    private String justification;
+    private Instant sentAt;
     
     private  ProposalStatus proposalStatus;
 
-    private Proposal 	
+    public Proposal 	
 		    	(
 				ProposalId id, 
 				UserId author, 
-				String text, 
-				String justification, 
-				Instant sentAt
+				String text
 				) 
     {
-    	this.id = id;
+    	this.id = Objects.requireNonNull(id);
         this.author = Objects.requireNonNull(author);
         this.text = Objects.requireNonNull(text);
-        this.justification = justification;
-        this.sentAt = Objects.requireNonNull(sentAt); 
         
         this.proposalStatus = ProposalStatus.DRAFT;
     }
-    
-    public static Proposal create
-    					( 	
-    					ProposalId proposalId, 
-    					UserId author, 
-    					String text, 
-    					String justification, 
-    					Clock clock
-    					) 
-    {
-        return new Proposal(
-            proposalId,
-            author,
-            text,
-            justification,
-            Instant.now(clock)
-        );
-    }
+ 
 
 	public UserId getAuthor() 
 	{
@@ -77,7 +54,6 @@ public class Proposal
 		return proposalStatus;
 	}
 
-
 	public ProposalId getId() 
 	{
 		return id;
@@ -88,11 +64,23 @@ public class Proposal
 		return sentAt;
 	}
 	
+	
 	public void setProposalStatus(ProposalStatus proposalStatus)
 	{
 		this.proposalStatus = Objects.requireNonNull(proposalStatus);
 	}
 	
+	public void setSentAt(Instant sentAt) 
+	{
+		this.sentAt = sentAt;
+	}
+	
+	public void setJustification(String justification) 
+	{
+		this.justification = justification;
+	}
+
+
 	public boolean isAccepted()
 	{
 		return this.proposalStatus == ProposalStatus.ACCEPTED;

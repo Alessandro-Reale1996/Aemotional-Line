@@ -1,5 +1,6 @@
 package com.aemotionalline.domain.negotiation;
 
+import java.time.Instant;
 import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
@@ -114,7 +115,7 @@ public class Negotiation
     	proposals.getLast().setProposalStatus(ProposalStatus.ACCEPTED);
     }
     
-    public void refuseProposal(UserId user)
+    public void refuseProposal(UserId user, ProposalId idResponse)
     {
     	ensureCanAct(user);
     	
@@ -123,6 +124,10 @@ public class Negotiation
     	ensureProposalAwaitsResponse();
     	
     	proposals.getLast().setProposalStatus(ProposalStatus.REFUSED);
+    	
+    	Proposal proposal = new Proposal(Objects.requireNonNull(idResponse), user, proposals.getLast().getText());
+    	
+    	this.currentProposal = proposal;
     }
     
     public boolean isAccepted() 
@@ -150,20 +155,30 @@ public class Negotiation
     	this.currentProposal = proposal;
     }
     
-    public void sendProposal(UserId user)
+    public void sendProposal(UserId user, String justification)
     {
     	ensureCanAct(user);
     	
     	ensureNegotiationStatus(NegotiationStatus.ACCEPTED);
     	
+    	if(this.currentProposal == null)
+    	{
+    		throw new DomainException("The is not a proposal to send.");
+    	}
+    	
     	currentProposal.setProposalStatus(ProposalStatus.WAITING_FOR_RESPONSE);
     	
+    	currentProposal.setJustification(justification);
+    	
+    	currentProposal.setSentAt(Instant.now());
+    	
     	proposals.add(currentProposal);
+    	
+    	this.currentProposal = null;
     	
     	switchCurrentResponder();
 
     }
-
     
     // Every rule violation throws DomainException, so the REST layer can map them all to one client error.
     // Terminal states (refused, or last proposal accepted) are checked first: once reached, nobody can act again.
@@ -234,6 +249,7 @@ public class Negotiation
     		return couple.getPartnerOneId();
     	}
     }
+ 
     
     @Override
     public boolean equals(Object o) 

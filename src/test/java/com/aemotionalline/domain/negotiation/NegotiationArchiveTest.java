@@ -3,7 +3,6 @@ package com.aemotionalline.domain.negotiation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.time.Clock;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,7 @@ public class NegotiationArchiveTest
 		
 		Couple couple = new Couple(10L, new UserId(1L), new UserId(2L), new UserId(3L));
 		
-		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEST TEXT", "TEST JUSTIFICATION", Clock.systemUTC());
+		Proposal proposal = new Proposal(new ProposalId(0L), couple.getPartnerOneId(), "TEST TEXT");
 		
 		Negotiation negotiation = Negotiation.start(new NegotiationId(0L), couple, proposal);
 		
@@ -38,7 +37,7 @@ public class NegotiationArchiveTest
 		
 		Couple couple = new Couple(10L, new UserId(1L), new UserId(2L), new UserId(3L));
 		
-		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEST TEXT", "TEST JUSTIFICATION", Clock.systemUTC());
+		Proposal proposal = new Proposal(new ProposalId(0L), couple.getPartnerOneId(), "TEST TEXT");
 		
 		Negotiation negotiation = Negotiation.start(new NegotiationId(0L), couple, proposal);
 		
@@ -56,7 +55,7 @@ public class NegotiationArchiveTest
 		
 		Couple couple = new Couple(10L, new UserId(1L), new UserId(2L), new UserId(3L));
 		
-		Proposal proposal = Proposal.create(new ProposalId(0L), couple.getPartnerOneId(), "TEST TEXT", "TEST JUSTIFICATION", Clock.systemUTC());
+		Proposal proposal = new Proposal(new ProposalId(0L), couple.getPartnerOneId(), "TEST TEXT");
 		
 		Negotiation negotiation0 = Negotiation.start(new NegotiationId(0L), couple, proposal);
 		
