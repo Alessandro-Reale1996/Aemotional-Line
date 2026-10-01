@@ -20,16 +20,25 @@ public class Couple
     
     public Couple(Long id, UserId partnerOneId, UserId partnerTwoId, UserId therapistId)
     {
-
-        this.id = Objects.requireNonNull(id, "Couple id cannot be null");
-        this.partnerOneId = Objects.requireNonNull(partnerOneId, "Partner one cannot be null");
-        this.partnerTwoId = Objects.requireNonNull(partnerTwoId, "Partner two cannot be null");
-        this.therapistId = Objects.requireNonNull(therapistId, "Therapist cannot be null");
+        if (id == null || partnerOneId == null || partnerTwoId == null || therapistId == null)
+        {
+            throw new DomainException("A couple needs an id, two partners and a therapist.");
+        }
 
         if (partnerOneId.equals(partnerTwoId)) 
         {
             throw new DomainException("Partners must be different");
         }
+        
+        if (therapistId.equals(partnerOneId) || therapistId.equals(partnerTwoId))
+        {
+            throw new DomainException("The therapist can't also be a partner of the couple.");
+        }
+        
+        this.id = id;
+        this.partnerOneId = partnerOneId;
+        this.partnerTwoId = partnerTwoId;
+        this.therapistId = therapistId;
     }
     
     public Long getId()
@@ -63,4 +72,25 @@ public class Couple
     }
     
     
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+
+        if (!(o instanceof Couple other))
+        {
+            return false;
+        }
+
+        return id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(id);
+    }
 }

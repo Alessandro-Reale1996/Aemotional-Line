@@ -1,6 +1,6 @@
 package com.aemotionalline.domain.negotiation;
 
-import java.time.Instant;
+import java.time.Clock;
 import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
@@ -17,17 +17,19 @@ public class Negotiation
 	private final NegotiationId id;
 	private final Couple couple;
 	private final ProposalArchive proposals;
+	private final Clock clock;
 	
 	private NegotiationStatus negotiationStatus;
 	
 	private UserId currentResponder;
 	private Proposal currentProposal;
 
-	private Negotiation(NegotiationId id, Couple couple, Proposal initialProposal, UserId initialResponder) 
+	private Negotiation(NegotiationId id, Couple couple, Proposal initialProposal, UserId initialResponder, Clock clock) 
 	{
 		super();
 		this.id = id;
 		this.couple = couple;
+		this.clock = clock;
 		this.currentProposal = initialProposal;
 		
 		this.currentResponder = initialResponder; 
@@ -35,14 +37,20 @@ public class Negotiation
 		this.negotiationStatus = NegotiationStatus.DRAFT;
 	}
 	
-	public static Negotiation start(NegotiationId id, Couple couple, Proposal initialProposal)
+	// The clock is injected so that the sentAt timestamps of the proposals are deterministic under test.
+	public static Negotiation start(NegotiationId id, Couple couple, Proposal initialProposal, Clock clock)
 	{
 		Objects.requireNonNull(id);
 		Objects.requireNonNull(couple);
 		Objects.requireNonNull(initialProposal);
+		Objects.requireNonNull(clock);
 		
+		if (!couple.isPartner(initialProposal.getAuthor()))
+		{
+			throw new DomainException("Only a partner of the couple can start a negotiation.");
+		}
 		
-		Negotiation negotiation = new Negotiation(id, couple, initialProposal, setFirstCurrentResponder(couple, initialProposal));
+		Negotiation negotiation = new Negotiation(id, couple, initialProposal, setFirstCurrentResponder(couple, initialProposal), clock);
 		
 		if(negotiation.currentResponder.equals(initialProposal.getAuthor()))
 		{
@@ -115,6 +123,8 @@ public class Negotiation
     	proposals.getLast().setProposalStatus(ProposalStatus.ACCEPTED);
     }
     
+    // Refusing means entering edit mode: the refuser gets a new draft, with its own id, starting from the refused text.
+    // Every check runs before the state changes, so a rejected call never leaves the negotiation half-refused.
     public void refuseProposal(UserId user, ProposalId idResponse)
     {
     	ensureCanAct(user);
@@ -123,9 +133,16 @@ public class Negotiation
     	
     	ensureProposalAwaitsResponse();
     	
+    	if (idResponse == null)
+    	{
+    		throw new DomainException("The id of the counter-proposal is required.");
+    	}
+    	
+    	ensureProposalIdNotAlreadyPresent(idResponse);
+    	
     	proposals.getLast().setProposalStatus(ProposalStatus.REFUSED);
     	
-    	Proposal proposal = new Proposal(Objects.requireNonNull(idResponse), user, proposals.getLast().getText());
+    	Proposal proposal = new Proposal(idResponse, user, proposals.getLast().getText());
     	
     	this.currentProposal = proposal;
     }
@@ -146,13 +163,25 @@ public class Negotiation
     	return proposals.getLast();
     }
     
-    public void setCurrentProposal(Proposal proposal)
+    public void editCurrentProposal(UserId user, String text)
     {
+    	ensureCanAct(user);
+    	
     	ensureNegotiationStatus(NegotiationStatus.ACCEPTED);
     	
-    	Objects.requireNonNull(proposal);	
+    	Proposal.ensureValidText(text);
+    
+    	if(this.currentProposal == null)
+    	{
+    		throw new DomainException("There is not a proposal to edit.");
+    	}
     	
-    	this.currentProposal = proposal;
+    	if(!currentProposal.getAuthor().equals(user))
+    	{
+    		throw new DomainException("Only the author of the proposal can edit it.");
+    	}
+    	
+    	this.currentProposal.setText(text);
     }
     
     public void sendProposal(UserId user, String justification)
@@ -163,14 +192,14 @@ public class Negotiation
     	
     	if(this.currentProposal == null)
     	{
-    		throw new DomainException("The is not a proposal to send.");
+    		throw new DomainException("There is not a proposal to send.");
     	}
     	
     	currentProposal.setProposalStatus(ProposalStatus.WAITING_FOR_RESPONSE);
     	
     	currentProposal.setJustification(justification);
     	
-    	currentProposal.setSentAt(Instant.now());
+    	currentProposal.setSentAt(clock.instant());
     	
     	proposals.add(currentProposal);
     	
@@ -184,8 +213,10 @@ public class Negotiation
     // Terminal states (refused, or last proposal accepted) are checked first: once reached, nobody can act again.
     private void ensureCanAct(UserId user) 
     {
-
-        Objects.requireNonNull(user);
+        if (user == null)
+        {
+            throw new DomainException("A user is required to act on the negotiation.");
+        }
 
         if ( negotiationStatus == NegotiationStatus.REFUSED) 
         {
@@ -234,6 +265,17 @@ public class Negotiation
     	if(this.negotiationStatus != expected)
     	{
     		throw new DomainException("The current negotiation status doesn't allow this operation: " + expected + " was expected, " + negotiationStatus + " was found.");
+    	}
+    }
+    
+    private void ensureProposalIdNotAlreadyPresent(ProposalId proposalId)
+    {
+    	for (Proposal proposal : this.proposals.getProposals())
+    	{
+    		if(proposal.getId().equals(proposalId))
+    		{
+    			throw new DomainException("A proposal with this id is already in the archive.");
+    		}
     	}
     }
     

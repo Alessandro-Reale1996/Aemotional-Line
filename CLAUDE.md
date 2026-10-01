@@ -41,6 +41,12 @@ Code style: Allman braces, tabs/spaces mixed as in existing files; many methods 
 
 **Keep this section up to date.** Whenever an issue is fixed, a decision is made, or a session ends with work done, update the status and "Next" below and commit it with the related change, so a session on any workstation can pick up where the last one stopped.
 
+### 2026-10-01: finish negotiation (A5), fix Couple (A7), couple check (A8), unanswered questions (A1)
+
+- **Done:** `Negotiation` — `editCurrentProposal(user, text)` replaces `setCurrentProposal`; `refuseProposal`/`editCurrentProposal` run every check (turn, phase, pending proposal, null/duplicate id across the archive, blank text) before changing state; `start` takes a `Clock` (used for `sentAt`) and rejects a non-partner initial author; `Proposal` setters are package-private and text can't be blank. `Couple` rejects a therapist who is also a partner, null arguments are `DomainException`, `equals`/`hashCode` by id. `Conversation.ensureNegotiationOfThisCouple` guards `start`/`openDiscussion`/`modifyAgreement`. `QuestionParagraph.isAnswered()` removed; `Analyzer` treats a question as answered when a POINTED paragraph references it. Tests: 86 pass (new cases in `NegotiationTest`, `CoupleTest`, `ConversationTest`, `AnalyzerTest`; `CoupleTest.shouldReconizeTherapist` fixed).
+- **Decisions:** refusing a proposal = entering edit mode on a new draft (new id, author = refuser, refused text copied); a couple is equal by id; "answered" is computed from the replies, never from the question's own references.
+- **State / next steps:** A9 was explained to the user but not fixed — reference cycles hang `ConversationGraph.findRootOf` (infinite loop) and crash `collectRepliesRecursively` (`StackOverflowError`). Recommended: fix A9 and A10 together (visited set; walk all references; `findRootOf` likely becomes a multi-root lookup; on a root-less cycle throw `DomainException`; tests with `assertTimeoutPreemptively`). The user hasn't chosen yet whether to do it themselves or let Claude. Known gaps in `Negotiation` are listed under "Negotiation — how it works now".
+
 ### How we work
 The user fixes the issues themselves and wants to be guided, not handed code. For each issue: explain what is wrong and why (reproduce it if useful), point to the code, suggest the tests and an approach, then review the user's change and run the tests. Do not edit `src/` unless the user explicitly asks for that specific task.
 
@@ -48,8 +54,8 @@ The user fixes the issues themselves and wants to be guided, not handed code. Fo
 Domain diagnostic and fix plan (written 2026-09-29 against `df1e867`): https://claude.ai/code/artifact/f2484746-ec41-47c7-b839-95c15769b5a8 — read it for the full description of each issue. Fix steps, in order:
 
 1. Build — ✅ done (Maven wrapper added).
-2. Negotiation state machine (A2–A6) — in progress (A5 left).
-3. Couple: reject therapist == partner, `equals`/`hashCode`, check the negotiation's couple in `Conversation` (A7, A8).
+2. Negotiation state machine (A2–A6) — ✅ done.
+3. Couple: reject therapist == partner, `equals`/`hashCode`, check the negotiation's couple in `Conversation` (A7, A8) — ✅ done.
 4. Graph and questions: "answered" = has a POINTED reply in the graph; walk references with a visited set; ordered references (A1, A9, A10).
 5. `Conversation.sendMessage` validation: references must be sent and in the same discussion, no duplicate paragraphs, POINTED only in replies, freeze sent messages, null context allowed without constraints (A11, A12).
 6. Encapsulation: return copies, package-private mutators on `Discussion`/`ConversationGraph`/`Proposal`, `ConstraintChangeRequest` stores its couple, copies its list, validates assignees, adds reject/applied states (section B).
@@ -65,23 +71,14 @@ Spec gaps (section C: pointed-paragraph semantics, new constraint types, "discor
 | A4 `acceptNegotiation` repeatable to skip a turn | ✅ fixed | `59c2d6d` |
 | A6 refused proposal can still be accepted | ✅ fixed | `59c2d6d` |
 | Exceptions: every rule violation in `Negotiation` is a `DomainException` | ✅ decided | `59c2d6d` |
-| A5 proposals not tied to author/turn | 🔧 in progress — see below | (this commit) |
-| A1, A7–A12, B, D | open | |
+| A5 proposals not tied to author/turn | ✅ fixed | 2026-10-01 |
+| A7 therapist can also be a partner; `Couple` had no `equals`/`hashCode` | ✅ fixed (null arguments now `DomainException` too; equality by id) | 2026-10-01 |
+| A8 a negotiation of another couple could start a conversation, open a discussion or change the agreement | ✅ fixed (`Conversation.ensureNegotiationOfThisCouple`, compares by `Couple.equals`) | 2026-10-01 |
+| A1 every question reported unanswered (checked the question's own references) | ✅ fixed: `QuestionParagraph.isAnswered()` removed; `Analyzer` looks for a POINTED reply (`ConversationGraph.findRepliesTo` for a conversation, the discussion's own paragraphs for a discussion); `AnalyzerTest` filled | 2026-10-01 |
+| A9–A12, B, D | open | |
 
-### A5 — decisions and state
-Decided (2026-09-30): the stipula is a back-and-forth of the same text. Refusing a proposal = entering edit mode: `refuseProposal(user, newId)` marks the received proposal REFUSED and creates the refuser's draft (new id, author = refuser, text copied from the refused proposal). The refuser is then forced to send a counter-proposal; re-sending the same text is allowed, but always as a new object with a new id. Justification and `sentAt` are set in `sendProposal(user, justification)`, and the draft becomes `null` after sending. Refusing and creating the draft stay a single call, so nobody can stop halfway.
-
-Done: `refuseProposal` creates the draft; `sendProposal` takes the justification, sets `sentAt`, clears the draft, and rejects sending when there is no draft. `Proposal.create(..., Clock)` was replaced by a public constructor `new Proposal(id, author, text)`; all tests were updated to the new API.
-
-Still open in `Negotiation`/`Proposal` (reproduced with a probe):
-1. No way to edit the draft's text (`text` is final, no edit method), so a counter-proposal can only repeat the received text.
-2. `setCurrentProposal` is unchanged and bypasses every rule: out-of-turn replacement, re-sending an already-sent proposal (same object archived twice, justification overwritten), countering without refusing. Planned: remove it once editing exists.
-3. `refuseProposal` accepts a duplicate id (archive ends with ids `[1, 1]`).
-4. `refuseProposal(user, null)` throws `NullPointerException` *after* marking the proposal REFUSED: the negotiation is then stuck forever (no draft, can't refuse again, can't send). Validate parameters before changing state.
-5. `setJustification`, `setSentAt`, `setProposalStatus` are public: anyone can rewrite archived proposals. Make them package-private.
-6. `sendProposal` uses `Instant.now()` instead of an injected `Clock` (untestable; `Proposal` Javadoc still mentions the clock).
-7. Pre-existing: `start` accepts an initial proposal authored by a non-partner.
-8. Typo in the new message: "The is not a proposal to send."
+### Negotiation — how it works now (A5 decisions)
+The stipula is a back-and-forth of the same text. `Negotiation.start(id, couple, initialProposal, clock)` requires the initial author to be a partner; the clock sets `sentAt`. Refusing = entering edit mode: `refuseProposal(user, newId)` marks the received proposal REFUSED and creates the refuser's draft (new id, author = refuser, refused text copied); every check (turn, phase, pending proposal, null/duplicate id across the whole archive) runs before any state change. `editCurrentProposal(user, text)` lets only the draft's author, on their turn, change the text (never blank). `sendProposal(user, justification)` sets justification and `sentAt`, archives the draft and clears it. `setCurrentProposal` was removed. `Proposal` setters are package-private, so archived proposals can't be rewritten from outside. Every rule violation is a `DomainException`, including null user/id/text in the action methods; `start` still uses `Objects.requireNonNull` (NPE) for its arguments. Known remaining gaps: `getProposals()` exposes the mutable `ProposalArchive` (outsiders can `add`, which can leave the negotiation stuck — fix in step 6), one `Proposal` object can be passed to two negotiations, and there is no way to end a negotiation without agreement once accepted (spec question). Regression tests for each case are in `NegotiationTest` (73 tests pass).
 
 ### Next
-Continue A5 in the order above: draft editing (1) → remove `setCurrentProposal` (2) → parameter/duplicate-id checks before any state change (3, 4) → package-private setters and `Clock` (5, 6), then add regression tests for each.
+Rest of step 4: A9 — reference cycles cause an infinite loop in `ConversationGraph.findRootOf`/`collectRepliesRecursively` (walk with a visited set); A10 — `findRootOf` follows only the first reference, and `Paragraph.references` is a `HashSet`, so "first" is arbitrary and a paragraph replying to two roots loses a branch (use ordered references, walk all of them).

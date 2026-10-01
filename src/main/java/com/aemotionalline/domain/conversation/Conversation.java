@@ -105,7 +105,7 @@ public class Conversation
 	
 	public void modifyAgreement(Negotiation negotiation)
 	{	
-		Objects.requireNonNull(negotiation);
+		ensureNegotiationOfThisCouple(negotiation);
 
 	    if (!negotiation.isAccepted())
 	    {
@@ -133,7 +133,7 @@ public class Conversation
 	 */
 	public void openDiscussion(Negotiation negotiation)
 	{
-		Objects.requireNonNull(negotiation);
+		ensureNegotiationOfThisCouple(negotiation);
 
 	    if (!negotiation.isAccepted())
 	    {
@@ -153,6 +153,19 @@ public class Conversation
 		else
 		{
 			throw new DomainException("Can't open a new discussion if the negotiation's proposal is not accepted.");
+		}
+	}
+
+	private void ensureNegotiationOfThisCouple(Negotiation negotiation)
+	{
+		if (negotiation == null)
+		{
+			throw new DomainException("A negotiation is required.");
+		}
+		
+		if (!couple.equals(negotiation.getCouple()))
+		{
+			throw new DomainException("The negotiation belongs to a different couple.");
 		}
 	}
 

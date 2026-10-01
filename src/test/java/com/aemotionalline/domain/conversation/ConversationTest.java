@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.Clock;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,7 @@ public class ConversationTest
 	    
 	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation negotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal);
+	    Negotiation negotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    negotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -70,7 +71,7 @@ public class ConversationTest
 	    
 	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation negotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal);
+	    Negotiation negotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    negotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -97,7 +98,7 @@ public class ConversationTest
 	    
 	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal);
+	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -109,7 +110,7 @@ public class ConversationTest
 	 
 	    Proposal discussionProposal = new Proposal(new ProposalId(124L), couple.getPartnerOneId(), "TEXT");
 
-	    Negotiation discussionNegotiation = Negotiation.start(new NegotiationId(70L), couple, discussionProposal);
+	    Negotiation discussionNegotiation = Negotiation.start(new NegotiationId(70L), couple, discussionProposal, Clock.systemUTC());
 	    
 	    discussionNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -125,6 +126,77 @@ public class ConversationTest
 
 	
 	
+	// A NEGOTIATION CAN ONLY BE USED BY THE CONVERSATION OF ITS OWN COUPLE:
+	
+	private static Negotiation acceptedNegotiation(long negotiationId, long proposalId, Couple couple)
+	{
+		Proposal proposal = new Proposal(new ProposalId(proposalId), couple.getPartnerOneId(), "TEXT");
+		
+		Negotiation negotiation = Negotiation.start(new NegotiationId(negotiationId), couple, proposal, Clock.systemUTC());
+		
+		negotiation.acceptNegotiation(couple.getPartnerTwoId());
+		
+		negotiation.sendProposal(couple.getPartnerOneId(), "JUSTIFICATION TEXT");
+		
+		negotiation.acceptProposal(couple.getPartnerTwoId());
+		
+		return negotiation;
+	}
+	
+	@Test
+	void shouldThrowExceptionWhenStartingWithAnotherCouplesNegotiation()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+		Couple otherCouple = new Couple(2L, new UserId(40L), new UserId(50L), new UserId(30L));
+		
+		Negotiation otherNegotiation = acceptedNegotiation(60L, 123L, otherCouple);
+		
+		assertThrows(DomainException.class, () -> Conversation.start(321L, couple, otherNegotiation));
+	}
+	
+	@Test
+	void shouldThrowExceptionWhenOpeningDiscussionWithAnotherCouplesNegotiation()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+		Couple otherCouple = new Couple(2L, new UserId(40L), new UserId(50L), new UserId(30L));
+		
+		Conversation conversation = Conversation.start(321L, couple, acceptedNegotiation(60L, 123L, couple));
+		
+		Negotiation otherNegotiation = acceptedNegotiation(70L, 124L, otherCouple);
+		
+		assertThrows(DomainException.class, () -> conversation.openDiscussion(otherNegotiation));
+		
+		assertEquals(1, conversation.getDiscussions().size());
+	}
+	
+	@Test
+	void shouldThrowExceptionWhenModifyingAgreementWithAnotherCouplesNegotiation()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+		Couple otherCouple = new Couple(2L, new UserId(40L), new UserId(50L), new UserId(30L));
+		
+		Negotiation negotiation = acceptedNegotiation(60L, 123L, couple);
+		
+		Conversation conversation = Conversation.start(321L, couple, negotiation);
+		
+		Negotiation otherNegotiation = acceptedNegotiation(70L, 124L, otherCouple);
+		
+		assertThrows(DomainException.class, () -> conversation.modifyAgreement(otherNegotiation));
+		
+		assertEquals(negotiation.getLastProposal(), conversation.getAgreement());
+	}
+	
+	@Test
+	void shouldAcceptNegotiationOfTheSameCoupleLoadedAsAnotherObject()
+	{
+		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+		Couple sameCoupleLoadedAgain = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+		
+		Conversation conversation = Conversation.start(321L, couple, acceptedNegotiation(60L, 123L, sameCoupleLoadedAgain));
+		
+		assertEquals(1, conversation.getDiscussions().size());
+	}
+	
 	@Test
 	void shouldThrowExceptionWhenSendingIsNotAllowed()
 	{
@@ -136,7 +208,7 @@ public class ConversationTest
 	    
 	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal);
+	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -160,7 +232,7 @@ public class ConversationTest
 	    
 	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal);
+	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -194,7 +266,7 @@ public class ConversationTest
 	    
 	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal);
+	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -241,7 +313,7 @@ public class ConversationTest
 	    
 	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal);
+	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -290,7 +362,7 @@ public class ConversationTest
 	    
 	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal);
+	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -348,7 +420,7 @@ public class ConversationTest
 	    
 	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal);
+	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    

@@ -3,8 +3,9 @@ package com.aemotionalline.domain.message;
 import com.aemotionalline.domain.common.DomainException;
 
 /**
- * A question addressed to the other partner. It stays "open" until a {@link PointedParagraph} references it,
- * which is what {@code Analyzer} uses to report unanswered questions.
+ * A question addressed to the other partner. It stays "open" until a {@link PointedParagraph} references it.
+ * The question itself can't tell: references point from the reply to the question, and the reply doesn't exist
+ * yet when the question is sent. So {@code Analyzer} decides it from the replies found in the conversation.
  */
 public class QuestionParagraph extends Paragraph
 {
@@ -32,18 +33,6 @@ public class QuestionParagraph extends Paragraph
                 + MAX_BODY_LENGTH
                 + " characters");
         }
-	}
-
-	public boolean isAnswered()
-	{
-		boolean retvalue = false;
-				
-	    if(!getReferences().isEmpty())
-	    {
-	    	retvalue = true;
-	    }
-	    
-	    return retvalue;
 	}
 	
 	@Override
