@@ -17,6 +17,8 @@ public class Message
 	private final UserId senderId;
 	private final List<Paragraph> paragraphs;
 	
+	private boolean sealed;
+	
 	public Message(MessageId id, UserId senderId)
 	{
 		super();
@@ -42,8 +44,18 @@ public class Message
 		return List.copyOf(paragraphs);
 	}
 	
+	public boolean isSealed()
+	{
+		return sealed;
+	}
+	
 	public void addParagraph(Paragraph paragraph)
 	{
+		if (sealed)
+		{
+			throw new DomainException("A sent message can't be changed.");
+		}
+		
 		if (paragraph == null)
 		{
 			throw new DomainException("Paragraph can't be null.");
@@ -66,6 +78,21 @@ public class Message
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * Called when the message is sent: the message and its paragraphs become read-only, so the history
+	 * can't be rewritten. As references may only point to paragraphs already sent (and therefore sealed),
+	 * no new link can ever close a cycle.
+	 */
+	public void seal()
+	{
+		this.sealed = true;
+		
+		for (Paragraph paragraph : paragraphs)
+		{
+			paragraph.seal();
+		}
 	}
 	
 	

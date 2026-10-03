@@ -43,13 +43,29 @@ public class ConstraintSet
     }
 	
 	  // Only the sender's own assignments are evaluated: a constraint on one partner never blocks the other.
+	  // The context is needed only when there is something to check: a sender without constraints may pass null.
 	  public void ensureSatisfiedBy(UserId userId, ConstraintContext context) 
 	  {
-	        Objects.requireNonNull(userId, "User id cannot be null");
-	        Objects.requireNonNull(context, "Constraint context cannot be null");
+	        if (userId == null)
+	        {
+	            throw new DomainException("User id cannot be null.");
+	        }
 
-	        assignments.stream()
+	        List<ConstraintAssignment> userAssignments = assignments.stream()
 	            .filter(assignment -> assignment.getUserId().equals(userId))
+	            .toList();
+
+	        if (userAssignments.isEmpty())
+	        {
+	            return;
+	        }
+
+	        if (context == null)
+	        {
+	            throw new DomainException("A constraint context is required to check the sender's constraints.");
+	        }
+
+	        userAssignments
 	            .forEach(assignment -> 
 						            {
 						                if (!assignment.getConstraint().isSatisfied(context)) 

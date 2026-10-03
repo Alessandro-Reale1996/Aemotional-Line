@@ -1,8 +1,11 @@
 package com.aemotionalline.domain.conversation;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.message.Message;
@@ -38,7 +41,10 @@ public class ConversationGraph
 	
 	public void addParagraph(Paragraph paragraph)
 	{
-		Objects.requireNonNull(paragraph);
+		if (paragraph == null)
+		{
+			throw new DomainException("Paragraph cannot be null.");
+		}
 		
 		paragraphs.add(paragraph);
 		
@@ -55,61 +61,106 @@ public class ConversationGraph
 	        .toList();
 	}
 	
+	/**
+	 * The whole topic a paragraph belongs to: every paragraph connected to it through references, in either
+	 * direction, returned in the order they were sent. When a paragraph replies to two topics, the topics are
+	 * merged into one branch, and the result is the same whichever paragraph of the branch is passed.
+	 * Each paragraph is visited once, so reference cycles can't make the walk loop forever.
+	 */
 	public List<Paragraph> findConversationBranchContaining(Paragraph paragraph)
 	{
-	    Objects.requireNonNull(paragraph, "Paragraph cannot be null");
+	    ensureInGraph(paragraph);
 
-	    Paragraph root = findRootOf(paragraph);
+	    Set<ParagraphId> visited = new HashSet<>();
+	    Deque<Paragraph> toVisit = new ArrayDeque<>();
+	    toVisit.push(paragraph);
 
-	    List<Paragraph> branch = new ArrayList<>();
-	    branch.add(root);
-	    branch.addAll(findEntireDiscussionTree(root));
-
-	    return List.copyOf(branch);
-	}
-	
-	// Only a root can seed the walk: starting mid-tree would silently drop the paragraphs above it.
-	private List<Paragraph> findEntireDiscussionTree(Paragraph root)
-	{
-	    Objects.requireNonNull(root, "Root paragraph cannot be null");
-	    
-	    if(!root.getReferences().isEmpty())
+	    while (!toVisit.isEmpty())
 	    {
-	    	throw new DomainException("The paragraph to find the discussion tree is must be root.");
+	        Paragraph current = toVisit.pop();
+
+	        if (!visited.add(current.getId()))
+	        {
+	            continue;
+	        }
+
+	        for (Paragraph reference : current.getReferences())
+	        {
+	            toVisit.push(findById(reference.getId()));
+	        }
+
+	        for (Paragraph reply : findRepliesTo(current))
+	        {
+	            toVisit.push(reply);
+	        }
 	    }
 
-	    List<Paragraph> result = new ArrayList<>();
-
-	    collectRepliesRecursively(root, result);
-
-	    return List.copyOf(result);
+	    return inSendingOrder(visited);
 	}
 	
-	private void collectRepliesRecursively(Paragraph paragraph, List<Paragraph> result)
+	/**
+	 * The roots (paragraphs that reference nothing) a paragraph descends from, following every reference,
+	 * in the order they were sent. A paragraph that replies to two topics has two roots.
+	 * A cycle with no way out has no root at all: that can only come from corrupt data, so it is reported.
+	 */
+	public List<Paragraph> findRootsOf(Paragraph paragraph)
 	{
-	    List<Paragraph> directReplies = findRepliesTo(paragraph);
+	    ensureInGraph(paragraph);
 
-	    for (Paragraph reply : directReplies)
+	    Set<ParagraphId> visited = new HashSet<>();
+	    Set<ParagraphId> roots = new HashSet<>();
+	    Deque<Paragraph> toVisit = new ArrayDeque<>();
+	    toVisit.push(paragraph);
+
+	    while (!toVisit.isEmpty())
 	    {
-	        result.add(reply);
+	        Paragraph current = toVisit.pop();
 
-	        collectRepliesRecursively(reply, result);
+	        if (!visited.add(current.getId()))
+	        {
+	            continue;
+	        }
+
+	        if (current.getReferences().isEmpty())
+	        {
+	            roots.add(current.getId());
+	        }
+
+	        for (Paragraph reference : current.getReferences())
+	        {
+	            toVisit.push(findById(reference.getId()));
+	        }
 	    }
+
+	    if (roots.isEmpty())
+	    {
+	        throw new DomainException("The paragraph is part of a reference cycle with no root.");
+	    }
+
+	    return inSendingOrder(roots);
 	}
 	
-	
-	public Paragraph findRootOf(Paragraph paragraph)
+	private void ensureInGraph(Paragraph paragraph)
 	{
-	    Paragraph current = paragraph;
-
-	    while (!current.getReferences().isEmpty())
+	    if (paragraph == null)
 	    {
-	        Paragraph firstReference = current.getReferences().get(0);
-
-	        current = findById(firstReference.getId());
+	        throw new DomainException("Paragraph cannot be null.");
 	    }
 
-	    return current;
+	    findById(paragraph.getId());
+	}
+	
+	// The graph's list is in sending order, so filtering it keeps the result chronological and deterministic.
+	private List<Paragraph> inSendingOrder(Set<ParagraphId> ids)
+	{
+	    return paragraphs.stream()
+	        .filter(p -> ids.contains(p.getId()))
+	        .toList();
+	}
+	
+	public boolean containsParagraph(ParagraphId id)
+	{
+	    return paragraphs.stream().anyMatch(p -> p.getId().equals(id));
 	}
 	
 	private Paragraph findById(ParagraphId id)
@@ -117,12 +168,15 @@ public class ConversationGraph
 	    return paragraphs.stream()
 	        .filter(p -> p.getId().equals(id))
 	        .findFirst()
-	        .orElseThrow(() -> new DomainException("Referenced paragraph not found"));
+	        .orElseThrow(() -> new DomainException("Paragraph " + id.value() + " is not in the conversation graph."));
 	}
 	
 	public List<Paragraph> findRepliesTo(Paragraph paragraph)
 	{
-	    Objects.requireNonNull(paragraph);
+	    if (paragraph == null)
+	    {
+	        throw new DomainException("Paragraph cannot be null.");
+	    }
 
 	    ParagraphId targetId = paragraph.getId();
 

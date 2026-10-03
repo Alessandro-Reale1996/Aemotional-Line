@@ -71,24 +71,18 @@ public class MessageTest
 		assertEquals(1, message.getParagraphs().size());
 	
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+	@Test
+	void shouldNotAddParagraphsToASealedMessage()
+	{
+		Message message = new Message(new MessageId(1L), new UserId(10L));
+		message.addParagraph(new SimpleParagraph(new ParagraphId(1L), "Title", "SubTitle", "Body"));
+		
+		message.seal();
+		
+		assertTrue(message.isSealed());
+		assertThrows(DomainException.class, () -> message.addParagraph(new SimpleParagraph(new ParagraphId(2L), "Title", "SubTitle", "Body")));
+		assertEquals(1, message.getParagraphs().size());
+	}
+
 }
