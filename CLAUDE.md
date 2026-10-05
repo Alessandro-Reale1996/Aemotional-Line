@@ -131,4 +131,4 @@ The stipula is a back-and-forth of the same text. `Negotiation.start(id, couple,
 Rule 1 keeps `Paragraph.references` a set, so A10 stays fully relevant. Rules 2–5 need the whole discussion, so they go in `Conversation.sendMessage` (step 5, A11).
 
 ### Next
-The 7 fix steps are done (sections A and B fully, D partly), but section C and the rest of D are open: see "Plan leftovers". Next: choose what to take on (D leftovers are small; C needs spec decisions), then commit the work (not committed yet).
+The 7 fix steps are done and sections A, B and D are closed (commit `c6435fb`). Only section C (spec features) is open: see "Plan leftovers"; it needs spec decisions from the user first (POINTED paragraph semantics, citation scope, new constraint types, the "discorso specifico" flow, readable archive).
