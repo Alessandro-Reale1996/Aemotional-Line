@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.user.UserId;
+import com.aemotionalline.domain.Ids;
 
 
 public class CoupleTest
@@ -18,22 +19,22 @@ public class CoupleTest
     @Test
     void shouldNotCreateCoupleWithSamePartners() 
     {
-        UserId partner = new UserId(10L);
-        UserId therapist = new UserId(30L);
+        UserId partner = Ids.user(10L);
+        UserId therapist = Ids.user(30L);
 
-        assertThrows(DomainException.class, () -> new Couple(1L, partner, partner, therapist));
+        assertThrows(DomainException.class, () -> new Couple(Ids.couple(1L), partner, partner, therapist));
     }
     
     @Test
-    void shouldReconizePartner()
+    void shouldRecognizePartner()
     {
-        UserId partnerOne = new UserId(10L);
-        UserId partnerTwo = new UserId(20L);
-        UserId therapist = new UserId(30L);
+        UserId partnerOne = Ids.user(10L);
+        UserId partnerTwo = Ids.user(20L);
+        UserId therapist = Ids.user(30L);
         
-        UserId notPartner = new UserId(45L);
+        UserId notPartner = Ids.user(45L);
 
-        var couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+        var couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
         
         assertTrue(couple.isPartner(partnerOne));
         assertTrue(couple.isPartner(partnerTwo));
@@ -42,15 +43,15 @@ public class CoupleTest
     }
     
     @Test
-    void shouldReconizeTherapist()
+    void shouldRecognizeTherapist()
     {
-        UserId partnerOne = new UserId(10L);
-        UserId partnerTwo = new UserId(20L);
-        UserId therapist = new UserId(30L);
+        UserId partnerOne = Ids.user(10L);
+        UserId partnerTwo = Ids.user(20L);
+        UserId therapist = Ids.user(30L);
         
-        UserId notTherapist = new UserId(45L);
+        UserId notTherapist = Ids.user(45L);
 
-        var couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+        var couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
         
         assertFalse(couple.isTherapist(partnerOne));
         assertFalse(couple.isTherapist(partnerTwo));
@@ -59,33 +60,33 @@ public class CoupleTest
     }
     
     @Test
-    void schouldCreateCoupleWithAllElements()
+    void shouldRequireAllElementsToCreateCouple()
     {
-        UserId partnerOne = new UserId(10L);
-        UserId partnerTwo = new UserId(20L);
-        UserId therapist = new UserId(30L);
+        UserId partnerOne = Ids.user(10L);
+        UserId partnerTwo = Ids.user(20L);
+        UserId therapist = Ids.user(30L);
         
         assertThrows(DomainException.class, () -> new Couple(null, partnerOne, partnerTwo, therapist));
-        assertThrows(DomainException.class, () -> new Couple(1L, null, partnerTwo, therapist));
-        assertThrows(DomainException.class, () -> new Couple(1L, partnerOne, null, therapist));
-        assertThrows(DomainException.class, () -> new Couple(1L, partnerOne, partnerTwo, null));
+        assertThrows(DomainException.class, () -> new Couple(Ids.couple(1L), null, partnerTwo, therapist));
+        assertThrows(DomainException.class, () -> new Couple(Ids.couple(1L), partnerOne, null, therapist));
+        assertThrows(DomainException.class, () -> new Couple(Ids.couple(1L), partnerOne, partnerTwo, null));
     }
     
     @Test
     void shouldNotCreateCoupleWhenTherapistIsAlsoAPartner()
     {
-        UserId partnerOne = new UserId(10L);
-        UserId partnerTwo = new UserId(20L);
+        UserId partnerOne = Ids.user(10L);
+        UserId partnerTwo = Ids.user(20L);
         
-        assertThrows(DomainException.class, () -> new Couple(1L, partnerOne, partnerTwo, partnerOne));
-        assertThrows(DomainException.class, () -> new Couple(1L, partnerOne, partnerTwo, partnerTwo));
+        assertThrows(DomainException.class, () -> new Couple(Ids.couple(1L), partnerOne, partnerTwo, partnerOne));
+        assertThrows(DomainException.class, () -> new Couple(Ids.couple(1L), partnerOne, partnerTwo, partnerTwo));
     }
     
     @Test
     void shouldBeEqualWhenIdsAreEqual()
     {
-        var couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
-        var sameCoupleLoadedAgain = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+        var couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
+        var sameCoupleLoadedAgain = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
         
         assertEquals(couple, sameCoupleLoadedAgain);
         assertEquals(couple.hashCode(), sameCoupleLoadedAgain.hashCode());
@@ -94,8 +95,8 @@ public class CoupleTest
     @Test
     void shouldNotBeEqualWhenIdsAreDifferent()
     {
-        var couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
-        var otherCouple = new Couple(2L, new UserId(10L), new UserId(20L), new UserId(30L));
+        var couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
+        var otherCouple = new Couple(Ids.couple(2L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
         
         assertNotEquals(couple, otherCouple);
     }

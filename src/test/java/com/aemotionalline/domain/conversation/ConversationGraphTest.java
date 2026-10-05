@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.message.Paragraph;
-import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.SimpleParagraph;
+import com.aemotionalline.domain.Ids;
 
 public class ConversationGraphTest 
 {
@@ -30,7 +30,7 @@ public class ConversationGraphTest
 	{
 		ConversationGraph graph = new ConversationGraph();
 		
-		graph.addParagraph(new SimpleParagraph(new ParagraphId(10L), "Title", "Subtitle", "Body"));
+		graph.addParagraph(new SimpleParagraph(Ids.paragraph(10L), "Title", "Subtitle", "Body"));
 		
 		assertEquals(1, graph.getParagraphs().size());
 	}
@@ -40,7 +40,7 @@ public class ConversationGraphTest
 	{
 		ConversationGraph graph = new ConversationGraph();
 		
-		graph.addParagraph(new SimpleParagraph(new ParagraphId(10L), "Title", "Subtitle", "Body"));
+		graph.addParagraph(new SimpleParagraph(Ids.paragraph(10L), "Title", "Subtitle", "Body"));
 		
 		assertEquals(1, graph.getParagraphs().size());
 	}
@@ -51,12 +51,12 @@ public class ConversationGraphTest
 		ConversationGraph graph = new ConversationGraph();
 		
 		SimpleParagraph rootParagraph = 
-				new SimpleParagraph(new ParagraphId(10L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(10L), "Title", "Subtitle", "Body");
 		
 		graph.addParagraph(rootParagraph);
 		
 		SimpleParagraph referencingParagraph = 
-				new SimpleParagraph(new ParagraphId(20L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(20L), "Title", "Subtitle", "Body");
 		
 		
 		referencingParagraph.addReference(rootParagraph);
@@ -76,12 +76,12 @@ public class ConversationGraphTest
 		ConversationGraph graph = new ConversationGraph();
 		
 		SimpleParagraph rootParagraph = 
-				new SimpleParagraph(new ParagraphId(10L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(10L), "Title", "Subtitle", "Body");
 		
 		graph.addParagraph(rootParagraph);
 		
 		SimpleParagraph directReferenceParagraph = 
-				new SimpleParagraph(new ParagraphId(20L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(20L), "Title", "Subtitle", "Body");
 		
 		directReferenceParagraph.addReference(rootParagraph);
 		
@@ -89,7 +89,7 @@ public class ConversationGraphTest
 		
 
 		SimpleParagraph undirectReferenceParagraph = 
-				new SimpleParagraph(new ParagraphId(30L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(30L), "Title", "Subtitle", "Body");
 		
 		undirectReferenceParagraph.addReference(directReferenceParagraph);
 		
@@ -109,12 +109,12 @@ public class ConversationGraphTest
 		ConversationGraph graph = new ConversationGraph();
 		
 		SimpleParagraph rootParagraph = 
-				new SimpleParagraph(new ParagraphId(10L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(10L), "Title", "Subtitle", "Body");
 		
 		graph.addParagraph(rootParagraph);
 		
 		SimpleParagraph directReferenceParagraph = 
-				new SimpleParagraph(new ParagraphId(20L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(20L), "Title", "Subtitle", "Body");
 		
 		directReferenceParagraph.addReference(rootParagraph);
 		
@@ -122,7 +122,7 @@ public class ConversationGraphTest
 		
 
 		SimpleParagraph undirectReferenceParagraph = 
-				new SimpleParagraph(new ParagraphId(30L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(30L), "Title", "Subtitle", "Body");
 				
 		undirectReferenceParagraph.addReference(directReferenceParagraph);
 		
@@ -142,12 +142,12 @@ public class ConversationGraphTest
 		ConversationGraph graph = new ConversationGraph();
 		
 		SimpleParagraph rootParagraph = 
-				new SimpleParagraph(new ParagraphId(10L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(10L), "Title", "Subtitle", "Body");
 		
 		graph.addParagraph(rootParagraph);
 		
 		SimpleParagraph directReferenceParagraph = 
-				new SimpleParagraph(new ParagraphId(20L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(20L), "Title", "Subtitle", "Body");
 				
 		directReferenceParagraph.addReference(rootParagraph);
 		
@@ -155,7 +155,7 @@ public class ConversationGraphTest
 		
 
 		SimpleParagraph undirectReferenceParagraph = 
-				new SimpleParagraph(new ParagraphId(30L), "Title", "Subtitle", "Body");
+				new SimpleParagraph(Ids.paragraph(30L), "Title", "Subtitle", "Body");
 		
 		undirectReferenceParagraph.addReference(directReferenceParagraph);
 		
@@ -177,12 +177,12 @@ public class ConversationGraphTest
 	
 	private static SimpleParagraph paragraph(long id)
 	{
-		return new SimpleParagraph(new ParagraphId(id), "Title", "Subtitle", "Body");
+		return new SimpleParagraph(Ids.paragraph(id), "Title", "Subtitle", "Body");
 	}
 	
 	private static List<Long> ids(List<Paragraph> paragraphs)
 	{
-		return paragraphs.stream().map(p -> p.getId().value()).toList();
+		return paragraphs.stream().map(p -> Ids.numberOf(p.getId().value())).toList();
 	}
 	
 	@Test

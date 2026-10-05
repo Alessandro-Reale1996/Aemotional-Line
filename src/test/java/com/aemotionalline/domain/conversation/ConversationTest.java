@@ -19,15 +19,12 @@ import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.TimeConstraint;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.message.Message;
-import com.aemotionalline.domain.message.MessageId;
 import com.aemotionalline.domain.message.Paragraph;
-import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.SimpleParagraph;
 import com.aemotionalline.domain.negotiation.Negotiation;
-import com.aemotionalline.domain.negotiation.NegotiationId;
 import com.aemotionalline.domain.negotiation.Proposal;
-import com.aemotionalline.domain.negotiation.ProposalId;
 import com.aemotionalline.domain.user.UserId;
+import com.aemotionalline.domain.Ids;
 
 public class ConversationTest
 {
@@ -36,15 +33,15 @@ public class ConversationTest
 	@Test
 	void shouldCreateConversationWithEmptyConstraintSet()
 	{
-	    UserId partnerOne = new UserId(10L);
-	    UserId partnerTwo = new UserId(20L);
-	    UserId therapist = new UserId(30L);
+	    UserId partnerOne = Ids.user(10L);
+	    UserId partnerTwo = Ids.user(20L);
+	    UserId therapist = Ids.user(30L);
 
-	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation negotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
+	    Negotiation negotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    negotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -52,7 +49,7 @@ public class ConversationTest
 	    
 	    negotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(321L, couple, negotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, negotiation);
 
 	    assertNotNull(conversation.getConstraintSet());
 	}
@@ -63,15 +60,15 @@ public class ConversationTest
 	void shouldNotAllowTherapistToSendMessageAsPartner()
 	{
 		
-		UserId partnerOne = new UserId(10L);
-	    UserId partnerTwo = new UserId(20L);
-	    UserId therapist = new UserId(30L);
+		UserId partnerOne = Ids.user(10L);
+	    UserId partnerTwo = Ids.user(20L);
+	    UserId therapist = Ids.user(30L);
 
-	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation negotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
+	    Negotiation negotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    negotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -79,7 +76,7 @@ public class ConversationTest
 	    
 	    negotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(321L, couple, negotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, negotiation);
 		
 		assertFalse(conversation.canSendMessage(therapist));
 			
@@ -90,15 +87,15 @@ public class ConversationTest
 	@Test
 	void shouldAddDiscussionToConversation()
 	{
-		UserId partnerOne = new UserId(10L);
-	    UserId partnerTwo = new UserId(20L);
-	    UserId therapist = new UserId(30L);
+		UserId partnerOne = Ids.user(10L);
+	    UserId partnerTwo = Ids.user(20L);
+	    UserId therapist = Ids.user(30L);
 
-	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
+	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -106,11 +103,11 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(321L, couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
 	 
-	    Proposal discussionProposal = new Proposal(new ProposalId(124L), couple.getPartnerOneId(), "TEXT");
+	    Proposal discussionProposal = new Proposal(Ids.proposal(124L), couple.getPartnerOneId(), "TEXT");
 
-	    Negotiation discussionNegotiation = Negotiation.start(new NegotiationId(70L), couple, discussionProposal, Clock.systemUTC());
+	    Negotiation discussionNegotiation = Negotiation.start(Ids.negotiation(70L), couple, discussionProposal, Clock.systemUTC());
 	    
 	    discussionNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -130,9 +127,9 @@ public class ConversationTest
 	
 	private static Negotiation acceptedNegotiation(long negotiationId, long proposalId, Couple couple)
 	{
-		Proposal proposal = new Proposal(new ProposalId(proposalId), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new Proposal(Ids.proposal(proposalId), couple.getPartnerOneId(), "TEXT");
 		
-		Negotiation negotiation = Negotiation.start(new NegotiationId(negotiationId), couple, proposal, Clock.systemUTC());
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(negotiationId), couple, proposal, Clock.systemUTC());
 		
 		negotiation.acceptNegotiation(couple.getPartnerTwoId());
 		
@@ -146,21 +143,21 @@ public class ConversationTest
 	@Test
 	void shouldThrowExceptionWhenStartingWithAnotherCouplesNegotiation()
 	{
-		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
-		Couple otherCouple = new Couple(2L, new UserId(40L), new UserId(50L), new UserId(30L));
+		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
+		Couple otherCouple = new Couple(Ids.couple(2L), Ids.user(40L), Ids.user(50L), Ids.user(30L));
 		
 		Negotiation otherNegotiation = acceptedNegotiation(60L, 123L, otherCouple);
 		
-		assertThrows(DomainException.class, () -> Conversation.start(321L, couple, otherNegotiation));
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), couple, otherNegotiation));
 	}
 	
 	@Test
 	void shouldThrowExceptionWhenOpeningDiscussionWithAnotherCouplesNegotiation()
 	{
-		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
-		Couple otherCouple = new Couple(2L, new UserId(40L), new UserId(50L), new UserId(30L));
+		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
+		Couple otherCouple = new Couple(Ids.couple(2L), Ids.user(40L), Ids.user(50L), Ids.user(30L));
 		
-		Conversation conversation = Conversation.start(321L, couple, acceptedNegotiation(60L, 123L, couple));
+		Conversation conversation = Conversation.start(Ids.conversation(321L), couple, acceptedNegotiation(60L, 123L, couple));
 		
 		Negotiation otherNegotiation = acceptedNegotiation(70L, 124L, otherCouple);
 		
@@ -172,12 +169,12 @@ public class ConversationTest
 	@Test
 	void shouldThrowExceptionWhenModifyingAgreementWithAnotherCouplesNegotiation()
 	{
-		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
-		Couple otherCouple = new Couple(2L, new UserId(40L), new UserId(50L), new UserId(30L));
+		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
+		Couple otherCouple = new Couple(Ids.couple(2L), Ids.user(40L), Ids.user(50L), Ids.user(30L));
 		
 		Negotiation negotiation = acceptedNegotiation(60L, 123L, couple);
 		
-		Conversation conversation = Conversation.start(321L, couple, negotiation);
+		Conversation conversation = Conversation.start(Ids.conversation(321L), couple, negotiation);
 		
 		Negotiation otherNegotiation = acceptedNegotiation(70L, 124L, otherCouple);
 		
@@ -189,10 +186,10 @@ public class ConversationTest
 	@Test
 	void shouldAcceptNegotiationOfTheSameCoupleLoadedAsAnotherObject()
 	{
-		Couple couple = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
-		Couple sameCoupleLoadedAgain = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
+		Couple sameCoupleLoadedAgain = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 		
-		Conversation conversation = Conversation.start(321L, couple, acceptedNegotiation(60L, 123L, sameCoupleLoadedAgain));
+		Conversation conversation = Conversation.start(Ids.conversation(321L), couple, acceptedNegotiation(60L, 123L, sameCoupleLoadedAgain));
 		
 		assertEquals(1, conversation.getDiscussions().size());
 	}
@@ -200,15 +197,15 @@ public class ConversationTest
 	@Test
 	void shouldThrowExceptionWhenSendingIsNotAllowed()
 	{
-		UserId partnerOne = new UserId(10L);
-	    UserId partnerTwo = new UserId(20L);
-	    UserId therapist = new UserId(30L);
+		UserId partnerOne = Ids.user(10L);
+	    UserId partnerTwo = Ids.user(20L);
+	    UserId therapist = Ids.user(30L);
 
-	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
+	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -216,23 +213,23 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(321L, couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
 		
 		assertThrows(DomainException.class, () -> conversation.ensureCanSendMessage(therapist));
 	}
 	
 	@Test
-	void shouldThrowExceptionWhenConstrictionsAreNotFullApproved()
+	void shouldThrowExceptionWhenConstraintsAreNotFullyApproved()
 	{
-		UserId partnerOne = new UserId(10L);
-	    UserId partnerTwo = new UserId(20L);
-	    UserId therapist = new UserId(30L);
+		UserId partnerOne = Ids.user(10L);
+	    UserId partnerTwo = Ids.user(20L);
+	    UserId therapist = Ids.user(30L);
 
-	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
+	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -240,7 +237,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(321L, couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
 		
 		TimeConstraint constraint = new TimeConstraint(LocalTime.of(22, 0));
 		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, constraint);
@@ -250,7 +247,7 @@ public class ConversationTest
 		
 		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
 		
-		constraintChangeRequest.approve(partnerOne, couple);
+		constraintChangeRequest.approve(partnerOne);
 		
 		assertThrows(DomainException.class, () -> conversation.applyConstraints(constraintChangeRequest));
 	}
@@ -258,15 +255,15 @@ public class ConversationTest
 	@Test
 	void shouldBlockMessageWhenConstraintFails()
 	{
-		UserId partnerOne = new UserId(10L);
-	    UserId partnerTwo = new UserId(20L);
-	    UserId therapist = new UserId(30L);
+		UserId partnerOne = Ids.user(10L);
+	    UserId partnerTwo = Ids.user(20L);
+	    UserId therapist = Ids.user(30L);
 
-	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
+	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -274,7 +271,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(321L, couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
 		
 		TimeConstraint failConstraint = new TimeConstraint(LocalTime.of(23, 0));
 
@@ -285,16 +282,16 @@ public class ConversationTest
 		
 		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
 		
-		constraintChangeRequest.approve(partnerOne, couple);
-		constraintChangeRequest.approve(partnerTwo, couple);
+		constraintChangeRequest.approve(partnerOne);
+		constraintChangeRequest.approve(partnerTwo);
 		
 		conversation.applyConstraints(constraintChangeRequest);
 		
-		Message message = new Message(new MessageId(110L),partnerOne);
+		Message message = new Message(Ids.message(110L),partnerOne);
 		
 		DiscussionId discussionId = conversation.getDiscussions().getFirst().getId();
 		
-		message.addParagraph(new SimpleParagraph(new ParagraphId(1L), "title", "subtitle", "body"));
+		message.addParagraph(new SimpleParagraph(Ids.paragraph(1L), "title", "subtitle", "body"));
 
 		// The message is valid, so the only reason left to reject it is the time constraint.
 		DomainException exception = assertThrows(DomainException.class, () -> conversation.sendMessage(message, discussionId, new ConstraintContext(LocalTime.of(22, 0))));
@@ -305,15 +302,15 @@ public class ConversationTest
 	@Test
 	void shouldAddMessageToConversation()
 	{
-		UserId partnerOne = new UserId(10L);
-	    UserId partnerTwo = new UserId(20L);
-	    UserId therapist = new UserId(30L);
+		UserId partnerOne = Ids.user(10L);
+	    UserId partnerTwo = Ids.user(20L);
+	    UserId therapist = Ids.user(30L);
 
-	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
+	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -321,7 +318,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(321L, couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
 		
 		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
 				
@@ -332,15 +329,15 @@ public class ConversationTest
 		
 		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
 		
-		constraintChangeRequest.approve(partnerOne, couple);
-		constraintChangeRequest.approve(partnerTwo, couple);
+		constraintChangeRequest.approve(partnerOne);
+		constraintChangeRequest.approve(partnerTwo);
 		
 		conversation.applyConstraints(constraintChangeRequest);
 		
-		Message message = new Message(new MessageId(110L),partnerOne);
+		Message message = new Message(Ids.message(110L),partnerOne);
 		
 		
-		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), "title", "subtitle", "body");
+		Paragraph paragraph = new SimpleParagraph(Ids.paragraph(1L), "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		
@@ -352,17 +349,17 @@ public class ConversationTest
 	}
 	
 	@Test
-	void shouldthrowExceptionWhenSenderIsTheSameAsLastSender()
+	void shouldThrowExceptionWhenSenderIsTheSameAsLastSender()
 	{
-		UserId partnerOne = new UserId(10L);
-	    UserId partnerTwo = new UserId(20L);
-	    UserId therapist = new UserId(30L);
+		UserId partnerOne = Ids.user(10L);
+	    UserId partnerTwo = Ids.user(20L);
+	    UserId therapist = Ids.user(30L);
 
-	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
+	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -370,7 +367,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(321L, couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
 		
 		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
 				
@@ -381,15 +378,15 @@ public class ConversationTest
 		
 		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
 		
-		constraintChangeRequest.approve(partnerOne, couple);
-		constraintChangeRequest.approve(partnerTwo, couple);
+		constraintChangeRequest.approve(partnerOne);
+		constraintChangeRequest.approve(partnerTwo);
 		
 		conversation.applyConstraints(constraintChangeRequest);
 		
-		Message message = new Message(new MessageId(110L),partnerOne);
+		Message message = new Message(Ids.message(110L),partnerOne);
 		
 		
-		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), "title", "subtitle", "body");
+		Paragraph paragraph = new SimpleParagraph(Ids.paragraph(1L), "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		
@@ -397,9 +394,9 @@ public class ConversationTest
 		
 		conversation.sendMessage(message, discussionId, new ConstraintContext(LocalTime.of(23, 0)));
 		
-		Message secondMessage = new Message(new MessageId(120L),partnerOne);
+		Message secondMessage = new Message(Ids.message(120L),partnerOne);
 
-		secondMessage.addParagraph(new SimpleParagraph(new ParagraphId(2L), "title", "subtitle", "body"));
+		secondMessage.addParagraph(new SimpleParagraph(Ids.paragraph(2L), "title", "subtitle", "body"));
 		
 		// The second message is valid and satisfies the constraint, so only the turn-taking rule can reject it.
 		DomainException exception = assertThrows(DomainException.class, ()-> conversation.sendMessage(secondMessage, discussionId, new ConstraintContext(LocalTime.of(23, 0))));
@@ -412,15 +409,15 @@ public class ConversationTest
 	@Test
 	void shouldNotSendEmptyMessage()
 	{
-		UserId partnerOne = new UserId(10L);
-	    UserId partnerTwo = new UserId(20L);
-	    UserId therapist = new UserId(30L);
+		UserId partnerOne = Ids.user(10L);
+	    UserId partnerTwo = Ids.user(20L);
+	    UserId therapist = Ids.user(30L);
 
-	    Couple couple = new Couple(1L, partnerOne, partnerTwo, therapist);
+	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(new ProposalId(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
-	    Negotiation conversationNegotiation = Negotiation.start(new NegotiationId(60L), couple,initialProposal, Clock.systemUTC());
+	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
 	    conversationNegotiation.acceptNegotiation(couple.getPartnerTwoId());
 	    
@@ -428,7 +425,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(321L, couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
 		
 		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
 				
@@ -439,12 +436,12 @@ public class ConversationTest
 		
 		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
 		
-		constraintChangeRequest.approve(partnerOne, couple);
-		constraintChangeRequest.approve(partnerTwo, couple);
+		constraintChangeRequest.approve(partnerOne);
+		constraintChangeRequest.approve(partnerTwo);
 		
 		conversation.applyConstraints(constraintChangeRequest);
 		
-		Message message = new Message(new MessageId(110L), partnerOne);
+		Message message = new Message(Ids.message(110L), partnerOne);
 		
 		DiscussionId discussionId = conversation.getDiscussions().getFirst().getId();
 		

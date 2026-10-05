@@ -112,11 +112,6 @@ public  abstract class Paragraph
 		}
 		
 	    references.add(reference);
-	    
-	    if (!this.references.contains(reference))
-		{
-			throw new DomainException("Reference failed to be added.");
-		}
 	}
 
 	// Every subclass calls this first, so a sealed paragraph is rejected before any type-specific rule.

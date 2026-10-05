@@ -1,6 +1,7 @@
 package com.aemotionalline.domain.negotiation;
 
 import java.time.Clock;
+import java.util.List;
 import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
@@ -70,9 +71,9 @@ public class Negotiation
 		return couple;
 	}
 
-	public ProposalArchive getProposals() 
+	public List<Proposal> getProposals()
 	{
-		return proposals;
+		return proposals.getProposals();
 	}
 
 	public NegotiationStatus getNegotiationStatus() 

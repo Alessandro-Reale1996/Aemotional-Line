@@ -11,14 +11,14 @@ import com.aemotionalline.domain.user.UserId;
  */
 public class Couple
 {
-    private final Long id;
+    private final CoupleId id;
     private final UserId partnerOneId;
     private final UserId partnerTwoId;
     private final UserId therapistId;
     
 
     
-    public Couple(Long id, UserId partnerOneId, UserId partnerTwoId, UserId therapistId)
+    public Couple(CoupleId id, UserId partnerOneId, UserId partnerTwoId, UserId therapistId)
     {
         if (id == null || partnerOneId == null || partnerTwoId == null || therapistId == null)
         {
@@ -41,7 +41,7 @@ public class Couple
         this.therapistId = therapistId;
     }
     
-    public Long getId()
+    public CoupleId getId()
 	{
 		return id;
 	}

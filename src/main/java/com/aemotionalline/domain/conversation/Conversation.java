@@ -1,6 +1,7 @@
 package com.aemotionalline.domain.conversation;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -26,7 +27,7 @@ import com.aemotionalline.domain.constraint.ConstraintSet;
  */
 public class Conversation
 {
-	private final Long id;
+	private final ConversationId id;
 	private final Couple couple ;
 	private final ConversationGraph conversationGraph;
 	private final NegotiationArchive negotiationArchive;
@@ -36,7 +37,7 @@ public class Conversation
 	private Proposal agreement;
 	private ConstraintSet constraintSet;
 	
-	private Conversation(Long id, Couple couple)
+	private Conversation(ConversationId id, Couple couple)
 	{
 		
 		this.id = id;
@@ -44,12 +45,12 @@ public class Conversation
 		
 		this.conversationGraph = new ConversationGraph();
 		this.constraintSet = new ConstraintSet();
-		this.discussions = new HashSet<>();
+		this.discussions = new LinkedHashSet<>();
 		this.negotiationArchive = new NegotiationArchive();
 		
 	}
 	
-	public static Conversation start(Long id, Couple couple, Negotiation negotiation)
+	public static Conversation start(ConversationId id, Couple couple, Negotiation negotiation)
 	{
 		Objects.requireNonNull(id);
 		Objects.requireNonNull(couple);
@@ -67,7 +68,7 @@ public class Conversation
 	
 	
 	
-	public Long getId()
+	public ConversationId getId()
 	{
 		return id;
 	}
@@ -117,9 +118,10 @@ public class Conversation
 		if (negotiation.getLastProposal().isAccepted())
 		{
 			
-		setAgreement(negotiation.getLastProposal());
-		
+		// Archiving first rejects a negotiation that was already used before the agreement is touched.
 		this.negotiationArchive.add(negotiation);
+		
+		setAgreement(negotiation.getLastProposal());
 		
 		}
 		else
@@ -145,12 +147,10 @@ public class Conversation
 		if (negotiation.getLastProposal().isAccepted())
 		{
 		
-		// The id is derived from the archive size, so the negotiation must be archived only after the id is generated.
-		Discussion discussion = new Discussion(generateDiscussionId(), negotiation.getLastProposal());
-		
-		addDiscussion(discussion);
-		
+		// Archiving first rejects a negotiation that was already used before any discussion is added.
 		negotiationArchive.add(negotiation);
+		
+		addDiscussion(new Discussion(generateDiscussionId(), negotiation.getLastProposal()));
 		}
 		else
 		{
@@ -188,14 +188,20 @@ public class Conversation
 	 * Constraints are imposed by the therapist but bind the partners, so they take effect only
 	 * once both partners have approved the request.
 	 */
-	public void applyConstraints(ConstraintChangeRequest request) 
+	public void applyConstraints(ConstraintChangeRequest request)
 	{
-	    if (!request.isFullyApproved(couple)) 
+	    if (request == null)
 	    {
-	        throw new DomainException("Constraints not fully approved");
+	        throw new DomainException("Constraint change request cannot be null.");
 	    }
 
-	    constraintSet.replaceWith(request.assignments());
+	    // The request was approved by its own couple's partners: it means nothing for another couple's conversation.
+	    if (!couple.equals(request.couple()))
+	    {
+	        throw new DomainException("The constraint change request belongs to another couple.");
+	    }
+
+	    request.applyTo(constraintSet);
 	}
 	
 	
@@ -242,13 +248,6 @@ public class Conversation
 	    conversationGraph.addAllParagraphsInMessage(message);
 	    
 	    message.seal();
-	    
-	    if (!discussion.getMessages().contains(message))
-		{
-			throw new DomainException("Message was not added to relative discussion.");
-		}
-	    
-	    verifyParagraphsWereAddedToGraph(message);
 	}
 	
 	/**
@@ -358,34 +357,20 @@ public class Conversation
 				.orElseThrow(() -> new DomainException("Discussion not found"));
 	}
 	
-	private void verifyParagraphsWereAddedToGraph(Message message)
-	{	
-		for(Paragraph paragraph : message.getParagraphs())
-		{
-			if(!this.conversationGraph.getParagraphs().contains(paragraph))
-			{
-				throw new DomainException("Message's paragraphs wasn't added to graph.");
-			}
-		}		
-	}
 	
 	private void addDiscussion(Discussion discussion)
 	{
 		if(!this.discussions.add(discussion))
 		{
 			throw new DomainException("Discussion already exists in the conversation.");
-		};
-		
-		if(!discussions.contains(discussion))
-		{
-			throw new DomainException("Discussion was not added to the conversation.");
 		}
 	}
 	
 	
 	private DiscussionId generateDiscussionId()
 	{
-		return new DiscussionId(this.id, this.negotiationArchive.getNegotiations().size());
+		// Discussions are never removed, so their count is the next number: no gaps, unlike the archive, which also records agreement changes.
+		return new DiscussionId(this.id, this.discussions.size());
 	}
 	
 }

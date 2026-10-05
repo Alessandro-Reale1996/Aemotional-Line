@@ -3,7 +3,6 @@ package com.aemotionalline.domain.negotiation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import com.aemotionalline.domain.common.DomainException;
 
 /**
  * Ordered history of every proposal that was sent, in the order the partners exchanged them.
@@ -27,16 +26,11 @@ public class ProposalArchive
 
 
 
-	public void add(Proposal proposal)
+	void add(Proposal proposal)
 	{
 		Objects.requireNonNull(proposal);
 		
 		this.proposals.add(proposal);
-		
-		if(!proposals.contains(proposal))
-		{
-			throw new DomainException("Proposal wasn't added to the archive.");
-		}
 	}
 	
 	public Proposal getLast()

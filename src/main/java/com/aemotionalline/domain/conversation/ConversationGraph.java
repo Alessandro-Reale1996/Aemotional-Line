@@ -31,7 +31,7 @@ public class ConversationGraph
 		return List.copyOf(paragraphs);
 	}
 	
-	public void addAllParagraphsInMessage(Message message)
+	void addAllParagraphsInMessage(Message message)
 	{
 		for(Paragraph paragraph : message.getParagraphs())
 		{
@@ -39,7 +39,7 @@ public class ConversationGraph
 		}
 	}
 	
-	public void addParagraph(Paragraph paragraph)
+	void addParagraph(Paragraph paragraph)
 	{
 		if (paragraph == null)
 		{
@@ -47,11 +47,6 @@ public class ConversationGraph
 		}
 		
 		paragraphs.add(paragraph);
-		
-		if (paragraphs.isEmpty())
-		{
-			throw new DomainException("Paragraph was not added to the ConversationGraph."); 
-		}
 	}
 	
 	public List<Paragraph> findRootParagraphs()

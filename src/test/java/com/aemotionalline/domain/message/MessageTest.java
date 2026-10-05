@@ -8,15 +8,16 @@ import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.user.UserId;
+import com.aemotionalline.domain.Ids;
 
 public class MessageTest
 {
 	@Test
 	void shouldThrowExceptionWhenTryToModifyParagraphs()
 	{
-		UserId user = new UserId(1L);
+		UserId user = Ids.user(1L);
 		
-		Message message = new Message(new MessageId(100L), user);
+		Message message = new Message(Ids.message(100L), user);
 		
 		assertThrows(UnsupportedOperationException.class, () -> message.getParagraphs().clear());
 	}
@@ -24,9 +25,9 @@ public class MessageTest
 	@Test
 	void shouldThrowExceptionWhenParagraphsIsEmpty()
 	{
-		UserId user = new UserId(1L);
+		UserId user = Ids.user(1L);
 		
-		Message message = new Message(new MessageId(100L), user);
+		Message message = new Message(Ids.message(100L), user);
 		
 		assertThrows(DomainException.class, () -> message.ensureReadyToSend());
 	}
@@ -34,11 +35,11 @@ public class MessageTest
 	@Test
 	void shouldBeReadyToSendWithAtLeastOneParagraph()
 	{
-		UserId user = new UserId(1L);
+		UserId user = Ids.user(1L);
 		
-		Message message = new Message(new MessageId(100L), user);
+		Message message = new Message(Ids.message(100L), user);
 		
-		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), "title", "subtitle", "body");
+		Paragraph paragraph = new SimpleParagraph(Ids.paragraph(1L), "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		
@@ -48,9 +49,9 @@ public class MessageTest
 	@Test
 	void shouldThrowExceptionWhenParagraphIsNull()
 	{
-		UserId user = new UserId(1L);
+		UserId user = Ids.user(1L);
 		
-		Message message = new Message(new MessageId(100L), user);
+		Message message = new Message(Ids.message(100L), user);
 		
 		Paragraph paragraph = null;
 		
@@ -60,11 +61,11 @@ public class MessageTest
 	@Test
 	void shouldAddParagraphToMessage()
 	{
-		UserId user = new UserId(1L);
+		UserId user = Ids.user(1L);
 		
-		Message message = new Message(new MessageId(100L), user);
+		Message message = new Message(Ids.message(100L), user);
 		
-		Paragraph paragraph = new SimpleParagraph(new ParagraphId(1L), "title", "subtitle", "body");
+		Paragraph paragraph = new SimpleParagraph(Ids.paragraph(1L), "title", "subtitle", "body");
 		
 		message.addParagraph(paragraph);
 		
@@ -75,13 +76,13 @@ public class MessageTest
 	@Test
 	void shouldNotAddParagraphsToASealedMessage()
 	{
-		Message message = new Message(new MessageId(1L), new UserId(10L));
-		message.addParagraph(new SimpleParagraph(new ParagraphId(1L), "Title", "SubTitle", "Body"));
+		Message message = new Message(Ids.message(1L), Ids.user(10L));
+		message.addParagraph(new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body"));
 		
 		message.seal();
 		
 		assertTrue(message.isSealed());
-		assertThrows(DomainException.class, () -> message.addParagraph(new SimpleParagraph(new ParagraphId(2L), "Title", "SubTitle", "Body")));
+		assertThrows(DomainException.class, () -> message.addParagraph(new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body")));
 		assertEquals(1, message.getParagraphs().size());
 	}
 

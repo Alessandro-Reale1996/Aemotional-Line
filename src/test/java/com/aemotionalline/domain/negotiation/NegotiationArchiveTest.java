@@ -4,26 +4,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Clock;
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
-import com.aemotionalline.domain.user.UserId;
+import com.aemotionalline.domain.Ids;
 
 public class NegotiationArchiveTest 
 {
 	@Test
-	void shouldNotAddAlredyPresentNegotiation()
+	void shouldNotAddAlreadyPresentNegotiation()
 	{
 		NegotiationArchive archive = new NegotiationArchive();
 		
-		Couple couple = new Couple(10L, new UserId(1L), new UserId(2L), new UserId(3L));
+		Couple couple = new Couple(Ids.couple(10L), Ids.user(1L), Ids.user(2L), Ids.user(3L));
 		
-		Proposal proposal = new Proposal(new ProposalId(0L), couple.getPartnerOneId(), "TEST TEXT");
+		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEST TEXT");
 		
-		Negotiation negotiation = Negotiation.start(new NegotiationId(0L), couple, proposal, Clock.systemUTC());
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(0L), couple, proposal, Clock.systemUTC());
 		
 		archive.add(negotiation);
 		
@@ -36,13 +35,13 @@ public class NegotiationArchiveTest
 	{
 		NegotiationArchive archive = new NegotiationArchive();
 		
-		Couple couple = new Couple(10L, new UserId(1L), new UserId(2L), new UserId(3L));
+		Couple couple = new Couple(Ids.couple(10L), Ids.user(1L), Ids.user(2L), Ids.user(3L));
 		
-		Proposal proposal = new Proposal(new ProposalId(0L), couple.getPartnerOneId(), "TEST TEXT");
+		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEST TEXT");
 		
-		Negotiation negotiation = Negotiation.start(new NegotiationId(0L), couple, proposal, Clock.systemUTC());
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(0L), couple, proposal, Clock.systemUTC());
 		
-		Negotiation negotiationSameId = Negotiation.start(new NegotiationId(0L), couple, proposal, Clock.systemUTC());
+		Negotiation negotiationSameId = Negotiation.start(Ids.negotiation(0L), couple, proposal, Clock.systemUTC());
 		
 		archive.add(negotiation);
 		
@@ -54,19 +53,19 @@ public class NegotiationArchiveTest
 	{
 		var archive = new NegotiationArchive();
 		
-		Couple couple = new Couple(10L, new UserId(1L), new UserId(2L), new UserId(3L));
+		Couple couple = new Couple(Ids.couple(10L), Ids.user(1L), Ids.user(2L), Ids.user(3L));
 		
-		Proposal proposal = new Proposal(new ProposalId(0L), couple.getPartnerOneId(), "TEST TEXT");
+		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEST TEXT");
 		
-		Negotiation negotiation0 = Negotiation.start(new NegotiationId(0L), couple, proposal, Clock.systemUTC());
+		Negotiation negotiation0 = Negotiation.start(Ids.negotiation(0L), couple, proposal, Clock.systemUTC());
 		
-		Negotiation negotiation1 = Negotiation.start(new NegotiationId(1L), couple, proposal, Clock.systemUTC());
+		Negotiation negotiation1 = Negotiation.start(Ids.negotiation(1L), couple, proposal, Clock.systemUTC());
 		
 		
 		archive.add(negotiation0);
 		archive.add(negotiation1);	
-		assertEquals(negotiation0, archive.findById(new NegotiationId(0L)));
-		assertEquals(negotiation1, archive.findById(new NegotiationId(1L)));
+		assertEquals(negotiation0, archive.findById(Ids.negotiation(0L)));
+		assertEquals(negotiation1, archive.findById(Ids.negotiation(1L)));
 		
 	}
 	
@@ -75,7 +74,7 @@ public class NegotiationArchiveTest
 	{
 		NegotiationArchive archive = new NegotiationArchive();
 		
-		assertThrows(DomainException.class, () -> archive.findById(new NegotiationId(1L)));
+		assertThrows(DomainException.class, () -> archive.findById(Ids.negotiation(1L)));
 	}
 	
 	

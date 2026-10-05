@@ -18,17 +18,14 @@ import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.TimeConstraint;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.message.Message;
-import com.aemotionalline.domain.message.MessageId;
 import com.aemotionalline.domain.message.Paragraph;
-import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.PointedParagraph;
 import com.aemotionalline.domain.message.QuestionParagraph;
 import com.aemotionalline.domain.message.SimpleParagraph;
 import com.aemotionalline.domain.negotiation.Negotiation;
-import com.aemotionalline.domain.negotiation.NegotiationId;
 import com.aemotionalline.domain.negotiation.Proposal;
-import com.aemotionalline.domain.negotiation.ProposalId;
 import com.aemotionalline.domain.user.UserId;
+import com.aemotionalline.domain.Ids;
 
 /**
  * The rules Conversation.sendMessage enforces before accepting a message,
@@ -36,20 +33,20 @@ import com.aemotionalline.domain.user.UserId;
  */
 public class ConversationSendMessageTest
 {
-	private static final Couple COUPLE = new Couple(1L, new UserId(10L), new UserId(20L), new UserId(30L));
+	private static final Couple COUPLE = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
 	private static final UserId A = COUPLE.getPartnerOneId();
 	private static final UserId B = COUPLE.getPartnerTwoId();
 
-	private static final DiscussionId FIRST_DISCUSSION = new DiscussionId(321L, 0L);
+	private static final DiscussionId FIRST_DISCUSSION = new DiscussionId(Ids.conversation(321L), 0);
 
 	private static final ConstraintContext NOON = new ConstraintContext(LocalTime.NOON);
 
 	private static Conversation startConversation()
 	{
-		Proposal proposal = new Proposal(new ProposalId(1L), A, "TEXT");
+		Proposal proposal = new Proposal(Ids.proposal(1L), A, "TEXT");
 
-		Negotiation negotiation = Negotiation.start(new NegotiationId(60L), COUPLE, proposal, Clock.systemUTC());
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(60L), COUPLE, proposal, Clock.systemUTC());
 
 		negotiation.acceptNegotiation(B);
 
@@ -57,12 +54,12 @@ public class ConversationSendMessageTest
 
 		negotiation.acceptProposal(B);
 
-		return Conversation.start(321L, COUPLE, negotiation);
+		return Conversation.start(Ids.conversation(321L), COUPLE, negotiation);
 	}
 
 	private static Message message(long id, UserId sender, Paragraph... paragraphs)
 	{
-		Message message = new Message(new MessageId(id), sender);
+		Message message = new Message(Ids.message(id), sender);
 
 		for (Paragraph paragraph : paragraphs)
 		{
@@ -79,7 +76,7 @@ public class ConversationSendMessageTest
 
 	private static SimpleParagraph simple(long id)
 	{
-		return new SimpleParagraph(new ParagraphId(id), "Title", "Subtitle", "Body");
+		return new SimpleParagraph(Ids.paragraph(id), "Title", "Subtitle", "Body");
 	}
 
 	// A rejected message must leave the discussion and the graph exactly as they were.
@@ -152,7 +149,7 @@ public class ConversationSendMessageTest
 	
 	private static Negotiation acceptedNegotiation(long id)
 	{
-		Negotiation negotiation = Negotiation.start(new NegotiationId(id), COUPLE, new Proposal(new ProposalId(id), A, "TEXT"), Clock.systemUTC());
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(id), COUPLE, new Proposal(Ids.proposal(id), A, "TEXT"), Clock.systemUTC());
 		
 		negotiation.acceptNegotiation(B);
 		
@@ -201,7 +198,7 @@ public class ConversationSendMessageTest
 		send(conversation, message(1L, A, inFirstDiscussion));
 		
 		conversation.openDiscussion(acceptedNegotiation(70L));
-		DiscussionId secondDiscussion = new DiscussionId(321L, 1L);
+		DiscussionId secondDiscussion = new DiscussionId(Ids.conversation(321L), 1);
 		
 		// The new discussion has no message to answer, and the target belongs to another discussion.
 		SimpleParagraph reply = simple(2L);
@@ -263,12 +260,12 @@ public class ConversationSendMessageTest
 	
 	private static QuestionParagraph question(long id)
 	{
-		return new QuestionParagraph(new ParagraphId(id), "Why?", "Body");
+		return new QuestionParagraph(Ids.paragraph(id), "Why?", "Body");
 	}
 	
 	private static PointedParagraph answer(long id, QuestionParagraph question)
 	{
-		PointedParagraph answer = new PointedParagraph(new ParagraphId(id), "In risposta a...", "Answer");
+		PointedParagraph answer = new PointedParagraph(Ids.paragraph(id), "In risposta a...", "Answer");
 		
 		if (question != null)
 		{
@@ -381,12 +378,51 @@ public class ConversationSendMessageTest
 		
 		ConstraintChangeRequest request = new ConstraintChangeRequest(COUPLE.getTherapistId(),
 				List.of(new ConstraintAssignment(A, new TimeConstraint(LocalTime.of(9, 0)))), COUPLE);
-		request.approve(A, COUPLE);
-		request.approve(B, COUPLE);
+		request.approve(A);
+		request.approve(B);
 		conversation.applyConstraints(request);
 		
 		assertThrows(DomainException.class, () -> conversation.sendMessage(message(1L, A, simple(1L)), FIRST_DISCUSSION, null));
 		assertUnchanged(conversation, 0, 0, null);
+	}
+	
+	// CONSTRAINT CHANGE REQUESTS (6d):
+	
+	private static ConstraintChangeRequest approvedRequest(Couple couple)
+	{
+		ConstraintChangeRequest request = new ConstraintChangeRequest(couple.getTherapistId(),
+				List.of(new ConstraintAssignment(couple.getPartnerOneId(), new TimeConstraint(LocalTime.of(9, 0)))), couple);
+		request.approve(couple.getPartnerOneId());
+		request.approve(couple.getPartnerTwoId());
+		return request;
+	}
+	
+	@Test
+	void shouldNotApplyARequestOfAnotherCouple()
+	{
+		Conversation conversation = startConversation();
+		Couple other = new Couple(Ids.couple(2L), Ids.user(11L), Ids.user(21L), Ids.user(31L));
+		
+		assertThrows(DomainException.class, () -> conversation.applyConstraints(approvedRequest(other)));
+		assertTrue(conversation.getConstraintSet().isEmpty());
+	}
+	
+	@Test
+	void shouldNotApplyTheSameRequestTwice()
+	{
+		Conversation conversation = startConversation();
+		ConstraintChangeRequest request = approvedRequest(COUPLE);
+		
+		conversation.applyConstraints(request);
+		
+		assertThrows(DomainException.class, () -> conversation.applyConstraints(request));
+		assertEquals(1, conversation.getConstraintSet().getAssignments().size());
+	}
+	
+	@Test
+	void shouldNotApplyANullRequest()
+	{
+		assertThrows(DomainException.class, () -> startConversation().applyConstraints(null));
 	}
 	
 	// CITATIONS (5g):

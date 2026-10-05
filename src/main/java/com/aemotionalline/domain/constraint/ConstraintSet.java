@@ -25,21 +25,26 @@ public class ConstraintSet
 	
 	public List<ConstraintAssignment> getAssignments()
 	{
-		return assignments;
+		return List.copyOf(assignments);
 	}
 
 
 
-	public void replaceWith(List<ConstraintAssignment> newAssignments) 
+	void replaceWith(List<ConstraintAssignment> newAssignments)
 	{
         Objects.requireNonNull(newAssignments, "Assignments cannot be null");
 
+        // Checked before copying (List.copyOf would throw a NullPointerException) and before the set is cleared, so a failure changes nothing.
+        if (newAssignments.stream().anyMatch(Objects::isNull))
+        {
+            throw new DomainException("Assignments cannot contain null.");
+        }
+
+        // Copying means the caller can't change the set through its own list later.
+        List<ConstraintAssignment> copy = List.copyOf(newAssignments);
+
         assignments.clear();
-        if (!assignments.isEmpty())
-		{
-			throw new DomainException("The list of constraints wasn't cleared.");
-		}
-        assignments.addAll(newAssignments);
+        assignments.addAll(copy);
     }
 	
 	  // Only the sender's own assignments are evaluated: a constraint on one partner never blocks the other.

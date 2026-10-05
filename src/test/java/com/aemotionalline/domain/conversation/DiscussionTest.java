@@ -7,36 +7,34 @@ import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.message.Message;
-import com.aemotionalline.domain.message.MessageId;
 import com.aemotionalline.domain.negotiation.Proposal;
-import com.aemotionalline.domain.negotiation.ProposalId;
-import com.aemotionalline.domain.user.UserId;
+import com.aemotionalline.domain.Ids;
 
 public class DiscussionTest
 {
 	@Test
 	public void shouldAddMessageOnlyIfNotEmpty()
 	{
-		Message message = new Message(new MessageId(1L), new UserId(10L));
+		Message message = new Message(Ids.message(1L), Ids.user(10L));
 		
-		Proposal proposal = new Proposal(new ProposalId(0L), new UserId(10L), "TEXT");
+		Proposal proposal = new Proposal(Ids.proposal(0L), Ids.user(10L), "TEXT");
 		
-		Discussion discussion = new Discussion(new DiscussionId(50L, 60L), proposal);
+		Discussion discussion = new Discussion(new DiscussionId(Ids.conversation(50L), 60), proposal);
 		
 		assertThrows(DomainException.class, ()-> discussion.addMessage(message));
 	}
 	
 	@Test
-	public void shouldThrowExceptionIfUserIdIsTheSameAsLAstSender()
+	public void shouldThrowExceptionIfUserIdIsTheSameAsLastSender()
 	{
 	
-		Proposal proposal = new Proposal(new ProposalId(0L), new UserId(10L), "TEXT");
+		Proposal proposal = new Proposal(Ids.proposal(0L), Ids.user(10L), "TEXT");
 		
-		Discussion discussion = new Discussion(new DiscussionId(50L, 60L), proposal);
+		Discussion discussion = new Discussion(new DiscussionId(Ids.conversation(50L), 60), proposal);
 		
-		discussion.setLastSender(new UserId(0L));
+		discussion.setLastSender(Ids.user(0L));
 		
-		assertThrows(DomainException.class, ()-> discussion.setLastSender(new UserId(0L)));
+		assertThrows(DomainException.class, ()-> discussion.setLastSender(Ids.user(0L)));
 	}
 	
 }

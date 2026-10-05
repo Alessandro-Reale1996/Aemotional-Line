@@ -50,7 +50,7 @@ public class Discussion
 	}
 
 	// Rejecting the same sender twice in a row is what makes the exchange turn-based.
-	public void setLastSender(UserId lastSender) 
+	void setLastSender(UserId lastSender)
 	{
 		if (lastSender.equals(this.lastSender)) 
 		{
@@ -58,11 +58,6 @@ public class Discussion
 		}
 		
 		this.lastSender = lastSender;
-		
-		if(lastSender != this.lastSender)
-		{
-			throw new DomainException("The sender was not registered as the last sender of the discussion.");
-		}
 	}
 	
 	
@@ -89,7 +84,7 @@ public class Discussion
 		return Objects.hash(id);
 	}
 	
-	public void addMessage(Message message)
+	void addMessage(Message message)
 	{
 		if (message == null)
 		{
@@ -98,11 +93,6 @@ public class Discussion
 		
 		message.ensureReadyToSend();
 		this.messages.add(message);
-		
-		if(!messages.contains(message))
-		{
-			throw new DomainException("Message was not added to the discussion.");
-		}
 	}
 	
 }

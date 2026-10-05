@@ -1,5 +1,6 @@
 package com.aemotionalline.domain.message;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,12 +10,12 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
-import com.aemotionalline.domain.user.UserId;
+import com.aemotionalline.domain.Ids;
 
 public class ParagraphTest
 {
 	@Test
-	void sholdThrowExceptionWhenParagraphIdIsNull()
+	void shouldThrowExceptionWhenParagraphIdIsNull()
 	{		
 		assertThrows(DomainException.class, () -> new SimpleParagraph(null, "Title", "SubTitle", "Body")); 
 	}
@@ -23,7 +24,7 @@ public class ParagraphTest
 	void shouldThrowExceptionWhenAddNullParagraph()
 	{
 		SimpleParagraph paragraph = 
-				new SimpleParagraph(new ParagraphId(20L), "TItle", "SubTitle", "Body");
+				new SimpleParagraph(Ids.paragraph(20L), "TItle", "SubTitle", "Body");
 		
 		
 		assertThrows(DomainException.class, () -> paragraph.addReference(null));
@@ -33,32 +34,32 @@ public class ParagraphTest
 	void shouldCorrectlyAddReference()
 	{
 		SimpleParagraph paragraph = 
-				new SimpleParagraph(new ParagraphId(20L), "TItle", "SubTitle", "Body");
+				new SimpleParagraph(Ids.paragraph(20L), "TItle", "SubTitle", "Body");
 		
 		
-		SimpleParagraph referencingParagraph = new SimpleParagraph(new ParagraphId(10L), "text", "text", "text");
+		SimpleParagraph referencingParagraph = new SimpleParagraph(Ids.paragraph(10L), "text", "text", "text");
 		
 		paragraph.addReference(referencingParagraph);		
 		assertEquals(1, paragraph.getReferences().size()); 
 	}
 	 @Test
-	 void shouldThrowExceptionWhenSelfRefenced()
+	 void shouldThrowExceptionWhenSelfReferenced()
 	 {
-			var paragraph = new SimpleParagraph(new ParagraphId(10L), "TItle", "SubTitle", "Body");
+			var paragraph = new SimpleParagraph(Ids.paragraph(10L), "TItle", "SubTitle", "Body");
 			
-			SimpleParagraph referencingParagraph = new SimpleParagraph(new ParagraphId(10L), "text", "text", "text");
+			SimpleParagraph referencingParagraph = new SimpleParagraph(Ids.paragraph(10L), "text", "text", "text");
 			
 			assertThrows(DomainException.class, () -> paragraph.addReference(referencingParagraph));
 	 }
 	 
 	 @Test
-	 void shouldThrowExceptionWhenRefenceAlredyExist()
+	 void shouldThrowExceptionWhenReferenceAlreadyExists()
 	 {
-			var paragraph = new SimpleParagraph(new ParagraphId(10L), "TItle", "SubTitle", "Body");
+			var paragraph = new SimpleParagraph(Ids.paragraph(10L), "TItle", "SubTitle", "Body");
 			
-			SimpleParagraph firstReferencingParagraph = new SimpleParagraph(new ParagraphId(20L), "text", "text", "text");
+			SimpleParagraph firstReferencingParagraph = new SimpleParagraph(Ids.paragraph(20L), "text", "text", "text");
 			
-			SimpleParagraph secondReferencingParagraph = new SimpleParagraph(new ParagraphId(20L), "text", "text", "text");
+			SimpleParagraph secondReferencingParagraph = new SimpleParagraph(Ids.paragraph(20L), "text", "text", "text");
 			
 			paragraph.addReference(firstReferencingParagraph);
 			
@@ -71,7 +72,7 @@ public class ParagraphTest
 			// 251 characters: above the 250 title limit but below the 350 body limit, which the title check once used by mistake.
 			String longTitle = "t".repeat(251);
 
-			assertThrows(DomainException.class, () -> new QuestionParagraph(new ParagraphId(1L), longTitle, "Body"));
+			assertThrows(DomainException.class, () -> new QuestionParagraph(Ids.paragraph(1L), longTitle, "Body"));
 	 }
 
 	 @Test
@@ -79,23 +80,23 @@ public class ParagraphTest
 	 {
 			String maxTitle = "t".repeat(250);
 
-			new QuestionParagraph(new ParagraphId(1L), maxTitle, "Body");
+			assertDoesNotThrow(() -> new QuestionParagraph(Ids.paragraph(1L), maxTitle, "Body"));
 	 }
 
 	 @Test
 	 void shouldReportTypeMatchingItsSubclass()
 	 {
-			assertEquals(ParagraphType.SIMPLE, new SimpleParagraph(new ParagraphId(1L), "Title", "SubTitle", "Body").getType());
-			assertEquals(ParagraphType.QUESTION, new QuestionParagraph(new ParagraphId(2L), "Title", "Body").getType());
-			assertEquals(ParagraphType.POINTED, new PointedParagraph(new ParagraphId(3L), "Title", "Body").getType());
+			assertEquals(ParagraphType.SIMPLE, new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body").getType());
+			assertEquals(ParagraphType.QUESTION, new QuestionParagraph(Ids.paragraph(2L), "Title", "Body").getType());
+			assertEquals(ParagraphType.POINTED, new PointedParagraph(Ids.paragraph(3L), "Title", "Body").getType());
 	 }
 
 	 @Test
 	 void shouldAllowAPointedParagraphToAnswerOnlyOneQuestion()
 	 {
-			PointedParagraph answer = new PointedParagraph(new ParagraphId(1L), "In risposta a...", "Body");
-			QuestionParagraph firstQuestion = new QuestionParagraph(new ParagraphId(2L), "Why?", "Body");
-			QuestionParagraph secondQuestion = new QuestionParagraph(new ParagraphId(3L), "When?", "Body");
+			PointedParagraph answer = new PointedParagraph(Ids.paragraph(1L), "In risposta a...", "Body");
+			QuestionParagraph firstQuestion = new QuestionParagraph(Ids.paragraph(2L), "Why?", "Body");
+			QuestionParagraph secondQuestion = new QuestionParagraph(Ids.paragraph(3L), "When?", "Body");
 			
 			answer.addReference(firstQuestion);
 			
@@ -106,12 +107,12 @@ public class ParagraphTest
 	 @Test
 	 void shouldNotChangeTheReferencesOfASealedParagraph()
 	 {
-			SimpleParagraph earlier = new SimpleParagraph(new ParagraphId(1L), "Title", "SubTitle", "Body");
-			SimpleParagraph paragraph = new SimpleParagraph(new ParagraphId(2L), "Title", "SubTitle", "Body");
-			PointedParagraph answer = new PointedParagraph(new ParagraphId(3L), "In risposta a...", "Body");
-			QuestionParagraph question = new QuestionParagraph(new ParagraphId(4L), "Why?", "Body");
+			SimpleParagraph earlier = new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body");
+			SimpleParagraph paragraph = new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body");
+			PointedParagraph answer = new PointedParagraph(Ids.paragraph(3L), "In risposta a...", "Body");
+			QuestionParagraph question = new QuestionParagraph(Ids.paragraph(4L), "Why?", "Body");
 			
-			Message message = new Message(new MessageId(1L), new UserId(10L));
+			Message message = new Message(Ids.message(1L), Ids.user(10L));
 			message.addParagraph(paragraph);
 			message.addParagraph(answer);
 			message.seal();
@@ -128,9 +129,9 @@ public class ParagraphTest
 	 @Test
 	 void shouldKeepCitationsSeparateFromReferences()
 	 {
-			SimpleParagraph cited = new SimpleParagraph(new ParagraphId(1L), "Title", "SubTitle", "Body");
-			SimpleParagraph referenced = new SimpleParagraph(new ParagraphId(2L), "Title", "SubTitle", "Body");
-			SimpleParagraph paragraph = new SimpleParagraph(new ParagraphId(3L), "Title", "SubTitle", "Body");
+			SimpleParagraph cited = new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body");
+			SimpleParagraph referenced = new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body");
+			SimpleParagraph paragraph = new SimpleParagraph(Ids.paragraph(3L), "Title", "SubTitle", "Body");
 			
 			paragraph.addCitation(cited);
 			paragraph.addReference(referenced);
@@ -142,8 +143,8 @@ public class ParagraphTest
 	 @Test
 	 void shouldAllowAnyParagraphToCiteAQuestion()
 	 {
-			QuestionParagraph question = new QuestionParagraph(new ParagraphId(1L), "Why?", "Body");
-			SimpleParagraph paragraph = new SimpleParagraph(new ParagraphId(2L), "Title", "SubTitle", "Body");
+			QuestionParagraph question = new QuestionParagraph(Ids.paragraph(1L), "Why?", "Body");
+			SimpleParagraph paragraph = new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body");
 			
 			// Only a pointed paragraph may reference a question, but a citation answers nothing.
 			paragraph.addCitation(question);
@@ -154,8 +155,8 @@ public class ParagraphTest
 	 @Test
 	 void shouldRejectInvalidCitations()
 	 {
-			SimpleParagraph cited = new SimpleParagraph(new ParagraphId(1L), "Title", "SubTitle", "Body");
-			SimpleParagraph paragraph = new SimpleParagraph(new ParagraphId(2L), "Title", "SubTitle", "Body");
+			SimpleParagraph cited = new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body");
+			SimpleParagraph paragraph = new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body");
 			
 			paragraph.addCitation(cited);
 			
@@ -167,10 +168,10 @@ public class ParagraphTest
 	 @Test
 	 void shouldNotAddCitationsToASealedParagraph()
 	 {
-			SimpleParagraph earlier = new SimpleParagraph(new ParagraphId(1L), "Title", "SubTitle", "Body");
-			SimpleParagraph paragraph = new SimpleParagraph(new ParagraphId(2L), "Title", "SubTitle", "Body");
+			SimpleParagraph earlier = new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body");
+			SimpleParagraph paragraph = new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body");
 			
-			Message message = new Message(new MessageId(1L), new UserId(10L));
+			Message message = new Message(Ids.message(1L), Ids.user(10L));
 			message.addParagraph(paragraph);
 			message.seal();
 			
