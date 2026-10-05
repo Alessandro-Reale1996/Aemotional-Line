@@ -34,19 +34,4 @@ public class QuestionParagraph extends Paragraph
                 + " characters");
         }
 	}
-	
-	@Override
-	public void addReference(Paragraph reference)
-	{
-		validateReference(reference);
-		
-		if (reference.getType().equals(ParagraphType.QUESTION))
-		{
-			throw new DomainException("Only PointedParagraphs can reference a Question.");
-		}
-		
-		super.addReference(reference);
-	}
-	
-	
 }

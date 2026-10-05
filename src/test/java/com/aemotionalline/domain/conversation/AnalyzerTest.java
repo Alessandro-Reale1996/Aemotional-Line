@@ -139,7 +139,7 @@ public class AnalyzerTest
 		
 		send(conversation, 2L, COUPLE.getPartnerTwoId(), answerTo(2L, question));
 		
-		assertTrue(Analyzer.discussionNotAnsweredQuestion(conversation.findDiscussion(FIRST_DISCUSSION)).isEmpty());
+		assertTrue(Analyzer.discussionNotAnsweredQuestion(conversation, conversation.findDiscussion(FIRST_DISCUSSION)).isEmpty());
 	}
 	
 	@Test
@@ -154,6 +154,6 @@ public class AnalyzerTest
 		
 		send(conversation, 2L, COUPLE.getPartnerTwoId(), answerTo(3L, answered));
 		
-		assertEquals(List.of(unanswered), Analyzer.discussionNotAnsweredQuestion(conversation.findDiscussion(FIRST_DISCUSSION)));
+		assertEquals(List.of(unanswered), Analyzer.discussionNotAnsweredQuestion(conversation, conversation.findDiscussion(FIRST_DISCUSSION)));
 	}
 }

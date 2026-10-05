@@ -3,15 +3,19 @@ package com.aemotionalline.domain.conversation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.message.Message;
+import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
 
 /**
  * An ordered exchange of messages inside a conversation. It keeps the agreement it was opened under
  * and enforces turn-taking, so the partners are forced to answer each other rather than write in bursts.
+ * A discussion can be opened to expand a topic exposed in a paragraph (its origin): the paragraphs of its
+ * first message then all refer to that paragraph, so a topic can continue across discussions.
  */
 public class Discussion
 {
@@ -21,10 +25,19 @@ public class Discussion
 	private UserId lastSender;
 	private Proposal agreement;
 	
+	// The paragraph this discussion expands, or null when it doesn't start from one (e.g. the conversation's first).
+	private final ParagraphId originParagraphId;
+	
 	public Discussion(DiscussionId id, Proposal agreement)
+	{
+		this(id, agreement, null);
+	}
+	
+	public Discussion(DiscussionId id, Proposal agreement, ParagraphId originParagraphId)
 	{
 		this.id = id;
 		this.agreement = agreement;
+		this.originParagraphId = originParagraphId;
 		
 		this.messages = new ArrayList<Message>();
 	}
@@ -47,6 +60,11 @@ public class Discussion
 	public Proposal getAgreement() 
 	{
 		return agreement;
+	}
+	
+	public Optional<ParagraphId> getOriginParagraphId()
+	{
+		return Optional.ofNullable(originParagraphId);
 	}
 
 	// Rejecting the same sender twice in a row is what makes the exchange turn-based.

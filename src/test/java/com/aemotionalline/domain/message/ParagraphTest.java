@@ -124,19 +124,19 @@ public class ParagraphTest
 			assertTrue(paragraph.getReferences().isEmpty());
 	 }
 
-	 // CITATIONS (5g): a separate kind of link from references.
+	 // SELF-CITATIONS (5g): a separate kind of link from references.
 	 
 	 @Test
-	 void shouldKeepCitationsSeparateFromReferences()
+	 void shouldKeepSelfCitationsSeparateFromReferences()
 	 {
 			SimpleParagraph cited = new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body");
 			SimpleParagraph referenced = new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body");
 			SimpleParagraph paragraph = new SimpleParagraph(Ids.paragraph(3L), "Title", "SubTitle", "Body");
 			
-			paragraph.addCitation(cited);
+			paragraph.addSelfCitation(cited);
 			paragraph.addReference(referenced);
 			
-			assertEquals(List.of(cited), paragraph.getCitations());
+			assertEquals(List.of(cited), paragraph.getSelfCitations());
 			assertEquals(List.of(referenced), paragraph.getReferences());
 	 }
 	 
@@ -146,27 +146,27 @@ public class ParagraphTest
 			QuestionParagraph question = new QuestionParagraph(Ids.paragraph(1L), "Why?", "Body");
 			SimpleParagraph paragraph = new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body");
 			
-			// Only a pointed paragraph may reference a question, but a citation answers nothing.
-			paragraph.addCitation(question);
+			// Only a pointed paragraph may reference a question, but a self-citation answers nothing.
+			paragraph.addSelfCitation(question);
 			
-			assertEquals(1, paragraph.getCitations().size());
+			assertEquals(1, paragraph.getSelfCitations().size());
 	 }
 	 
 	 @Test
-	 void shouldRejectInvalidCitations()
+	 void shouldRejectInvalidSelfCitations()
 	 {
 			SimpleParagraph cited = new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body");
 			SimpleParagraph paragraph = new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body");
 			
-			paragraph.addCitation(cited);
+			paragraph.addSelfCitation(cited);
 			
-			assertThrows(DomainException.class, () -> paragraph.addCitation(null));
-			assertThrows(DomainException.class, () -> paragraph.addCitation(paragraph));
-			assertThrows(DomainException.class, () -> paragraph.addCitation(cited));
+			assertThrows(DomainException.class, () -> paragraph.addSelfCitation(null));
+			assertThrows(DomainException.class, () -> paragraph.addSelfCitation(paragraph));
+			assertThrows(DomainException.class, () -> paragraph.addSelfCitation(cited));
 	 }
 	 
 	 @Test
-	 void shouldNotAddCitationsToASealedParagraph()
+	 void shouldNotAddSelfCitationsToASealedParagraph()
 	 {
 			SimpleParagraph earlier = new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body");
 			SimpleParagraph paragraph = new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body");
@@ -175,7 +175,7 @@ public class ParagraphTest
 			message.addParagraph(paragraph);
 			message.seal();
 			
-			assertThrows(DomainException.class, () -> paragraph.addCitation(earlier));
+			assertThrows(DomainException.class, () -> paragraph.addSelfCitation(earlier));
 	 }
 
 }

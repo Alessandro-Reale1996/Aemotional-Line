@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
@@ -132,10 +133,34 @@ public class Conversation
 	
 
 	/**
-	 * Opens a new topic-specific branch ("discorso specifico"). Like a change of agreement, it requires
+	 * Opens a new discussion that doesn't start from a paragraph. Like a change of agreement, it requires
 	 * a negotiation the partners have both settled, so no branch can start on a text one of them has not accepted.
 	 */
 	public void openDiscussion(Negotiation negotiation)
+	{
+		open(negotiation, null);
+	}
+	
+	/**
+	 * Opens a new topic-specific branch ("discorso specifico") that expands the topic exposed in a paragraph already
+	 * sent. The origin is checked before anything changes, so a rejected request leaves the conversation untouched.
+	 */
+	public void openDiscussion(Negotiation negotiation, ParagraphId originParagraphId)
+	{
+		if (originParagraphId == null)
+		{
+			throw new DomainException("The paragraph to expand can't be null.");
+		}
+		
+		if (!conversationGraph.containsParagraph(originParagraphId))
+		{
+			throw new DomainException("A discussion can only expand a paragraph that was already sent.");
+		}
+		
+		open(negotiation, originParagraphId);
+	}
+	
+	private void open(Negotiation negotiation, ParagraphId originParagraphId)
 	{
 		ensureNegotiationOfThisCouple(negotiation);
 
@@ -150,7 +175,7 @@ public class Conversation
 		// Archiving first rejects a negotiation that was already used before any discussion is added.
 		negotiationArchive.add(negotiation);
 		
-		addDiscussion(new Discussion(generateDiscussionId(), negotiation.getLastProposal()));
+		addDiscussion(new Discussion(generateDiscussionId(), negotiation.getLastProposal(), originParagraphId));
 		}
 		else
 		{
@@ -255,13 +280,22 @@ public class Conversation
 	 * conversation forever: it can't be reused by a later message, nor appear twice in the same one.
 	 * A reference may only point to a paragraph of the message being answered, i.e. the last message of the
 	 * discussion: never to an unsent paragraph, another discussion, an older message or the message itself.
+	 * The one exception is the first message of a discussion opened from a paragraph: it answers that paragraph,
+	 * so every paragraph of it must refer to it, and to nothing else.
 	 * Since every reference then points to an older paragraph, references can't form a cycle.
-	 * A pointed paragraph must answer a question, and each question receives at most one pointed answer;
-	 * as answers can only target the message being answered, counting them inside this message is enough.
+	 * Only a pointed paragraph may answer a question (except in that first message, where any paragraph may refer
+	 * to the question the discussion expands); a pointed paragraph must answer a question, and each question
+	 * receives at most one pointed answer. As answers can only target the message being answered, counting them
+	 * inside this message is enough.
+	 * A self-citation must point to a paragraph its sender already sent, within the topic of the citing paragraph,
+	 * i.e. the topic of the paragraphs it refers to: a paragraph that answers nothing has no topic to cite from.
 	 */
 	private void ensureValidParagraphs(Message message, Discussion discussion)
 	{
-		Set<ParagraphId> answerable = paragraphIdsOfLastMessage(discussion);
+		Optional<ParagraphId> origin = discussion.getOriginParagraphId();
+		boolean answersTheOrigin = discussion.getMessages().isEmpty() && origin.isPresent();
+		
+		Set<ParagraphId> answerable = answersTheOrigin ? Set.of(origin.get()) : paragraphIdsOfLastMessage(discussion);
 		
 		Set<ParagraphId> idsInMessage = new HashSet<>();
 		Set<ParagraphId> questionsAnswered = new HashSet<>();
@@ -284,6 +318,12 @@ public class Conversation
 				throw new DomainException("Pointed paragraph " + paragraph.getId().value() + " must answer a question.");
 			}
 			
+			if (answersTheOrigin && paragraph.getReferences().stream().noneMatch(reference -> reference.getId().equals(origin.get())))
+			{
+				throw new DomainException("Paragraph " + paragraph.getId().value()
+						+ " must refer to the paragraph its discussion expands.");
+			}
+			
 			for (Paragraph reference : paragraph.getReferences())
 			{
 				if (!answerable.contains(reference.getId()))
@@ -292,21 +332,55 @@ public class Conversation
 							+ " can only refer to paragraphs of the message being answered.");
 				}
 				
+				boolean expandsThisQuestion = answersTheOrigin && reference.getId().equals(origin.get());
+				
+				if (reference.getType() == ParagraphType.QUESTION && paragraph.getType() != ParagraphType.POINTED && !expandsThisQuestion)
+				{
+					throw new DomainException("Only pointed paragraphs can answer a question: paragraph "
+							+ paragraph.getId().value() + " refers to question " + reference.getId().value() + ".");
+				}
+				
 				if (paragraph.getType() == ParagraphType.POINTED && !questionsAnswered.add(reference.getId()))
 				{
 					throw new DomainException("Question " + reference.getId().value() + " can receive only one answer.");
 				}
 			}
 			
-			// Citations are exempt from the "message being answered" rule: they may point to any earlier paragraph,
-			// as long as it was already sent and written by the sender.
-			for (Paragraph cited : paragraph.getCitations())
+			ensureValidSelfCitations(paragraph, message.getSenderId());
+		}
+	}
+	
+	// Self-citations are exempt from the "message being answered" rule: they may point to any earlier paragraph of the
+	// sender, as long as it belongs to the topic of the citing paragraph (the topic of the paragraphs it refers to).
+	private void ensureValidSelfCitations(Paragraph paragraph, UserId sender)
+	{
+		if (paragraph.getSelfCitations().isEmpty())
+		{
+			return;
+		}
+		
+		Set<ParagraphId> topic = new HashSet<>();
+		
+		for (Paragraph reference : paragraph.getReferences())
+		{
+			for (Paragraph inTopic : conversationGraph.findConversationBranchContaining(reference))
 			{
-				if (!message.getSenderId().equals(authorOf(cited.getId())))
-				{
-					throw new DomainException("Paragraph " + paragraph.getId().value()
-							+ " can only cite paragraphs its sender already sent.");
-				}
+				topic.add(inTopic.getId());
+			}
+		}
+		
+		for (Paragraph cited : paragraph.getSelfCitations())
+		{
+			if (!sender.equals(authorOf(cited.getId())))
+			{
+				throw new DomainException("Paragraph " + paragraph.getId().value()
+						+ " can only cite paragraphs its sender already sent.");
+			}
+			
+			if (!topic.contains(cited.getId()))
+			{
+				throw new DomainException("Paragraph " + paragraph.getId().value()
+						+ " can only cite paragraphs of its own topic.");
 			}
 		}
 	}

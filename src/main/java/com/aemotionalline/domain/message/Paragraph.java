@@ -8,9 +8,9 @@ import com.aemotionalline.domain.common.DomainException;
 
 /**
  * The smallest unit of a message and a node of the conversation graph. A paragraph replies to earlier ones
- * through {@link #addReference}; subclasses decide which kinds of paragraph they may reference
- * and how long their text may be, which keeps every message short and focused.
- * It can also cite paragraphs its author wrote earlier ({@link #addCitation}): a citation is only a link in the
+ * through {@link #addReference}; subclasses decide how long their text may be (and a pointed paragraph which
+ * paragraph it may reference), which keeps every message short and focused.
+ * It can also cite paragraphs its author wrote earlier ({@link #addSelfCitation}): a self-citation is only a link in the
  * text and takes no part in rebuilding the conversation. Once the message is sent the paragraph is sealed.
  */
 public  abstract class Paragraph 
@@ -19,9 +19,9 @@ public  abstract class Paragraph
 	private final ParagraphType type;
 	private final Set<Paragraph> references;
 	
-	// Citations are a separate kind of link: a pointer to a paragraph the same user wrote earlier, shown as a link
+	// Self-citations are a separate kind of link: a pointer to a paragraph the same user wrote earlier, shown as a link
 	// in the text. Unlike references they don't rebuild the conversation, so the graph and Analyzer ignore them.
-	private final Set<Paragraph> citations;
+	private final Set<Paragraph> selfCitations;
 	
 	// Set when the message containing the paragraph is sent: from then on its references can't change.
 	private boolean sealed;
@@ -55,7 +55,7 @@ public  abstract class Paragraph
 		this.type = type;
 
 		this.references = new LinkedHashSet<Paragraph>();
-		this.citations = new LinkedHashSet<Paragraph>();
+		this.selfCitations = new LinkedHashSet<Paragraph>();
 		
 		this.title = title;
 		this.subtitle = subtitle;
@@ -128,14 +128,14 @@ public  abstract class Paragraph
 	    }
 	}
 	
-	public List<Paragraph> getCitations()
+	public List<Paragraph> getSelfCitations()
 	{
-		return List.copyOf(citations);
+		return List.copyOf(selfCitations);
 	}
 	
-	// A citation answers nothing, so any kind of paragraph may cite any other: the subclasses' reference rules don't apply.
+	// A self-citation answers nothing, so any kind of paragraph may cite any other: the subclasses' reference rules don't apply.
 	// Who wrote the cited paragraph, and whether it was already sent, is checked when the message is sent.
-	public void addCitation(Paragraph cited)
+	public void addSelfCitation(Paragraph cited)
 	{
 		if (sealed)
 		{
@@ -144,7 +144,7 @@ public  abstract class Paragraph
 		
 		if (cited == null)
 		{
-			throw new DomainException("Citation can't be null.");
+			throw new DomainException("Self-citation can't be null.");
 		}
 		
 		if (cited.getId().equals(this.id))
@@ -152,12 +152,12 @@ public  abstract class Paragraph
 			throw new DomainException("Paragraph can't cite itself.");
 		}
 		
-		if (citations.contains(cited))
+		if (selfCitations.contains(cited))
 		{
-			throw new DomainException("Citation already exists.");
+			throw new DomainException("Self-citation already exists.");
 		}
 		
-		citations.add(cited);
+		selfCitations.add(cited);
 	}
 	
 	public boolean isSealed()

@@ -3,8 +3,9 @@ package com.aemotionalline.domain.message;
 import com.aemotionalline.domain.common.DomainException;
 
 /**
- * A free-form paragraph with the most generous limits. It can reply to any paragraph except a question:
- * answering a question requires a {@link PointedParagraph}, so a plain reply can never close one by accident.
+ * A free-form paragraph with the most generous limits. It can refer to any paragraph. Whether it may refer to a
+ * question depends on the message it is sent in (only a {@link PointedParagraph} answers a question, except in the
+ * first message of a discussion that expands it), so that is checked when the message is sent.
  */
 public class SimpleParagraph extends Paragraph
 {
@@ -44,19 +45,4 @@ public class SimpleParagraph extends Paragraph
         }		
 
 	}
-
-	@Override
-	public void addReference(Paragraph reference)
-	{
-		validateReference(reference);
-
-		if (reference.getType().equals(ParagraphType.QUESTION))
-		{
-			throw new DomainException("Only PointedParagraphs can reference a Question.");
-		}
-		
-		super.addReference(reference);
-	}
-	
-	
 }

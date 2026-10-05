@@ -234,7 +234,7 @@ public class ConversationSendMessageTest
 		send(conversation, message(1L, A, own));
 		send(conversation, message(2L, B, simple(2L)));
 		
-		// Pointing back to one's own paragraph is a citation, not a reference.
+		// Pointing back to one's own paragraph is a self-citation, not a reference.
 		SimpleParagraph reply = simple(3L);
 		reply.addReference(own);
 		
@@ -425,70 +425,155 @@ public class ConversationSendMessageTest
 		assertThrows(DomainException.class, () -> startConversation().applyConstraints(null));
 	}
 	
-	// CITATIONS (5g):
+	// SELF-CITATIONS (5g):
 	
 	@Test
-	void shouldAcceptACitationOfTheSendersOwnEarlierParagraph()
+	void shouldAcceptASelfCitationOfTheSendersOwnEarlierParagraph()
 	{
 		Conversation conversation = startConversation();
 		SimpleParagraph own = simple(1L);
 		send(conversation, message(1L, A, own));
-		send(conversation, message(2L, B, simple(2L)));
-		send(conversation, message(3L, A, simple(3L)));
-		send(conversation, message(4L, B, simple(4L)));
 		
-		// Unlike a reference, a citation may point to an older message.
+		// One topic: every reply answers the previous message, so paragraph 1 stays in the topic of the last one.
+		SimpleParagraph second = simple(2L);
+		second.addReference(own);
+		send(conversation, message(2L, B, second));
+		
+		SimpleParagraph third = simple(3L);
+		third.addReference(second);
+		send(conversation, message(3L, A, third));
+		
+		SimpleParagraph fourth = simple(4L);
+		fourth.addReference(third);
+		send(conversation, message(4L, B, fourth));
+		
+		// Unlike a reference, a self-citation may point to an older message of the same topic.
 		SimpleParagraph citing = simple(5L);
-		citing.addCitation(own);
+		citing.addReference(fourth);
+		citing.addSelfCitation(own);
 		
 		assertDoesNotThrow(() -> send(conversation, message(5L, A, citing)));
 		assertUnchanged(conversation, 5, 5, A);
 	}
 	
 	@Test
-	void shouldRejectACitationOfTheOtherPartnersParagraph()
+	void shouldRejectASelfCitationOfTheOtherPartnersParagraph()
 	{
 		Conversation conversation = startConversation();
 		SimpleParagraph othersParagraph = simple(1L);
 		send(conversation, message(1L, A, othersParagraph));
 		
 		SimpleParagraph citing = simple(2L);
-		citing.addCitation(othersParagraph);
+		citing.addSelfCitation(othersParagraph);
 		
 		assertThrows(DomainException.class, () -> send(conversation, message(2L, B, citing)));
 		assertUnchanged(conversation, 1, 1, A);
 	}
 	
 	@Test
-	void shouldRejectACitationOfAParagraphNeverSent()
+	void shouldRejectASelfCitationOfAParagraphNeverSent()
 	{
 		Conversation conversation = startConversation();
 		
 		SimpleParagraph citing = simple(2L);
-		citing.addCitation(simple(99L));
+		citing.addSelfCitation(simple(99L));
 		
 		assertThrows(DomainException.class, () -> send(conversation, message(1L, A, citing)));
 		assertUnchanged(conversation, 0, 0, null);
 	}
 	
 	@Test
-	void shouldLeaveCitationsOutOfTheConversationRebuild()
+	void shouldLeaveSelfCitationsOutOfTheConversationRebuild()
 	{
 		Conversation conversation = startConversation();
-		QuestionParagraph ownQuestion = question(1L);
-		send(conversation, message(1L, A, ownQuestion));
-		send(conversation, message(2L, B, simple(2L)));
 		
-		SimpleParagraph citing = simple(3L);
-		citing.addCitation(ownQuestion);
-		send(conversation, message(3L, A, citing));
+		// One topic, with a question that nobody answers.
+		SimpleParagraph root = simple(1L);
+		send(conversation, message(1L, A, root));
+		
+		SimpleParagraph reply = simple(2L);
+		reply.addReference(root);
+		send(conversation, message(2L, B, reply));
+		
+		QuestionParagraph ownQuestion = question(3L);
+		ownQuestion.addReference(reply);
+		SimpleParagraph plain = simple(4L);
+		plain.addReference(reply);
+		send(conversation, message(3L, A, ownQuestion, plain));
+		
+		SimpleParagraph next = simple(5L);
+		next.addReference(plain);
+		send(conversation, message(4L, B, next));
+		
+		SimpleParagraph citing = simple(6L);
+		citing.addReference(next);
+		citing.addSelfCitation(ownQuestion);
+		send(conversation, message(5L, A, citing));
 		
 		ConversationGraph graph = conversation.getConversationGraph();
 		
-		// The citation joins no topic and answers nothing.
-		assertEquals(List.of(ownQuestion), graph.findConversationBranchContaining(ownQuestion));
+		// The self-citation answers nothing and adds no link: the topic is rebuilt from the references only.
 		assertTrue(graph.findRepliesTo(ownQuestion).isEmpty());
+		assertEquals(List.of(root), graph.findRootsOf(citing));
 		assertEquals(List.of(ownQuestion), Analyzer.conversationNotAnsweredQuestions(conversation));
 	}
-
+	
+	@Test
+	void shouldRejectASelfCitationOutsideTheTopicOfTheCitingParagraph()
+	{
+		Conversation conversation = startConversation();
+		SimpleParagraph firstTopic = simple(1L);
+		SimpleParagraph secondTopic = simple(2L);
+		send(conversation, message(1L, A, firstTopic, secondTopic));
+		
+		SimpleParagraph reply = simple(3L);
+		reply.addReference(secondTopic);
+		send(conversation, message(2L, B, reply));
+		
+		// The reply is about the second topic: the first one is another subject, even if the same user wrote it.
+		SimpleParagraph citing = simple(4L);
+		citing.addReference(reply);
+		citing.addSelfCitation(firstTopic);
+		
+		assertThrows(DomainException.class, () -> send(conversation, message(3L, A, citing)));
+		assertUnchanged(conversation, 2, 3, B);
+	}
+	
+	@Test
+	void shouldRejectASelfCitationInAParagraphThatAnswersNothing()
+	{
+		Conversation conversation = startConversation();
+		SimpleParagraph own = simple(1L);
+		send(conversation, message(1L, A, own));
+		send(conversation, message(2L, B, simple(2L)));
+		
+		// Without references the paragraph has no topic to cite from.
+		SimpleParagraph citing = simple(3L);
+		citing.addSelfCitation(own);
+		
+		assertThrows(DomainException.class, () -> send(conversation, message(3L, A, citing)));
+		assertUnchanged(conversation, 2, 2, B);
+	}
+	
+	@Test
+	void shouldAllowCitingBothTopicsWhenAReplyJoinsThem()
+	{
+		Conversation conversation = startConversation();
+		SimpleParagraph firstTopic = simple(1L);
+		SimpleParagraph secondTopic = simple(2L);
+		send(conversation, message(1L, A, firstTopic, secondTopic));
+		
+		SimpleParagraph join = simple(3L);
+		join.addReference(firstTopic);
+		join.addReference(secondTopic);
+		send(conversation, message(2L, B, join));
+		
+		SimpleParagraph citing = simple(4L);
+		citing.addReference(join);
+		citing.addSelfCitation(firstTopic);
+		citing.addSelfCitation(secondTopic);
+		
+		assertDoesNotThrow(() -> send(conversation, message(3L, A, citing)));
+		assertUnchanged(conversation, 3, 4, A);
+	}
 }
