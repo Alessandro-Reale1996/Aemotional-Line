@@ -1,8 +1,12 @@
 package com.aemotionalline.domain.conversation;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
+import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.ParagraphType;
 import com.aemotionalline.domain.message.QuestionParagraph;
 
@@ -38,7 +42,32 @@ public class Analyzer
 				.toList();
 	}
 
-	private static boolean isAnswered(QuestionParagraph question, Conversation conversation)
+	/**
+	 * The questions a partner chose not to answer: they were in the message being answered, and the reply skipped them.
+	 * Since a question can only be answered by the very next message, these stay unanswered for good, unlike the
+	 * questions of the last message, which are still waiting for a reply (see conversationNotAnsweredQuestions).
+	 */
+	public static List<QuestionParagraph> questionsLeftUnanswered(Conversation conversation)
+	{
+		Set<ParagraphId> skipped = new HashSet<>();
+		
+		for (Discussion discussion : conversation.getDiscussions())
+		{
+			for (Message message : discussion.getMessages())
+			{
+				skipped.addAll(message.getQuestionsLeftUnanswered());
+			}
+		}
+		
+		return conversation.getConversationGraph().getParagraphs()
+				.stream()
+				.filter(paragraph -> skipped.contains(paragraph.getId()))
+				.map(paragraph -> (QuestionParagraph) paragraph)
+				.toList();
+	}
+
+	// Package-private: Conversation uses the same rule to preview which questions a reply would leave unanswered.
+	static boolean isAnswered(QuestionParagraph question, Conversation conversation)
 	{
 		return hasPointedReply(conversation.getConversationGraph().findRepliesTo(question))
 				|| hasDiscussionAnswering(question, conversation);

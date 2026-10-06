@@ -2,6 +2,7 @@ package com.aemotionalline.domain.message;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -88,17 +89,15 @@ public class ParagraphTest
 	 {
 			assertEquals(ParagraphType.SIMPLE, new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body").getType());
 			assertEquals(ParagraphType.QUESTION, new QuestionParagraph(Ids.paragraph(2L), "Title", "Body").getType());
-			assertEquals(ParagraphType.POINTED, new PointedParagraph(Ids.paragraph(3L), "Title", "Body").getType());
+			assertEquals(ParagraphType.POINTED, new PointedParagraph(Ids.paragraph(3L), new QuestionParagraph(Ids.paragraph(4L), "Title", "Body"), "Body").getType());
 	 }
 
 	 @Test
 	 void shouldAllowAPointedParagraphToAnswerOnlyOneQuestion()
 	 {
-			PointedParagraph answer = new PointedParagraph(Ids.paragraph(1L), "In risposta a...", "Body");
 			QuestionParagraph firstQuestion = new QuestionParagraph(Ids.paragraph(2L), "Why?", "Body");
 			QuestionParagraph secondQuestion = new QuestionParagraph(Ids.paragraph(3L), "When?", "Body");
-			
-			answer.addReference(firstQuestion);
+			PointedParagraph answer = new PointedParagraph(Ids.paragraph(1L), firstQuestion, "Body");
 			
 			assertThrows(DomainException.class, () -> answer.addReference(secondQuestion));
 			assertEquals(1, answer.getReferences().size());
@@ -109,8 +108,8 @@ public class ParagraphTest
 	 {
 			SimpleParagraph earlier = new SimpleParagraph(Ids.paragraph(1L), "Title", "SubTitle", "Body");
 			SimpleParagraph paragraph = new SimpleParagraph(Ids.paragraph(2L), "Title", "SubTitle", "Body");
-			PointedParagraph answer = new PointedParagraph(Ids.paragraph(3L), "In risposta a...", "Body");
 			QuestionParagraph question = new QuestionParagraph(Ids.paragraph(4L), "Why?", "Body");
+			PointedParagraph answer = new PointedParagraph(Ids.paragraph(3L), new QuestionParagraph(Ids.paragraph(5L), "When?", "Body"), "Body");
 			
 			Message message = new Message(Ids.message(1L), Ids.user(10L));
 			message.addParagraph(paragraph);
@@ -176,6 +175,36 @@ public class ParagraphTest
 			message.seal();
 			
 			assertThrows(DomainException.class, () -> paragraph.addSelfCitation(earlier));
+	 }
+
+	 // POINTED PARAGRAPHS (section C, point 2): the question is given at creation and sets the standard title.
+	 
+	 @Test
+	 void shouldBuildTheStandardTitleFromTheQuestion()
+	 {
+			QuestionParagraph question = new QuestionParagraph(Ids.paragraph(1L), "Perch\u00e9 sei arrabbiato?", "Body");
+			
+			PointedParagraph answer = new PointedParagraph(Ids.paragraph(2L), question, "Body");
+			
+			assertEquals("In risposta a \u00abPerch\u00e9 sei arrabbiato?\u00bb", answer.getTitle());
+			assertNull(answer.getSubtitle());
+	 }
+	 
+	 @Test
+	 void shouldReferenceTheQuestionGivenAtCreation()
+	 {
+			QuestionParagraph question = new QuestionParagraph(Ids.paragraph(1L), "Why?", "Body");
+			
+			PointedParagraph answer = new PointedParagraph(Ids.paragraph(2L), question, "Body");
+			
+			assertEquals(question, answer.getQuestion());
+			assertEquals(List.of(question), answer.getReferences());
+	 }
+	 
+	 @Test
+	 void shouldNotBuildAPointedParagraphWithoutAQuestion()
+	 {
+			assertThrows(DomainException.class, () -> new PointedParagraph(Ids.paragraph(1L), null, "Body"));
 	 }
 
 }

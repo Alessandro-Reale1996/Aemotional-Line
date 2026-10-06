@@ -19,6 +19,10 @@ public class Message
 	
 	private boolean sealed;
 	
+	// The questions of the answered message that this message left without an answer, recorded when it is sent
+	// (spec 1.3.3: the user may skip a question, but the choice is tracked). Final once the message is sealed.
+	private List<ParagraphId> questionsLeftUnanswered = List.of();
+	
 	public Message(MessageId id, UserId senderId)
 	{
 		super();
@@ -79,8 +83,30 @@ public class Message
 	 * can't be rewritten. As references may only point to paragraphs already sent (and therefore sealed),
 	 * no new link can ever close a cycle.
 	 */
+	public List<ParagraphId> getQuestionsLeftUnanswered()
+	{
+		return questionsLeftUnanswered;
+	}
+	
 	public void seal()
 	{
+		seal(List.of());
+	}
+	
+	// Seals the message and records, in the same step, the questions it left unanswered: the record can't change later.
+	public void seal(List<ParagraphId> questionsLeftUnanswered)
+	{
+		if (sealed)
+		{
+			throw new DomainException("The message is already sealed.");
+		}
+		
+		if (questionsLeftUnanswered == null || questionsLeftUnanswered.stream().anyMatch(Objects::isNull))
+		{
+			throw new DomainException("The questions left unanswered can't be null.");
+		}
+		
+		this.questionsLeftUnanswered = List.copyOf(questionsLeftUnanswered);
 		this.sealed = true;
 		
 		for (Paragraph paragraph : paragraphs)

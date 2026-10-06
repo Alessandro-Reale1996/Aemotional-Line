@@ -13,6 +13,7 @@ import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.ParagraphType;
+import com.aemotionalline.domain.message.QuestionParagraph;
 import com.aemotionalline.domain.negotiation.Negotiation;
 import com.aemotionalline.domain.negotiation.NegotiationArchive;
 import com.aemotionalline.domain.negotiation.Proposal;
@@ -266,13 +267,19 @@ public class Conversation
 	    
 	    ensureValidParagraphs(message, discussion);
 	    
+	    // Computed before anything changes, so the draft's answers are counted from the message itself.
+	    List<ParagraphId> skippedQuestions = questionsLeftUnanswered(message, discussion)
+	    		.stream()
+	    		.map(QuestionParagraph::getId)
+	    		.toList();
+	    
 	    // From here on nothing can fail: the message is valid and the conversation can change.
 	    discussion.setLastSender(sender);
 	    discussion.addMessage(message);
 	    
 	    conversationGraph.addAllParagraphsInMessage(message);
 	    
-	    message.seal();
+	    message.seal(skippedQuestions);
 	}
 	
 	/**
@@ -284,12 +291,56 @@ public class Conversation
 	 * so every paragraph of it must refer to it, and to nothing else.
 	 * Since every reference then points to an older paragraph, references can't form a cycle.
 	 * Only a pointed paragraph may answer a question (except in that first message, where any paragraph may refer
-	 * to the question the discussion expands); a pointed paragraph must answer a question, and each question
-	 * receives at most one pointed answer. As answers can only target the message being answered, counting them
-	 * inside this message is enough.
+	 * to the question the discussion expands); a pointed paragraph always answers one question (PointedParagraph
+	 * guarantees it at creation), and each question receives at most one pointed answer. As answers can only
+	 * target the message being answered, counting them inside this message is enough.
 	 * A self-citation must point to a paragraph its sender already sent, within the topic of the citing paragraph,
 	 * i.e. the topic of the paragraphs it refers to: a paragraph that answers nothing has no topic to cite from.
 	 */
+	/**
+	 * Preview for the "you are leaving questions unanswered" warning (spec 1.3.3): the questions of the message being
+	 * answered that this draft would not answer. It changes nothing and does not validate the draft; sending it
+	 * records the same list in the message. A question already answered by a discussion opened from it doesn't count.
+	 */
+	public List<QuestionParagraph> questionsLeftUnansweredBy(Message message, DiscussionId discussionId)
+	{
+		if (message == null)
+		{
+			throw new DomainException("Message can't be null.");
+		}
+		
+		return questionsLeftUnanswered(message, findDiscussion(discussionId));
+	}
+	
+	private List<QuestionParagraph> questionsLeftUnanswered(Message message, Discussion discussion)
+	{
+		List<Message> previousMessages = discussion.getMessages();
+		
+		// The first message of a discussion answers no message (the origin, if any, is expanded, not skipped).
+		if (previousMessages.isEmpty())
+		{
+			return List.of();
+		}
+		
+		Set<ParagraphId> answeredByDraft = new HashSet<>();
+		
+		for (Paragraph paragraph : message.getParagraphs())
+		{
+			if (paragraph.getType() == ParagraphType.POINTED)
+			{
+				paragraph.getReferences().forEach(reference -> answeredByDraft.add(reference.getId()));
+			}
+		}
+		
+		return previousMessages.getLast().getParagraphs()
+				.stream()
+				.filter(paragraph -> paragraph.getType() == ParagraphType.QUESTION)
+				.map(paragraph -> (QuestionParagraph) paragraph)
+				.filter(question -> !answeredByDraft.contains(question.getId()))
+				.filter(question -> !Analyzer.isAnswered(question, this))
+				.toList();
+	}
+	
 	private void ensureValidParagraphs(Message message, Discussion discussion)
 	{
 		Optional<ParagraphId> origin = discussion.getOriginParagraphId();
@@ -310,12 +361,6 @@ public class Conversation
 			if (conversationGraph.containsParagraph(paragraph.getId()))
 			{
 				throw new DomainException("Paragraph " + paragraph.getId().value() + " was already sent.");
-			}
-			
-			// "In risposta a ...": a pointed paragraph without a question has nothing to answer.
-			if (paragraph.getType() == ParagraphType.POINTED && paragraph.getReferences().isEmpty())
-			{
-				throw new DomainException("Pointed paragraph " + paragraph.getId().value() + " must answer a question.");
 			}
 			
 			if (answersTheOrigin && paragraph.getReferences().stream().noneMatch(reference -> reference.getId().equals(origin.get())))

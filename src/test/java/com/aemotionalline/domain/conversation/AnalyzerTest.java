@@ -58,11 +58,7 @@ public class AnalyzerTest
 	
 	private static PointedParagraph answerTo(long id, QuestionParagraph question)
 	{
-		PointedParagraph answer = new PointedParagraph(Ids.paragraph(id), "In risposta a...", "Answer");
-		
-		answer.addReference(question);
-		
-		return answer;
+		return new PointedParagraph(Ids.paragraph(id), question, "Answer");
 	}
 	
 	// conversationNotAnsweredQuestions():

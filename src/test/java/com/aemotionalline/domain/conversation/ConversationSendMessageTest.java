@@ -265,14 +265,7 @@ public class ConversationSendMessageTest
 	
 	private static PointedParagraph answer(long id, QuestionParagraph question)
 	{
-		PointedParagraph answer = new PointedParagraph(Ids.paragraph(id), "In risposta a...", "Answer");
-		
-		if (question != null)
-		{
-			answer.addReference(question);
-		}
-		
-		return answer;
+		return new PointedParagraph(Ids.paragraph(id), question, "Answer");
 	}
 	
 	@Test
@@ -299,13 +292,10 @@ public class ConversationSendMessageTest
 	}
 	
 	@Test
-	void shouldRejectAPointedParagraphWithoutAQuestion()
+	void shouldNotBuildAPointedParagraphWithoutAQuestion()
 	{
-		Conversation conversation = startConversation();
-		send(conversation, message(1L, A, question(1L)));
-		
-		assertThrows(DomainException.class, () -> send(conversation, message(2L, B, answer(2L, null))));
-		assertUnchanged(conversation, 1, 1, A);
+		// Since section C point 2 the question is a constructor argument: the rule holds before any send.
+		assertThrows(DomainException.class, () -> answer(2L, null));
 	}
 	
 	@Test
@@ -313,8 +303,10 @@ public class ConversationSendMessageTest
 	{
 		Conversation conversation = startConversation();
 		
-		// The first message answers nothing, so a pointed paragraph there can never have a question.
-		assertThrows(DomainException.class, () -> send(conversation, message(1L, A, answer(1L, null))));
+		// The first message answers nothing, so whatever question a pointed paragraph answers, it is out of reach.
+		QuestionParagraph neverSent = question(9L);
+		
+		assertThrows(DomainException.class, () -> send(conversation, message(1L, A, answer(1L, neverSent))));
 		assertUnchanged(conversation, 0, 0, null);
 	}
 

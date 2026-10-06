@@ -98,11 +98,7 @@ public class ConversationDiscussionOriginTest
 
 	private static PointedParagraph answer(long id, QuestionParagraph question)
 	{
-		PointedParagraph answer = new PointedParagraph(Ids.paragraph(id), "In risposta a...", "Answer");
-
-		answer.addReference(question);
-
-		return answer;
+		return new PointedParagraph(Ids.paragraph(id), question, "Answer");
 	}
 
 	// The first discussion holds the origin, sent by A; the second one expands it.
@@ -264,10 +260,10 @@ public class ConversationDiscussionOriginTest
 	{
 		SimpleParagraph origin = simple(1L);
 		Conversation conversation = conversationExpanding(origin);
-		PointedParagraph pointed = new PointedParagraph(Ids.paragraph(3L), "In risposta a...", "Answer");
+		// A pointed paragraph can only answer a question, and this discussion expands a simple paragraph:
+		// whatever question it answers is not the origin, so the first message rejects it.
+		PointedParagraph pointed = new PointedParagraph(Ids.paragraph(3L), new QuestionParagraph(Ids.paragraph(9L), "Why?", "Body"), "Answer");
 
-		// A pointed paragraph refers only to questions, so it has nothing valid to refer to here.
-		assertThrows(DomainException.class, () -> pointed.addReference(origin));
 		assertThrows(DomainException.class, () -> send(conversation, SECOND,
 				message(2L, B, simpleReplyingTo(2L, origin), pointed)));
 		assertSecondDiscussionEmpty(conversation, 1);

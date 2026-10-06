@@ -3,19 +3,20 @@ package com.aemotionalline.domain.message;
 import com.aemotionalline.domain.common.DomainException;
 
 /**
- * A direct answer to a question. It may reference only {@link QuestionParagraph}s, and this is the only
- * paragraph kind allowed to do so, which makes "who answered which question" unambiguous in the graph.
- * It answers exactly one question: a second reference is rejected here, while the requirement of having
- * one at all is checked when the message is sent (a paragraph is built before its reference is added).
+ * A direct answer to a question ("paragrafo puntuale"). It answers exactly one {@link QuestionParagraph},
+ * which is given when it is created: the type makes it impossible to build a pointed paragraph without a question,
+ * or one that answers anything else (a simple paragraph can never receive a pointed answer).
+ * Its title is not written by the user: the spec wants it standardized, so it is "In risposta a «question title»".
+ * Whether the question belongs to the message being answered is checked when the message is sent.
  */
 public class PointedParagraph extends Paragraph
 {
 	private static final int MAX_BODY_LENGTH = 500;
 	
 	public PointedParagraph
-	(ParagraphId id, String title, String body)
+	(ParagraphId id, QuestionParagraph question, String body)
 	{
-		super(id, ParagraphType.POINTED, title, null, body);
+		super(id, ParagraphType.POINTED, standardTitle(question), null, body);
 		
 		if(body != null && body.length() > MAX_BODY_LENGTH)
         {
@@ -24,25 +25,33 @@ public class PointedParagraph extends Paragraph
                 + MAX_BODY_LENGTH
                 + " characters");
         }
+		
+		// The overridden addReference below rejects every reference, so the base one is called directly.
+		super.addReference(question);
+	}
+	
+	// Static because it runs before the constructor body: the title must exist when Paragraph is built.
+	private static String standardTitle(QuestionParagraph question)
+	{
+		if (question == null)
+		{
+			throw new DomainException("A pointed paragraph must answer a question.");
+		}
+		
+		return "In risposta a \u00ab" + question.getTitle() + "\u00bb";
+	}
+	
+	public QuestionParagraph getQuestion()
+	{
+		return (QuestionParagraph) getReferences().get(0);
 	}
 
+	// The question is fixed at creation: a pointed paragraph never gets a second reference.
 	@Override
 	public void addReference(Paragraph reference)
 	{
 		validateReference(reference);
 		
-		if (!reference.getType().equals(ParagraphType.QUESTION))
-		{
-			throw new DomainException("PointedParagraphs can reference only Questions.");
-		}
-		
-		if (!getReferences().isEmpty())
-		{
-			throw new DomainException("A pointed paragraph answers exactly one question.");
-		}
-		
-		super.addReference(reference);
+		throw new DomainException("A pointed paragraph answers exactly one question, given when it is created.");
 	}
-	
-	
 }
