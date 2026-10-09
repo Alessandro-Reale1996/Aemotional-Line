@@ -20,7 +20,7 @@ public class ProposalArchiveEncapsulationTest
 {
 	private Negotiation negotiationWithOneSentProposal(Couple couple)
 	{
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
 		negotiation.acceptNegotiation(couple.getPartnerTwoId());
@@ -34,7 +34,7 @@ public class ProposalArchiveEncapsulationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 		Negotiation negotiation = negotiationWithOneSentProposal(couple);
-		Proposal intruder = new Proposal(Ids.proposal(9L), couple.getPartnerTwoId(), "INTRUDER");
+		Proposal intruder = new AgreementProposal(Ids.proposal(9L), couple.getPartnerTwoId(), "INTRUDER");
 
 		assertThrows(UnsupportedOperationException.class, () -> negotiation.getProposals().add(intruder));
 		assertEquals(1, negotiation.getProposals().size());
@@ -49,7 +49,7 @@ public class ProposalArchiveEncapsulationTest
 		List<Proposal> before = negotiation.getProposals();
 
 		negotiation.refuseProposal(couple.getPartnerTwoId(), Ids.proposal(1L));
-		negotiation.editCurrentProposal(couple.getPartnerTwoId(), "EDITED");
+		negotiation.editCurrentProposal(couple.getPartnerTwoId(), new AgreementText("EDITED"));
 		negotiation.sendProposal(couple.getPartnerTwoId(), "WHY");
 
 		assertEquals(1, before.size());

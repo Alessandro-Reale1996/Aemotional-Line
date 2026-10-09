@@ -23,7 +23,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 		
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 		
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 		
@@ -38,7 +38,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 		
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 		
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 		
@@ -57,7 +57,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 		
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 		
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 		
@@ -69,7 +69,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 		
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 		
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 		
@@ -81,7 +81,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 		
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 		
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 		
@@ -102,7 +102,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -114,7 +114,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -129,7 +129,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -143,7 +143,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -163,7 +163,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -178,12 +178,12 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
 		// Partner two holds the turn but must first accept or refuse the request to talk.
-		assertThrows(DomainException.class, ()-> negotiation.editCurrentProposal(couple.getPartnerTwoId(), "OTHER TEXT"));
+		assertThrows(DomainException.class, ()-> negotiation.editCurrentProposal(couple.getPartnerTwoId(), new AgreementText("OTHER TEXT")));
 	}
 
 	@Test
@@ -191,7 +191,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -208,7 +208,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -229,7 +229,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -243,7 +243,7 @@ public class NegotiationTest
 
 		assertEquals(Ids.proposal(1L), draft.getId());
 		assertEquals(couple.getPartnerTwoId(), draft.getAuthor());
-		assertEquals("TEXT", draft.getText());
+		assertEquals(new AgreementText("TEXT"), draft.getContent());
 		assertEquals(ProposalStatus.DRAFT, draft.getProposalStatus());
 		// The refuser keeps the turn: they are now editing and must send the counter-proposal.
 		assertEquals(couple.getPartnerTwoId(), negotiation.getCurrentResponder());
@@ -254,7 +254,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -264,14 +264,14 @@ public class NegotiationTest
 
 		negotiation.refuseProposal(couple.getPartnerTwoId(), Ids.proposal(1L));
 
-		negotiation.editCurrentProposal(couple.getPartnerTwoId(), "EDITED TEXT");
+		negotiation.editCurrentProposal(couple.getPartnerTwoId(), new AgreementText("EDITED TEXT"));
 
 		negotiation.sendProposal(couple.getPartnerTwoId(), "WHY I CHANGED IT");
 
 		assertEquals(2, negotiation.getProposals().size());
 		assertEquals(ProposalStatus.REFUSED, negotiation.getProposals().get(0).getProposalStatus());
-		assertEquals("TEXT", negotiation.getProposals().get(0).getText());
-		assertEquals("EDITED TEXT", negotiation.getLastProposal().getText());
+		assertEquals(new AgreementText("TEXT"), negotiation.getProposals().get(0).getContent());
+		assertEquals(new AgreementText("EDITED TEXT"), negotiation.getLastProposal().getContent());
 		assertEquals("WHY I CHANGED IT", negotiation.getLastProposal().getJustification());
 		assertEquals(ProposalStatus.WAITING_FOR_RESPONSE, negotiation.getLastProposal().getProposalStatus());
 		assertEquals(couple.getPartnerOneId(), negotiation.getCurrentResponder());
@@ -283,7 +283,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -302,7 +302,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -325,7 +325,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -334,7 +334,7 @@ public class NegotiationTest
 		negotiation.sendProposal(couple.getPartnerOneId(), "JUSTIFICATION TEXT");
 
 		// Partner two holds the turn, but has not refused yet, so there is no draft to edit.
-		assertThrows(DomainException.class, ()-> negotiation.editCurrentProposal(couple.getPartnerTwoId(), "OTHER TEXT"));
+		assertThrows(DomainException.class, ()-> negotiation.editCurrentProposal(couple.getPartnerTwoId(), new AgreementText("OTHER TEXT")));
 	}
 
 	@Test
@@ -342,7 +342,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -352,7 +352,7 @@ public class NegotiationTest
 
 		negotiation.acceptProposal(couple.getPartnerTwoId());
 
-		assertThrows(DomainException.class, ()-> negotiation.editCurrentProposal(couple.getPartnerTwoId(), "OTHER TEXT"));
+		assertThrows(DomainException.class, ()-> negotiation.editCurrentProposal(couple.getPartnerTwoId(), new AgreementText("OTHER TEXT")));
 	}
 
 	@Test
@@ -360,7 +360,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
@@ -370,7 +370,7 @@ public class NegotiationTest
 
 		negotiation.refuseProposal(couple.getPartnerTwoId(), Ids.proposal(1L));
 
-		assertThrows(DomainException.class, ()-> negotiation.editCurrentProposal(couple.getPartnerOneId(), "OTHER TEXT"));
+		assertThrows(DomainException.class, ()-> negotiation.editCurrentProposal(couple.getPartnerOneId(), new AgreementText("OTHER TEXT")));
 	}
 
 	@Test
@@ -378,15 +378,15 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC());
 
 		negotiation.acceptNegotiation(couple.getPartnerTwoId());
 
-		assertThrows(DomainException.class, ()-> negotiation.editCurrentProposal(couple.getPartnerOneId(), "   "));
+		assertThrows(DomainException.class, ()-> negotiation.editCurrentProposal(couple.getPartnerOneId(), new AgreementText("   ")));
 
-		assertEquals("TEXT", negotiation.getCurrentProposal().getText());
+		assertEquals(new AgreementText("TEXT"), negotiation.getCurrentProposal().getContent());
 	}
 
 	@Test
@@ -394,7 +394,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), Ids.user(999L), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), Ids.user(999L), "TEXT");
 
 		assertThrows(DomainException.class, ()-> Negotiation.start(Ids.negotiation(100L), couple, proposal, Clock.systemUTC()));
 	}
@@ -404,7 +404,7 @@ public class NegotiationTest
 	{
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT");
 
 		Instant now = Instant.parse("2026-10-01T10:00:00Z");
 

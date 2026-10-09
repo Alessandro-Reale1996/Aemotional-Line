@@ -20,7 +20,7 @@ public class NegotiationArchiveTest
 		
 		Couple couple = new Couple(Ids.couple(10L), Ids.user(1L), Ids.user(2L), Ids.user(3L));
 		
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEST TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEST TEXT");
 		
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(0L), couple, proposal, Clock.systemUTC());
 		
@@ -37,7 +37,7 @@ public class NegotiationArchiveTest
 		
 		Couple couple = new Couple(Ids.couple(10L), Ids.user(1L), Ids.user(2L), Ids.user(3L));
 		
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEST TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEST TEXT");
 		
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(0L), couple, proposal, Clock.systemUTC());
 		
@@ -55,7 +55,7 @@ public class NegotiationArchiveTest
 		
 		Couple couple = new Couple(Ids.couple(10L), Ids.user(1L), Ids.user(2L), Ids.user(3L));
 		
-		Proposal proposal = new Proposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEST TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEST TEXT");
 		
 		Negotiation negotiation0 = Negotiation.start(Ids.negotiation(0L), couple, proposal, Clock.systemUTC());
 		

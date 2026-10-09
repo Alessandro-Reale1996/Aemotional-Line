@@ -143,7 +143,7 @@ public class Negotiation
     	
     	proposals.getLast().setProposalStatus(ProposalStatus.REFUSED);
     	
-    	Proposal proposal = new Proposal(idResponse, user, proposals.getLast().getText());
+    	Proposal proposal = proposals.getLast().draftFor(idResponse, user);
     	
     	this.currentProposal = proposal;
     }
@@ -164,14 +164,12 @@ public class Negotiation
     	return proposals.getLast();
     }
     
-    public void editCurrentProposal(UserId user, String text)
+    public void editCurrentProposal(UserId user, ProposalContent content)
     {
     	ensureCanAct(user);
     	
     	ensureNegotiationStatus(NegotiationStatus.ACCEPTED);
     	
-    	Proposal.ensureValidText(text);
-    
     	if(this.currentProposal == null)
     	{
     		throw new DomainException("There is not a proposal to edit.");
@@ -182,7 +180,7 @@ public class Negotiation
     		throw new DomainException("Only the author of the proposal can edit it.");
     	}
     	
-    	this.currentProposal.setText(text);
+    	this.currentProposal.setContent(content);
     }
     
     public void sendProposal(UserId user, String justification)

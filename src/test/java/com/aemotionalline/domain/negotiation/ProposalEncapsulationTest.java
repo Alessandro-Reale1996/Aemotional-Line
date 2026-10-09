@@ -17,7 +17,7 @@ public class ProposalEncapsulationTest
 		assertNotPublic("setProposalStatus");
 		assertNotPublic("setSentAt");
 		assertNotPublic("setJustification");
-		assertNotPublic("setText");
+		assertNotPublic("setContent");
 	}
 
 	private static void assertNotPublic(String methodName)

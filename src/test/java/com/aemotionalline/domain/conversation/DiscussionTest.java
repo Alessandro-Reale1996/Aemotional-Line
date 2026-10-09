@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.message.Message;
+import com.aemotionalline.domain.negotiation.AgreementProposal;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.Ids;
 
@@ -17,9 +18,7 @@ public class DiscussionTest
 	{
 		Message message = new Message(Ids.message(1L), Ids.user(10L));
 		
-		Proposal proposal = new Proposal(Ids.proposal(0L), Ids.user(10L), "TEXT");
-		
-		Discussion discussion = new Discussion(new DiscussionId(Ids.conversation(50L), 60), proposal);
+		Discussion discussion = new Discussion(new DiscussionId(Ids.conversation(50L), 60), null);
 		
 		assertThrows(DomainException.class, ()-> discussion.addMessage(message));
 	}
@@ -28,9 +27,7 @@ public class DiscussionTest
 	public void shouldThrowExceptionIfUserIdIsTheSameAsLastSender()
 	{
 	
-		Proposal proposal = new Proposal(Ids.proposal(0L), Ids.user(10L), "TEXT");
-		
-		Discussion discussion = new Discussion(new DiscussionId(Ids.conversation(50L), 60), proposal);
+		Discussion discussion = new Discussion(new DiscussionId(Ids.conversation(50L), 60), null);
 		
 		discussion.setLastSender(Ids.user(0L));
 		

@@ -1,17 +1,21 @@
 package com.aemotionalline.domain.conversation;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
+import com.aemotionalline.domain.negotiation.AgreementProposal;
+import com.aemotionalline.domain.negotiation.DiscussionProposal;
+import com.aemotionalline.domain.negotiation.DiscussionTitle;
 import com.aemotionalline.domain.negotiation.Negotiation;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
@@ -30,7 +34,7 @@ public class ConversationAgreementTest
 
 	private static Negotiation draftNegotiation(long id)
 	{
-		Proposal proposal = new Proposal(Ids.proposal(id), A, "TEXT " + id);
+		Proposal proposal = new AgreementProposal(Ids.proposal(id), A, "TEXT " + id);
 
 		return Negotiation.start(Ids.negotiation(id), COUPLE, proposal, Clock.systemUTC());
 	}
@@ -49,6 +53,32 @@ public class ConversationAgreementTest
 	private static Negotiation settledNegotiation(long id)
 	{
 		Negotiation negotiation = negotiationWithPendingProposal(id);
+
+		negotiation.acceptProposal(B);
+
+		return negotiation;
+	}
+
+	private static Negotiation draftDiscussionNegotiation(long id)
+	{
+		Proposal proposal = new DiscussionProposal(Ids.proposal(id), A, "TITLE " + id, "SUBTITLE " + id);
+
+		return Negotiation.start(Ids.negotiation(id), COUPLE, proposal, Clock.systemUTC());
+	}
+
+	private static Negotiation discussionWithPendingProposal(long id)
+	{
+		Negotiation negotiation = draftDiscussionNegotiation(id);
+
+		negotiation.acceptNegotiation(B);
+		negotiation.sendProposal(A, "JUSTIFICATION");
+
+		return negotiation;
+	}
+
+	private static Negotiation settledDiscussionNegotiation(long id)
+	{
+		Negotiation negotiation = discussionWithPendingProposal(id);
 
 		negotiation.acceptProposal(B);
 
@@ -124,7 +154,7 @@ public class ConversationAgreementTest
 	{
 		Conversation conversation = startConversation();
 
-		assertThrows(DomainException.class, () -> conversation.openDiscussion(draftNegotiation(70L)));
+		assertThrows(DomainException.class, () -> conversation.openDiscussion(draftDiscussionNegotiation(70L)));
 		assertEquals(1, conversation.getDiscussions().size());
 	}
 
@@ -133,7 +163,7 @@ public class ConversationAgreementTest
 	{
 		Conversation conversation = startConversation();
 
-		assertThrows(DomainException.class, () -> conversation.openDiscussion(negotiationWithPendingProposal(70L)));
+		assertThrows(DomainException.class, () -> conversation.openDiscussion(discussionWithPendingProposal(70L)));
 		assertEquals(1, conversation.getDiscussions().size());
 	}
 
@@ -141,7 +171,7 @@ public class ConversationAgreementTest
 	void shouldNotOpenADiscussionWithAnAcceptedNegotiationThatHasNoProposal()
 	{
 		Conversation conversation = startConversation();
-		Negotiation negotiation = draftNegotiation(70L);
+		Negotiation negotiation = draftDiscussionNegotiation(70L);
 		negotiation.acceptNegotiation(B);
 
 		assertThrows(DomainException.class, () -> conversation.openDiscussion(negotiation));
@@ -152,14 +182,14 @@ public class ConversationAgreementTest
 	void shouldLeaveTheConversationUsableWhenANegotiationIsReused()
 	{
 		Conversation conversation = startConversation();
-		Negotiation negotiation = settledNegotiation(70L);
+		Negotiation negotiation = settledDiscussionNegotiation(70L);
 		conversation.openDiscussion(negotiation);
 
 		// A rejected reuse must not leave a half-opened discussion behind, or the next discussion could never be opened.
 		assertThrows(DomainException.class, () -> conversation.openDiscussion(negotiation));
 		assertEquals(2, conversation.getDiscussions().size());
 
-		conversation.openDiscussion(settledNegotiation(80L));
+		conversation.openDiscussion(settledDiscussionNegotiation(80L));
 
 		assertEquals(3, conversation.getDiscussions().size());
 	}
@@ -182,9 +212,9 @@ public class ConversationAgreementTest
 		Conversation conversation = startConversation();
 
 		conversation.modifyAgreement(settledNegotiation(70L));
-		conversation.openDiscussion(settledNegotiation(80L));
+		conversation.openDiscussion(settledDiscussionNegotiation(80L));
 		conversation.modifyAgreement(settledNegotiation(90L));
-		conversation.openDiscussion(settledNegotiation(100L));
+		conversation.openDiscussion(settledDiscussionNegotiation(100L));
 
 		assertEquals(3, conversation.getDiscussions().size());
 		assertEquals(new DiscussionId(Ids.conversation(321L), 0), conversation.findDiscussion(new DiscussionId(Ids.conversation(321L), 0)).getId());
@@ -200,7 +230,7 @@ public class ConversationAgreementTest
 
 		for (long i = 1; i < 20; i++)
 		{
-			conversation.openDiscussion(settledNegotiation(100L + i));
+			conversation.openDiscussion(settledDiscussionNegotiation(100L + i));
 		}
 
 		List<Discussion> discussions = conversation.getDiscussions();
@@ -214,16 +244,47 @@ public class ConversationAgreementTest
 	}
 
 	@Test
-	void shouldGiveEachDiscussionTheAgreementItWasOpenedUnder()
+	void shouldGiveTheMainDiscussionNoTitleAndEachBranchTheTitleItWasSettledWith()
 	{
 		Conversation conversation = startConversation();
-		Proposal original = conversation.getAgreement();
 
-		Negotiation change = settledNegotiation(70L);
-		conversation.modifyAgreement(change);
-		conversation.openDiscussion(settledNegotiation(80L));
+		conversation.openDiscussion(settledDiscussionNegotiation(80L));
 
-		assertSame(original, conversation.findDiscussion(new DiscussionId(Ids.conversation(321L), 0)).getAgreement());
-		assertNotEquals(original, conversation.findDiscussion(new DiscussionId(Ids.conversation(321L), 1)).getAgreement());
+		assertEquals(Optional.empty(), conversation.findDiscussion(new DiscussionId(Ids.conversation(321L), 0)).getTitle());
+		assertEquals(Optional.of(new DiscussionTitle("TITLE 80", "SUBTITLE 80")), conversation.findDiscussion(new DiscussionId(Ids.conversation(321L), 1)).getTitle());
+	}
+
+	// KIND OF PROPOSAL:
+
+	@Test
+	void shouldNotOpenADiscussionWithAnAgreementNegotiation()
+	{
+		Conversation conversation = startConversation();
+		Negotiation agreement = settledNegotiation(70L);
+
+		assertThrows(DomainException.class, () -> conversation.openDiscussion(agreement));
+		assertEquals(1, conversation.getDiscussions().size());
+
+		// The rejected negotiation was not used up.
+		assertDoesNotThrow(() -> conversation.modifyAgreement(agreement));
+	}
+
+	@Test
+	void shouldNotModifyTheAgreementWithADiscussionNegotiation()
+	{
+		Conversation conversation = startConversation();
+		Negotiation discussion = settledDiscussionNegotiation(70L);
+		Proposal before = conversation.getAgreement();
+
+		assertThrows(DomainException.class, () -> conversation.modifyAgreement(discussion));
+		assertSame(before, conversation.getAgreement());
+
+		assertDoesNotThrow(() -> conversation.openDiscussion(discussion));
+	}
+
+	@Test
+	void shouldNotStartAConversationWithADiscussionNegotiation()
+	{
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), COUPLE, settledDiscussionNegotiation(60L)));
 	}
 }

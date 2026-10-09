@@ -47,10 +47,18 @@ public class ConstraintSet
         assignments.addAll(copy);
     }
 	
-	  // Only the sender's own assignments are evaluated: a constraint on one partner never blocks the other.
-	  // The context is needed only when there is something to check: a sender without constraints may pass null.
+	  // Sending is the default action: this is the check of the constraints that restrict writing.
 	  public void ensureSatisfiedBy(UserId userId, ConstraintContext context) 
 	  {
+	        ensureSatisfiedBy(userId, context, ConstraintScope.WRITE);
+	  }
+
+	  // Only the user's own assignments that cover the action (READ or WRITE) are evaluated: a constraint on one partner
+	  // never blocks the other. The context is needed only when there is something to check: a user without constraints may pass null.
+	  public void ensureSatisfiedBy(UserId userId, ConstraintContext context, ConstraintScope action) 
+	  {
+	        Objects.requireNonNull(action);
+
 	        if (userId == null)
 	        {
 	            throw new DomainException("User id cannot be null.");
@@ -58,6 +66,7 @@ public class ConstraintSet
 
 	        List<ConstraintAssignment> userAssignments = assignments.stream()
 	            .filter(assignment -> assignment.getUserId().equals(userId))
+	            .filter(assignment -> assignment.getConstraint().getScope().covers(action))
 	            .toList();
 
 	        if (userAssignments.isEmpty())

@@ -21,6 +21,8 @@ import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.SimpleParagraph;
+import com.aemotionalline.domain.negotiation.AgreementProposal;
+import com.aemotionalline.domain.negotiation.DiscussionProposal;
 import com.aemotionalline.domain.negotiation.Negotiation;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
@@ -39,7 +41,7 @@ public class ConversationTest
 
 	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new AgreementProposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
 	    Negotiation negotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
@@ -66,7 +68,7 @@ public class ConversationTest
 
 	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new AgreementProposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
 	    Negotiation negotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
@@ -93,7 +95,7 @@ public class ConversationTest
 
 	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new AgreementProposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
 	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
@@ -105,7 +107,7 @@ public class ConversationTest
 
 	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
 	 
-	    Proposal discussionProposal = new Proposal(Ids.proposal(124L), couple.getPartnerOneId(), "TEXT");
+	    Proposal discussionProposal = new DiscussionProposal(Ids.proposal(124L), couple.getPartnerOneId(), "TITLE", "SUBTITLE");
 
 	    Negotiation discussionNegotiation = Negotiation.start(Ids.negotiation(70L), couple, discussionProposal, Clock.systemUTC());
 	    
@@ -127,7 +129,7 @@ public class ConversationTest
 	
 	private static Negotiation acceptedNegotiation(long negotiationId, long proposalId, Couple couple)
 	{
-		Proposal proposal = new Proposal(Ids.proposal(proposalId), couple.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(proposalId), couple.getPartnerOneId(), "TEXT");
 		
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(negotiationId), couple, proposal, Clock.systemUTC());
 		
@@ -203,7 +205,7 @@ public class ConversationTest
 
 	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new AgreementProposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
 	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
@@ -227,7 +229,7 @@ public class ConversationTest
 
 	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new AgreementProposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
 	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
@@ -261,7 +263,7 @@ public class ConversationTest
 
 	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new AgreementProposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
 	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
@@ -308,7 +310,7 @@ public class ConversationTest
 
 	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new AgreementProposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
 	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
@@ -357,7 +359,7 @@ public class ConversationTest
 
 	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new AgreementProposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
 	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    
@@ -415,7 +417,7 @@ public class ConversationTest
 
 	    Couple couple = new Couple(Ids.couple(1L), partnerOne, partnerTwo, therapist);
 	    
-	    Proposal initialProposal = new Proposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
+	    Proposal initialProposal = new AgreementProposal(Ids.proposal(123L), couple.getPartnerOneId(), "TEXT");
 	    
 	    Negotiation conversationNegotiation = Negotiation.start(Ids.negotiation(60L), couple,initialProposal, Clock.systemUTC());
 	    

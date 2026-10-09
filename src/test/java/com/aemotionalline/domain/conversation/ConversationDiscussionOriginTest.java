@@ -21,6 +21,8 @@ import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.PointedParagraph;
 import com.aemotionalline.domain.message.QuestionParagraph;
 import com.aemotionalline.domain.message.SimpleParagraph;
+import com.aemotionalline.domain.negotiation.AgreementProposal;
+import com.aemotionalline.domain.negotiation.DiscussionProposal;
 import com.aemotionalline.domain.negotiation.Negotiation;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
@@ -41,9 +43,20 @@ public class ConversationDiscussionOriginTest
 
 	private static final ConstraintContext NOON = new ConstraintContext(LocalTime.NOON);
 
+	private static Negotiation discussionNegotiation(long id)
+	{
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(id), COUPLE, new DiscussionProposal(Ids.proposal(id), A, "TITLE " + id, "SUBTITLE " + id), Clock.systemUTC());
+
+		negotiation.acceptNegotiation(B);
+		negotiation.sendProposal(A, "JUSTIFICATION TEXT");
+		negotiation.acceptProposal(B);
+
+		return negotiation;
+	}
+
 	private static Negotiation acceptedNegotiation(long id)
 	{
-		Negotiation negotiation = Negotiation.start(Ids.negotiation(id), COUPLE, new Proposal(Ids.proposal(id), A, "TEXT"), Clock.systemUTC());
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(id), COUPLE, new AgreementProposal(Ids.proposal(id), A, "TEXT"), Clock.systemUTC());
 
 		negotiation.acceptNegotiation(B);
 		negotiation.sendProposal(A, "JUSTIFICATION TEXT");
@@ -71,7 +84,7 @@ public class ConversationDiscussionOriginTest
 
 	private static void send(Conversation conversation, DiscussionId discussion, Message message)
 	{
-		conversation.sendMessage(message, discussion, NOON);
+		Reading.send(conversation, message, discussion, NOON);
 	}
 
 	private static SimpleParagraph simple(long id)
@@ -107,7 +120,7 @@ public class ConversationDiscussionOriginTest
 		Conversation conversation = startConversation();
 
 		send(conversation, FIRST, message(1L, A, origin));
-		conversation.openDiscussion(acceptedNegotiation(70L), origin.getId());
+		conversation.openDiscussion(discussionNegotiation(70L), origin.getId());
 
 		return conversation;
 	}
@@ -134,7 +147,7 @@ public class ConversationDiscussionOriginTest
 	void shouldNotOpenADiscussionFromAParagraphThatWasNotSent()
 	{
 		Conversation conversation = startConversation();
-		Negotiation negotiation = acceptedNegotiation(70L);
+		Negotiation negotiation = discussionNegotiation(70L);
 
 		assertThrows(DomainException.class, () -> conversation.openDiscussion(negotiation, Ids.paragraph(99L)));
 		assertEquals(1, conversation.getDiscussions().size());
@@ -149,7 +162,7 @@ public class ConversationDiscussionOriginTest
 	{
 		Conversation conversation = startConversation();
 
-		assertThrows(DomainException.class, () -> conversation.openDiscussion(acceptedNegotiation(70L), null));
+		assertThrows(DomainException.class, () -> conversation.openDiscussion(discussionNegotiation(70L), null));
 		assertEquals(1, conversation.getDiscussions().size());
 	}
 
@@ -187,7 +200,7 @@ public class ConversationDiscussionOriginTest
 		SimpleParagraph other = simple(2L);
 		send(conversation, FIRST, message(1L, A, origin));
 		send(conversation, FIRST, message(2L, B, other));
-		conversation.openDiscussion(acceptedNegotiation(70L), origin.getId());
+		conversation.openDiscussion(discussionNegotiation(70L), origin.getId());
 
 		assertThrows(DomainException.class, () -> send(conversation, SECOND,
 				message(3L, A, simpleReplyingTo(3L, origin, other))));
@@ -200,7 +213,7 @@ public class ConversationDiscussionOriginTest
 		Conversation conversation = startConversation();
 		SimpleParagraph inFirstDiscussion = simple(1L);
 		send(conversation, FIRST, message(1L, A, inFirstDiscussion));
-		conversation.openDiscussion(acceptedNegotiation(70L));
+		conversation.openDiscussion(discussionNegotiation(70L));
 
 		assertThrows(DomainException.class, () -> send(conversation, SECOND,
 				message(2L, B, simpleReplyingTo(2L, inFirstDiscussion))));
@@ -239,7 +252,7 @@ public class ConversationDiscussionOriginTest
 		QuestionParagraph other = question(2L);
 		send(conversation, FIRST, message(1L, A, origin));
 		send(conversation, FIRST, message(2L, B, other));
-		conversation.openDiscussion(acceptedNegotiation(70L), origin.getId());
+		conversation.openDiscussion(discussionNegotiation(70L), origin.getId());
 
 		// The question was not the paragraph expanded: that reference is invalid anyway, in any message.
 		assertThrows(DomainException.class, () -> send(conversation, FIRST, message(3L, A, simpleReplyingTo(3L, other))));
@@ -314,7 +327,7 @@ public class ConversationDiscussionOriginTest
 		SimpleParagraph origin = simpleReplyingTo(2L, earlier);
 		send(conversation, FIRST, message(1L, A, earlier));
 		send(conversation, FIRST, message(2L, B, origin));
-		conversation.openDiscussion(acceptedNegotiation(70L), origin.getId());
+		conversation.openDiscussion(discussionNegotiation(70L), origin.getId());
 
 		SimpleParagraph citing = simpleReplyingTo(3L, origin);
 		citing.addSelfCitation(earlier);
@@ -332,7 +345,7 @@ public class ConversationDiscussionOriginTest
 		send(conversation, FIRST, message(1L, A, earlier));
 		send(conversation, FIRST, message(2L, B, origin));
 		send(conversation, FIRST, message(3L, A, otherTopic));
-		conversation.openDiscussion(acceptedNegotiation(70L), origin.getId());
+		conversation.openDiscussion(discussionNegotiation(70L), origin.getId());
 
 		SimpleParagraph citing = simpleReplyingTo(4L, origin);
 		citing.addSelfCitation(otherTopic);

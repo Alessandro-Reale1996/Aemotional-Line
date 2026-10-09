@@ -16,6 +16,8 @@ import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.PointedParagraph;
 import com.aemotionalline.domain.message.QuestionParagraph;
 import com.aemotionalline.domain.message.SimpleParagraph;
+import com.aemotionalline.domain.negotiation.AgreementProposal;
+import com.aemotionalline.domain.negotiation.DiscussionProposal;
 import com.aemotionalline.domain.negotiation.Negotiation;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
@@ -37,9 +39,20 @@ public class ConversationUnansweredQuestionsTest
 
 	private static final ConstraintContext NOON = new ConstraintContext(LocalTime.NOON);
 
+	private static Negotiation discussionNegotiation(long id)
+	{
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(id), COUPLE, new DiscussionProposal(Ids.proposal(id), A, "TITLE " + id, "SUBTITLE " + id), Clock.systemUTC());
+
+		negotiation.acceptNegotiation(B);
+		negotiation.sendProposal(A, "JUSTIFICATION TEXT");
+		negotiation.acceptProposal(B);
+
+		return negotiation;
+	}
+
 	private static Negotiation acceptedNegotiation(long id)
 	{
-		Negotiation negotiation = Negotiation.start(Ids.negotiation(id), COUPLE, new Proposal(Ids.proposal(id), A, "TEXT"), Clock.systemUTC());
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(id), COUPLE, new AgreementProposal(Ids.proposal(id), A, "TEXT"), Clock.systemUTC());
 
 		negotiation.acceptNegotiation(B);
 
@@ -90,7 +103,7 @@ public class ConversationUnansweredQuestionsTest
 		Conversation conversation = startConversation();
 		QuestionParagraph answered = question(1L);
 		QuestionParagraph skipped = question(2L);
-		conversation.sendMessage(message(1L, A, answered, skipped), FIRST, NOON);
+		Reading.send(conversation, message(1L, A, answered, skipped), FIRST, NOON);
 
 		Message draft = message(2L, B, answer(3L, answered));
 
@@ -106,7 +119,7 @@ public class ConversationUnansweredQuestionsTest
 	{
 		Conversation conversation = startConversation();
 		QuestionParagraph question = question(1L);
-		conversation.sendMessage(message(1L, A, question, simple(2L)), FIRST, NOON);
+		Reading.send(conversation, message(1L, A, question, simple(2L)), FIRST, NOON);
 
 		assertTrue(conversation.questionsLeftUnansweredBy(message(2L, B, answer(3L, question)), FIRST).isEmpty());
 	}
@@ -127,10 +140,10 @@ public class ConversationUnansweredQuestionsTest
 		Conversation conversation = startConversation();
 		QuestionParagraph answered = question(1L);
 		QuestionParagraph skipped = question(2L);
-		conversation.sendMessage(message(1L, A, answered, skipped), FIRST, NOON);
+		Reading.send(conversation, message(1L, A, answered, skipped), FIRST, NOON);
 
 		Message reply = message(2L, B, answer(3L, answered));
-		conversation.sendMessage(reply, FIRST, NOON);
+		Reading.send(conversation, reply, FIRST, NOON);
 
 		assertEquals(List.of(skipped.getId()), reply.getQuestionsLeftUnanswered());
 	}
@@ -140,10 +153,10 @@ public class ConversationUnansweredQuestionsTest
 	{
 		Conversation conversation = startConversation();
 		QuestionParagraph question = question(1L);
-		conversation.sendMessage(message(1L, A, question), FIRST, NOON);
+		Reading.send(conversation, message(1L, A, question), FIRST, NOON);
 
 		Message reply = message(2L, B, answer(2L, question));
-		conversation.sendMessage(reply, FIRST, NOON);
+		Reading.send(conversation, reply, FIRST, NOON);
 
 		assertTrue(reply.getQuestionsLeftUnanswered().isEmpty());
 	}
@@ -153,16 +166,16 @@ public class ConversationUnansweredQuestionsTest
 	{
 		Conversation conversation = startConversation();
 		QuestionParagraph question = question(1L);
-		conversation.sendMessage(message(1L, A, question), FIRST, NOON);
+		Reading.send(conversation, message(1L, A, question), FIRST, NOON);
 
 		// B expands the question in a new discussion: that counts as answering it.
-		conversation.openDiscussion(acceptedNegotiation(70L), question.getId());
+		conversation.openDiscussion(discussionNegotiation(70L), question.getId());
 		SimpleParagraph expansion = simple(2L);
 		expansion.addReference(question);
-		conversation.sendMessage(message(2L, B, expansion), SECOND, NOON);
+		Reading.send(conversation, message(2L, B, expansion), SECOND, NOON);
 
 		Message reply = message(3L, B, simple(3L));
-		conversation.sendMessage(reply, FIRST, NOON);
+		Reading.send(conversation, reply, FIRST, NOON);
 
 		assertTrue(reply.getQuestionsLeftUnanswered().isEmpty());
 	}
@@ -174,10 +187,10 @@ public class ConversationUnansweredQuestionsTest
 	{
 		Conversation conversation = startConversation();
 		QuestionParagraph skipped = question(1L);
-		conversation.sendMessage(message(1L, A, skipped), FIRST, NOON);
+		Reading.send(conversation, message(1L, A, skipped), FIRST, NOON);
 
 		QuestionParagraph waiting = question(2L);
-		conversation.sendMessage(message(2L, B, waiting), FIRST, NOON);
+		Reading.send(conversation, message(2L, B, waiting), FIRST, NOON);
 
 		// B skipped A's question for good; A hasn't replied to B's question yet.
 		assertEquals(List.of(skipped), Analyzer.questionsLeftUnanswered(conversation));

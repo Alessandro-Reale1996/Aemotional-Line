@@ -1,5 +1,6 @@
 package com.aemotionalline.domain.conversation;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -9,13 +10,18 @@ import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
+import com.aemotionalline.domain.constraint.ConstraintScope;
 import com.aemotionalline.domain.message.Message;
+import com.aemotionalline.domain.message.MessageId;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.ParagraphType;
 import com.aemotionalline.domain.message.QuestionParagraph;
 import com.aemotionalline.domain.negotiation.Negotiation;
 import com.aemotionalline.domain.negotiation.NegotiationArchive;
+import com.aemotionalline.domain.negotiation.AgreementProposal;
+import com.aemotionalline.domain.negotiation.DiscussionProposal;
+import com.aemotionalline.domain.negotiation.DiscussionTitle;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
@@ -60,8 +66,9 @@ public class Conversation
 		
 		Conversation conversation = new Conversation(id, couple);
 		
-		// A conversation is never empty: the negotiation that authorised it also opens its first discussion.
-		conversation.openDiscussion(negotiation);	
+		// A conversation is never empty: the negotiation that authorised it also opens its first discussion,
+		// the main one, which has no title because it is not a branch.
+		conversation.open(negotiation, AgreementProposal.class, null);
 		
 		conversation.setAgreement(negotiation.getLastProposal());
 		
@@ -117,34 +124,33 @@ public class Conversation
 	        throw new DomainException("Cannot modify agreement with an unaccepted negotiation.");
 	    }
 		
-		if (negotiation.getLastProposal().isAccepted())
+		if (!negotiation.getLastProposal().isAccepted())
 		{
-			
+			throw new DomainException("Can't modify agreement if the negotiation's proposal is not accepted.");
+		}
+		
+		ensureProposalKind(negotiation, AgreementProposal.class);
+		
 		// Archiving first rejects a negotiation that was already used before the agreement is touched.
 		this.negotiationArchive.add(negotiation);
 		
 		setAgreement(negotiation.getLastProposal());
-		
-		}
-		else
-		{
-			throw new DomainException("Can't modify agreement if the negotiation's proposal is not accepted.");
-		}
 	}
 	
 
 	/**
-	 * Opens a new discussion that doesn't start from a paragraph. Like a change of agreement, it requires
-	 * a negotiation the partners have both settled, so no branch can start on a text one of them has not accepted.
+	 * Opens a new discussion that doesn't start from a paragraph. It requires a negotiation of title and subtitle
+	 * ({@link DiscussionProposal}) the partners have both settled, so no branch can start on a text one of them has not accepted.
 	 */
 	public void openDiscussion(Negotiation negotiation)
 	{
-		open(negotiation, null);
+		open(negotiation, DiscussionProposal.class, null);
 	}
 	
 	/**
 	 * Opens a new topic-specific branch ("discorso specifico") that expands the topic exposed in a paragraph already
-	 * sent. The origin is checked before anything changes, so a rejected request leaves the conversation untouched.
+	 * sent and not expanded yet (one discussion per paragraph). The origin is checked before anything changes, so a rejected
+	 * request leaves the conversation untouched.
 	 */
 	public void openDiscussion(Negotiation negotiation, ParagraphId originParagraphId)
 	{
@@ -158,10 +164,16 @@ public class Conversation
 			throw new DomainException("A discussion can only expand a paragraph that was already sent.");
 		}
 		
-		open(negotiation, originParagraphId);
+		if (discussions.stream().anyMatch(other -> other.getOriginParagraphId().equals(Optional.of(originParagraphId))))
+		{
+			throw new DomainException("A paragraph can be expanded by only one discussion.");
+		}
+		
+		open(negotiation, DiscussionProposal.class, originParagraphId);
 	}
 	
-	private void open(Negotiation negotiation, ParagraphId originParagraphId)
+	// The kind of proposal tells what the negotiation was for: an agreement text can't title a discussion, nor the reverse.
+	private void open(Negotiation negotiation, Class<? extends Proposal> kind, ParagraphId originParagraphId)
 	{
 		ensureNegotiationOfThisCouple(negotiation);
 
@@ -170,17 +182,26 @@ public class Conversation
 	        throw new DomainException("Cannot open new discussion with an unaccepted negotiation.");
 	    }
 		
-		if (negotiation.getLastProposal().isAccepted())
+		if (!negotiation.getLastProposal().isAccepted())
 		{
+			throw new DomainException("Can't open a new discussion if the negotiation's proposal is not accepted.");
+		}
+		
+		ensureProposalKind(negotiation, kind);
 		
 		// Archiving first rejects a negotiation that was already used before any discussion is added.
 		negotiationArchive.add(negotiation);
 		
-		addDiscussion(new Discussion(generateDiscussionId(), negotiation.getLastProposal(), originParagraphId));
-		}
-		else
+		DiscussionTitle title = kind == DiscussionProposal.class ? ((DiscussionTitle) negotiation.getLastProposal().getContent()) : null;
+		
+		addDiscussion(new Discussion(generateDiscussionId(), title, originParagraphId));
+	}
+	
+	private void ensureProposalKind(Negotiation negotiation, Class<? extends Proposal> kind)
+	{
+		if (!kind.isInstance(negotiation.getLastProposal()))
 		{
-			throw new DomainException("Can't open a new discussion if the negotiation's proposal is not accepted.");
+			throw new DomainException("The negotiation doesn't carry the kind of proposal required here: " + kind.getSimpleName() + ".");
 		}
 	}
 
@@ -233,6 +254,41 @@ public class Conversation
 	
 	
 	/**
+	 * Reading is an operation of its own: a partner reads a message the other partner sent, the constraints that
+	 * restrict reading are checked, and the instant of the first read is recorded (a reply needs it, and so does a
+	 * reply-delay constraint). The therapist consults freely, with no constraint and no record; a partner's own
+	 * messages are not "read". Nothing changes if a check fails. The context must carry {@code now}.
+	 */
+	public void readMessage(UserId reader, DiscussionId discussionId, MessageId messageId, ConstraintContext context)
+	{
+		if (reader == null || messageId == null || context == null || context.now() == null)
+		{
+			throw new DomainException("A reader, a message and a context with the current instant are required.");
+		}
+		
+		Discussion discussion = findDiscussion(discussionId);
+		
+		Message message = discussion.getMessages().stream()
+				.filter(sent -> sent.getId().equals(messageId))
+				.findFirst()
+				.orElseThrow(() -> new DomainException("The message is not in this discussion."));
+		
+		if (couple.isTherapist(reader) || reader.equals(message.getSenderId()))
+		{
+			return;
+		}
+		
+		if (!couple.isPartner(reader))
+		{
+			throw new DomainException("User does not belong to the couple");
+		}
+		
+		constraintSet.ensureSatisfiedBy(reader, context, ConstraintScope.READ);
+		
+		discussion.markRead(messageId, context.now());
+	}
+	
+	/**
 	 * The single entry point for sending. Every check runs before anything changes (message shape,
 	 * sender permission, discussion, turn, constraints, then the paragraphs), so a rejected message
 	 * leaves the discussion and the graph exactly as they were.
@@ -262,8 +318,24 @@ public class Conversation
 	    {
 	    	throw new DomainException("A new message can't be sent if an answer wasn't received.");
 	    }
+	    
+	    // A reply requires having read the message being answered (the last of the discussion).
+	    ConstraintContext checkedContext = context;
+	    List<Message> sentMessages = discussion.getMessages();
+	    
+	    if (!sentMessages.isEmpty())
+	    {
+	    	Optional<Instant> readAt = discussion.getReadAt(sentMessages.getLast().getId());
+	    	
+	    	if (readAt.isEmpty())
+	    	{
+	    		throw new DomainException("The message being answered must be read before replying.");
+	    	}
+	    	
+	    	checkedContext = context == null ? null : context.withReadAt(readAt.get());
+	    }
 
-	    constraintSet.ensureSatisfiedBy(sender, context);
+	    constraintSet.ensureSatisfiedBy(sender, checkedContext, ConstraintScope.WRITE);
 	    
 	    ensureValidParagraphs(message, discussion);
 	    
@@ -310,6 +382,50 @@ public class Conversation
 		}
 		
 		return questionsLeftUnanswered(message, findDiscussion(discussionId));
+	}
+	
+	/**
+	 * Preview for the "this paragraph has a specific discussion" pop-up (spec 1.3.3): the discussions that keep this draft
+	 * from being sent in the given discussion, because a paragraph it refers to is the origin of a specific discussion
+	 * (the draft must be written there instead). It changes nothing and does not validate the draft; sending it
+	 * fails for the same reason.
+	 */
+	public List<DiscussionId> discussionsBlockingReplyTo(Message message, DiscussionId discussionId)
+	{
+		if (message == null)
+		{
+			throw new DomainException("Message can't be null.");
+		}
+		
+		Discussion discussion = findDiscussion(discussionId);
+		Set<DiscussionId> blocking = new LinkedHashSet<>();
+		
+		for (Paragraph paragraph : message.getParagraphs())
+		{
+			for (Paragraph reference : paragraph.getReferences())
+			{
+				blocking.addAll(discussionsBlockingReplyTo(reference.getId(), discussion));
+			}
+		}
+		
+		return List.copyOf(blocking);
+	}
+	
+	// A paragraph that is the origin of a discussion is answered only there: the first message of that discussion
+	// (and of any other opened from the same paragraph) is the one place where it may be referred to again.
+	private List<DiscussionId> discussionsBlockingReplyTo(ParagraphId paragraphId, Discussion discussion)
+	{
+		boolean expandsIt = discussion.getMessages().isEmpty() && discussion.getOriginParagraphId().equals(Optional.of(paragraphId));
+		
+		if (expandsIt)
+		{
+			return List.of();
+		}
+		
+		return discussions.stream()
+				.filter(other -> other.getOriginParagraphId().equals(Optional.of(paragraphId)))
+				.map(Discussion::getId)
+				.toList();
 	}
 	
 	private List<QuestionParagraph> questionsLeftUnanswered(Message message, Discussion discussion)
@@ -375,6 +491,14 @@ public class Conversation
 				{
 					throw new DomainException("Paragraph " + paragraph.getId().value()
 							+ " can only refer to paragraphs of the message being answered.");
+				}
+				
+				List<DiscussionId> blocking = discussionsBlockingReplyTo(reference.getId(), discussion);
+				
+				if (!blocking.isEmpty())
+				{
+					throw new DomainException("Paragraph " + reference.getId().value() + " can't be answered here: it is expanded by discussion "
+							+ blocking.getFirst().discussionNumber() + ".");
 				}
 				
 				boolean expandsThisQuestion = answersTheOrigin && reference.getId().equals(origin.get());

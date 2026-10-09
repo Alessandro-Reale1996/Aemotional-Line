@@ -16,6 +16,7 @@ import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.PointedParagraph;
 import com.aemotionalline.domain.message.QuestionParagraph;
 import com.aemotionalline.domain.message.SimpleParagraph;
+import com.aemotionalline.domain.negotiation.AgreementProposal;
 import com.aemotionalline.domain.negotiation.Negotiation;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
@@ -31,7 +32,7 @@ public class AnalyzerTest
 	
 	private static Conversation startConversation()
 	{
-		Proposal proposal = new Proposal(Ids.proposal(1L), COUPLE.getPartnerOneId(), "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(1L), COUPLE.getPartnerOneId(), "TEXT");
 		
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(60L), COUPLE, proposal, Clock.systemUTC());
 		
@@ -53,7 +54,7 @@ public class AnalyzerTest
 			message.addParagraph(paragraph);
 		}
 		
-		conversation.sendMessage(message, FIRST_DISCUSSION, NOON);
+		Reading.send(conversation, message, FIRST_DISCUSSION, NOON);
 	}
 	
 	private static PointedParagraph answerTo(long id, QuestionParagraph question)

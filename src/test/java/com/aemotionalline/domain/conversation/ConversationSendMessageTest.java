@@ -22,6 +22,8 @@ import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.PointedParagraph;
 import com.aemotionalline.domain.message.QuestionParagraph;
 import com.aemotionalline.domain.message.SimpleParagraph;
+import com.aemotionalline.domain.negotiation.AgreementProposal;
+import com.aemotionalline.domain.negotiation.DiscussionProposal;
 import com.aemotionalline.domain.negotiation.Negotiation;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
@@ -44,7 +46,7 @@ public class ConversationSendMessageTest
 
 	private static Conversation startConversation()
 	{
-		Proposal proposal = new Proposal(Ids.proposal(1L), A, "TEXT");
+		Proposal proposal = new AgreementProposal(Ids.proposal(1L), A, "TEXT");
 
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(60L), COUPLE, proposal, Clock.systemUTC());
 
@@ -71,7 +73,7 @@ public class ConversationSendMessageTest
 
 	private static void send(Conversation conversation, Message message)
 	{
-		conversation.sendMessage(message, FIRST_DISCUSSION, NOON);
+		Reading.send(conversation, message, FIRST_DISCUSSION, NOON);
 	}
 
 	private static SimpleParagraph simple(long id)
@@ -147,9 +149,20 @@ public class ConversationSendMessageTest
 	
 	// REFERENCES ONLY TO THE MESSAGE BEING ANSWERED (5c):
 	
+	private static Negotiation discussionNegotiation(long id)
+	{
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(id), COUPLE, new DiscussionProposal(Ids.proposal(id), A, "TITLE " + id, "SUBTITLE " + id), Clock.systemUTC());
+
+		negotiation.acceptNegotiation(B);
+		negotiation.sendProposal(A, "JUSTIFICATION TEXT");
+		negotiation.acceptProposal(B);
+
+		return negotiation;
+	}
+
 	private static Negotiation acceptedNegotiation(long id)
 	{
-		Negotiation negotiation = Negotiation.start(Ids.negotiation(id), COUPLE, new Proposal(Ids.proposal(id), A, "TEXT"), Clock.systemUTC());
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(id), COUPLE, new AgreementProposal(Ids.proposal(id), A, "TEXT"), Clock.systemUTC());
 		
 		negotiation.acceptNegotiation(B);
 		
@@ -197,14 +210,14 @@ public class ConversationSendMessageTest
 		SimpleParagraph inFirstDiscussion = simple(1L);
 		send(conversation, message(1L, A, inFirstDiscussion));
 		
-		conversation.openDiscussion(acceptedNegotiation(70L));
+		conversation.openDiscussion(discussionNegotiation(70L));
 		DiscussionId secondDiscussion = new DiscussionId(Ids.conversation(321L), 1);
 		
 		// The new discussion has no message to answer, and the target belongs to another discussion.
 		SimpleParagraph reply = simple(2L);
 		reply.addReference(inFirstDiscussion);
 		
-		assertThrows(DomainException.class, () -> conversation.sendMessage(message(2L, B, reply), secondDiscussion, NOON));
+		assertThrows(DomainException.class, () -> Reading.send(conversation, message(2L, B, reply), secondDiscussion, NOON));
 		assertEquals(0, conversation.findDiscussion(secondDiscussion).getMessages().size());
 		assertEquals(1, conversation.getConversationGraph().getParagraphs().size());
 	}

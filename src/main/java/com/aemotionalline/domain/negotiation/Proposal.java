@@ -7,31 +7,32 @@ import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.user.UserId;
 
 /**
- * One version of the agreement text, with the author's justification for the edit.
- * Text, justification, status and sentAt change only through {@link Negotiation} (the setters are package-private),
+ * One version of what the partners are negotiating, with the author's justification for the edit.
+ * The kind of content depends on the subclass ({@link AgreementProposal}, {@link DiscussionProposal}) and never changes.
+ * Content, justification, status and sentAt change only through {@link Negotiation} (the setters are package-private),
  * so a proposal in the archive can't be rewritten from outside. sentAt is set when the proposal is sent.
  */
-public class Proposal 
+public abstract class Proposal 
 {
 	private final ProposalId id;
 	private final UserId author;
 	
-    private String text;
+    private ProposalContent content;
     private String justification;
     private Instant sentAt;
     
     private  ProposalStatus proposalStatus;
 
-    public Proposal 	
+    protected Proposal 	
 		    	(
 				ProposalId id, 
 				UserId author, 
-				String text
+				ProposalContent content
 				) 
     {
     	this.id = Objects.requireNonNull(id);
         this.author = Objects.requireNonNull(author);
-        this.text = ensureValidText(text);
+        this.content = Objects.requireNonNull(content);
         
         this.proposalStatus = ProposalStatus.DRAFT;
     }
@@ -42,9 +43,9 @@ public class Proposal
 		return author;
 	}
 
-	public String getText() 
+	public ProposalContent getContent() 
 	{
-		return text;
+		return content;
 	}
 
 	public String getJustification() 
@@ -67,16 +68,18 @@ public class Proposal
 		return sentAt;
 	}
 	
+	// A refused proposal is answered with a draft of the same kind, starting from the refused content.
+	abstract Proposal draftFor(ProposalId newId, UserId newAuthor);
 	
-	// The agreement text can never be empty, both at creation and after an edit.
-	static String ensureValidText(String text)
+	// Each kind of proposal accepts only its own kind of content.
+	abstract boolean acceptsContent(ProposalContent content);
+	
+	void ensureAcceptsContent(ProposalContent content)
 	{
-		if (text == null || text.isBlank())
+		if (content == null || !acceptsContent(content))
 		{
-			throw new DomainException("The proposal text cannot be blank.");
+			throw new DomainException("This kind of proposal doesn't accept this content.");
 		}
-		
-		return text;
 	}
 	
 	void setProposalStatus(ProposalStatus proposalStatus)
@@ -94,9 +97,11 @@ public class Proposal
 		this.justification = justification;
 	}
 	
-	void setText(String text) 
+	void setContent(ProposalContent content) 
 	{
-		this.text = ensureValidText(text);
+		ensureAcceptsContent(content);
+		
+		this.content = content;
 	}
 
 

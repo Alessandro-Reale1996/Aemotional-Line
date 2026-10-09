@@ -9,4 +9,10 @@ public interface Constraint
     boolean isSatisfied(ConstraintContext context);
 
     String getDescription();
+
+    /** Writing by default: the first constraint, a time of day, restricted sending. */
+    default ConstraintScope getScope()
+    {
+        return ConstraintScope.WRITE;
+    }
 }
