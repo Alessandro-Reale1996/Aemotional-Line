@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -114,7 +115,7 @@ public class ParagraphTest
 			Message message = new Message(Ids.message(1L), Ids.user(10L));
 			message.addParagraph(paragraph);
 			message.addParagraph(answer);
-			message.seal();
+			message.seal(List.of(), Instant.EPOCH);
 			
 			assertTrue(paragraph.isSealed());
 			assertThrows(DomainException.class, () -> paragraph.addReference(earlier));
@@ -172,7 +173,7 @@ public class ParagraphTest
 			
 			Message message = new Message(Ids.message(1L), Ids.user(10L));
 			message.addParagraph(paragraph);
-			message.seal();
+			message.seal(List.of(), Instant.EPOCH);
 			
 			assertThrows(DomainException.class, () -> paragraph.addSelfCitation(earlier));
 	 }

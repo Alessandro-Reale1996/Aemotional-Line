@@ -42,7 +42,7 @@ public class AnalyzerTest
 		
 		negotiation.acceptProposal(COUPLE.getPartnerTwoId());
 		
-		return Conversation.start(Ids.conversation(321L), COUPLE, negotiation);
+		return Conversation.start(Ids.conversation(321L), COUPLE, negotiation, Clock.systemUTC());
 	}
 	
 	private static void send(Conversation conversation, long messageId, UserId sender, Paragraph... paragraphs)

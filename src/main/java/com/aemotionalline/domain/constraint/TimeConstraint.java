@@ -29,6 +29,12 @@ public class TimeConstraint implements Constraint
     @Override
     public boolean isSatisfied(ConstraintContext context) 
     {
+        // Without the local time the constraint can't be shown satisfied, so it fails.
+        if (context.time() == null)
+        {
+            return false;
+        }
+
         // Negated isBefore makes the boundary inclusive: sending exactly at notBefore is allowed.
         return !context.time().isBefore(notBefore);
     }

@@ -33,4 +33,10 @@ public class TimeConstraintTest
 
 	    assertTrue(constraint.isSatisfied(new ConstraintContext(LocalTime.of(22, 0))));
 	}
+
+	@Test
+	void shouldFailWithoutTheLocalTime()
+	{
+		assertFalse(new TimeConstraint(LocalTime.of(9, 0)).isSatisfied(new ConstraintContext(null)));
+	}
 }

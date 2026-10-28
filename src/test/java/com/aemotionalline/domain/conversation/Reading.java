@@ -1,6 +1,5 @@
 package com.aemotionalline.domain.conversation;
 
-import java.time.Instant;
 import java.util.List;
 
 import com.aemotionalline.domain.constraint.ConstraintContext;
@@ -12,8 +11,6 @@ import com.aemotionalline.domain.message.Message;
  */
 final class Reading
 {
-	static final Instant READ_AT = Instant.EPOCH;
-
 	private Reading()
 	{
 	}
@@ -24,7 +21,7 @@ final class Reading
 
 		if (!sent.isEmpty() && !sent.getLast().getSenderId().equals(message.getSenderId()))
 		{
-			conversation.readMessage(message.getSenderId(), discussionId, sent.getLast().getId(), new ConstraintContext(context.time(), READ_AT));
+			conversation.readMessage(message.getSenderId(), discussionId, sent.getLast().getId(), context);
 		}
 
 		conversation.sendMessage(message, discussionId, context);

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.Instant;
 import java.time.LocalTime;
 
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,7 @@ public class LocationConstraintTest
 
 	private static ConstraintContext at(GeoPosition position)
 	{
-		return new ConstraintContext(LocalTime.NOON, Instant.EPOCH, position);
+		return new ConstraintContext(LocalTime.NOON, position);
 	}
 
 	@Test
@@ -54,7 +53,7 @@ public class LocationConstraintTest
 	@Test
 	void shouldFailWithoutAPosition()
 	{
-		assertFalse(new LocationConstraint(HOME, 100, Direction.WITHIN).isSatisfied(new ConstraintContext(LocalTime.NOON, Instant.EPOCH)));
+		assertFalse(new LocationConstraint(HOME, 100, Direction.WITHIN).isSatisfied(new ConstraintContext(LocalTime.NOON)));
 		assertFalse(new LocationConstraint(HOME, 100, Direction.BEYOND).isSatisfied(new ConstraintContext(LocalTime.NOON)));
 	}
 

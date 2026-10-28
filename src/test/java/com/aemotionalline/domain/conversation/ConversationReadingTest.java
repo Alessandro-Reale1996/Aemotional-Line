@@ -14,10 +14,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.Ids;
+import com.aemotionalline.domain.MutableClock;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.constraint.Constraint;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
-import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.ConstraintScope;
 import com.aemotionalline.domain.constraint.GeoPosition;
@@ -48,12 +48,18 @@ public class ConversationReadingTest
 
 	private static final Instant T0 = Instant.parse("2026-10-09T10:00:00Z");
 
-	private static ConstraintContext at(LocalTime time, Instant now)
+	// Each test gets its own instance, hence its own clock.
+	private final MutableClock clock = new MutableClock(T0);
+
+	// The instant of an action comes from the conversation's clock, not from the caller: these helpers move the clock
+	// to the given instant, then build the context the caller supplies (local time of day only).
+	private ConstraintContext at(LocalTime time, Instant now)
 	{
-		return new ConstraintContext(time, now);
+		clock.set(now);
+		return new ConstraintContext(time);
 	}
 
-	private static ConstraintContext at(Instant now)
+	private ConstraintContext at(Instant now)
 	{
 		return at(LocalTime.NOON, now);
 	}
@@ -63,18 +69,18 @@ public class ConversationReadingTest
 
 	private static ConstraintContext at(GeoPosition position)
 	{
-		return new ConstraintContext(LocalTime.NOON, T0, position);
+		return new ConstraintContext(LocalTime.NOON, position);
 	}
 
 	// A's first message is sent; B has not read it.
-	private static Conversation conversationWithMessageFromA(Message first)
+	private Conversation conversationWithMessageFromA(Message first)
 	{
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(60L), COUPLE, new AgreementProposal(Ids.proposal(60L), A, "TEXT"), Clock.systemUTC());
 		negotiation.acceptNegotiation(B);
 		negotiation.sendProposal(A, "JUSTIFICATION TEXT");
 		negotiation.acceptProposal(B);
 
-		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE, negotiation);
+		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE, negotiation, clock);
 		conversation.sendMessage(first, FIRST, new ConstraintContext(LocalTime.NOON));
 
 		return conversation;
@@ -90,10 +96,9 @@ public class ConversationReadingTest
 
 	private static void constrain(Conversation conversation, UserId user, Constraint constraint)
 	{
-		ConstraintChangeRequest request = new ConstraintChangeRequest(THERAPIST, List.of(new ConstraintAssignment(user, constraint)), COUPLE);
-		request.approve(A);
-		request.approve(B);
-		conversation.applyConstraints(request);
+		var request = conversation.proposeConstraints(THERAPIST, List.of(new ConstraintAssignment(user, constraint)));
+		conversation.approveConstraints(request, A);
+		conversation.approveConstraints(request, B);
 	}
 
 	// READING:
@@ -123,16 +128,38 @@ public class ConversationReadingTest
 	}
 
 	@Test
-	void shouldRejectAReadByAStrangerOfAnUnknownMessageOrWithoutTheInstant()
+	void shouldRejectAReadByAStrangerOrOfAnUnknownMessage()
 	{
 		Message first = message(1L, A);
 		Conversation conversation = conversationWithMessageFromA(first);
 
 		assertThrows(DomainException.class, () -> conversation.readMessage(Ids.user(99L), FIRST, first.getId(), at(T0)));
 		assertThrows(DomainException.class, () -> conversation.readMessage(B, FIRST, Ids.message(99L), at(T0)));
-		assertThrows(DomainException.class, () -> conversation.readMessage(B, FIRST, first.getId(), new ConstraintContext(LocalTime.NOON)));
-		assertThrows(DomainException.class, () -> conversation.readMessage(B, FIRST, first.getId(), null));
 		assertThrows(DomainException.class, () -> conversation.readMessage(null, FIRST, first.getId(), at(T0)));
+		assertThrows(DomainException.class, () -> conversation.readMessage(B, FIRST, null, at(T0)));
+		assertEquals(Optional.empty(), conversation.findDiscussion(FIRST).getReadAt(first.getId()));
+	}
+
+	@Test
+	void shouldTakeTheReadInstantFromTheClockAndAcceptANullContextWithoutReadingConstraints()
+	{
+		Message first = message(1L, A);
+		Conversation conversation = conversationWithMessageFromA(first);
+		clock.set(T0.plusSeconds(30));
+
+		conversation.readMessage(B, FIRST, first.getId(), null);
+
+		assertEquals(Optional.of(T0.plusSeconds(30)), conversation.findDiscussion(FIRST).getReadAt(first.getId()));
+	}
+
+	@Test
+	void shouldRequireAContextWhenTheReaderHasReadingConstraints()
+	{
+		Message first = message(1L, A);
+		Conversation conversation = conversationWithMessageFromA(first);
+		constrain(conversation, B, new TimeConstraint(LocalTime.of(18, 0), ConstraintScope.READ));
+
+		assertThrows(DomainException.class, () -> conversation.readMessage(B, FIRST, first.getId(), null));
 		assertEquals(Optional.empty(), conversation.findDiscussion(FIRST).getReadAt(first.getId()));
 	}
 
@@ -175,14 +202,17 @@ public class ConversationReadingTest
 	}
 
 	@Test
-	void shouldAcceptAReplyOnceTheMessageWasRead()
+	void shouldAcceptAReplyOnceTheMessageWasReadAndRecordWhenItWasSent()
 	{
 		Message first = message(1L, A);
 		Conversation conversation = conversationWithMessageFromA(first);
 
 		conversation.readMessage(B, FIRST, first.getId(), at(T0));
+		Message reply = message(2L, B);
 
-		assertDoesNotThrow(() -> conversation.sendMessage(message(2L, B), FIRST, at(T0)));
+		assertDoesNotThrow(() -> conversation.sendMessage(reply, FIRST, at(T0.plusSeconds(90))));
+		assertEquals(T0, first.getSentAt());
+		assertEquals(T0.plusSeconds(90), reply.getSentAt());
 	}
 
 	@Test
@@ -231,14 +261,28 @@ public class ConversationReadingTest
 	}
 
 	@Test
-	void shouldFailTheDelayWhenTheContextHasNoCurrentInstant()
+	void shouldIgnoreAnInstantSuppliedByTheCaller()
+	{
+		// A client claiming it is already two hours later can't get around the delay: the conversation's clock decides.
+		Message first = message(1L, A);
+		Conversation conversation = conversationWithMessageFromA(first);
+		constrain(conversation, B, new ReplyDelayConstraint(Duration.ofHours(1)));
+		conversation.readMessage(B, FIRST, first.getId(), at(T0));
+
+		ConstraintContext faked = at(T0.plus(Duration.ofMinutes(1))).withNow(T0.plus(Duration.ofHours(2)));
+
+		assertThrows(DomainException.class, () -> conversation.sendMessage(message(2L, B), FIRST, faked));
+	}
+
+	@Test
+	void shouldRequireAContextWhenTheSenderHasAReplyDelay()
 	{
 		Message first = message(1L, A);
 		Conversation conversation = conversationWithMessageFromA(first);
 		constrain(conversation, B, new ReplyDelayConstraint(Duration.ZERO));
 		conversation.readMessage(B, FIRST, first.getId(), at(T0));
 
-		assertThrows(DomainException.class, () -> conversation.sendMessage(message(2L, B), FIRST, new ConstraintContext(LocalTime.NOON)));
+		assertThrows(DomainException.class, () -> conversation.sendMessage(message(2L, B), FIRST, null));
 	}
 
 	@Test

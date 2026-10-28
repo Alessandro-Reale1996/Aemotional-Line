@@ -67,7 +67,7 @@ public class ConversationDiscussionOriginTest
 
 	private static Conversation startConversation()
 	{
-		return Conversation.start(Ids.conversation(321L), COUPLE, acceptedNegotiation(60L));
+		return Conversation.start(Ids.conversation(321L), COUPLE, acceptedNegotiation(60L), Clock.systemUTC());
 	}
 
 	private static Message message(long id, UserId sender, Paragraph... paragraphs)

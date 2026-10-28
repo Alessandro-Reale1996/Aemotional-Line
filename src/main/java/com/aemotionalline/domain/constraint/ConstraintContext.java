@@ -4,10 +4,11 @@ import java.time.Instant;
 import java.time.LocalTime;
 
 /**
- * The circumstances a message is read or sent in, supplied by the caller. Passing them in, rather than reading the
- * system clock inside a constraint, keeps constraints pure and testable. {@code now} is the instant of the action,
- * {@code position} where the user is (both may be null when no constraint needs them);
- * {@code readAt} is when the message being answered was first read, and is filled in by the conversation, not the caller.
+ * The circumstances a message is read or sent in. The caller supplies the local time of day (it depends on the user's
+ * time zone) and the position; either may be null when no constraint needs it. {@code now} (the instant of the action,
+ * from the conversation's clock) and {@code readAt} (when the message being answered was first read) are filled in by
+ * the conversation, which overwrites whatever the caller put there, so the caller can't fake them.
+ * Passing everything in, rather than reading the system clock inside a constraint, keeps constraints pure and testable.
  */
 public class ConstraintContext
 {
@@ -21,14 +22,9 @@ public class ConstraintContext
         this(time, null, null, null);
     }
 
-    public ConstraintContext(LocalTime time, Instant now)
+    public ConstraintContext(LocalTime time, GeoPosition position)
     {
-        this(time, now, null, null);
-    }
-
-    public ConstraintContext(LocalTime time, Instant now, GeoPosition position)
-    {
-        this(time, now, null, position);
+        this(time, null, null, position);
     }
 
     private ConstraintContext(LocalTime time, Instant now, Instant readAt, GeoPosition position)
@@ -37,6 +33,11 @@ public class ConstraintContext
         this.now = now;
         this.readAt = readAt;
         this.position = position;
+    }
+
+    public ConstraintContext withNow(Instant now)
+    {
+        return new ConstraintContext(time, now, readAt, position);
     }
 
     public ConstraintContext withReadAt(Instant readAt)

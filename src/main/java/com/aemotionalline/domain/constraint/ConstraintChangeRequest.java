@@ -1,8 +1,10 @@
 package com.aemotionalline.domain.constraint;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
@@ -10,22 +12,33 @@ import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.user.UserId;
 
 /**
- * A therapist's proposal to change the constraints. Only the therapist may create it, but it changes nothing
- * on its own: both partners must approve first, because the constraints limit them, not the therapist.
- * It belongs to one couple for its whole life, and it can be applied only once.
+ * A therapist's proposal to change the constraints (spec 1.3.2: the "descriptive notification"). Only the therapist may
+ * create it, but it changes nothing on its own: both partners must approve first, because the constraints limit them,
+ * not the therapist. It belongs to one couple for its whole life, and it can be applied only once. The conversation
+ * owns its requests and keeps every one of them, however it ends; the instants are given by the conversation's clock.
  */
 public class ConstraintChangeRequest
 {
 
+    private final ConstraintChangeRequestId id;
     private final Couple couple;
     private final UserId proposedBy;
     private final List<ConstraintAssignment> assignments;
+    private final Instant proposedAt;
     private final Set<UserId> approvals = new HashSet<>();
 
     private ConstraintChangeRequestStatus status = ConstraintChangeRequestStatus.PENDING;
+    private Instant closedAt;
+    private UserId rejectedBy;
+    private List<ConstraintAssignment> previousAssignments;
 
-    public ConstraintChangeRequest(UserId proposedBy, List<ConstraintAssignment> assignments, Couple couple)
+    public ConstraintChangeRequest(ConstraintChangeRequestId id, UserId proposedBy, List<ConstraintAssignment> assignments, Couple couple, Instant proposedAt)
     {
+        if (id == null || proposedAt == null)
+        {
+            throw new DomainException("A request needs an id and the instant it was proposed.");
+        }
+
         if (couple == null)
         {
             throw new DomainException("Couple cannot be null.");
@@ -47,7 +60,7 @@ public class ConstraintChangeRequest
             throw new DomainException("Assignments cannot contain null.");
         }
 
-        // A constraint only ever checks the sender, who is always a partner: one assigned to anybody else would never apply.
+        // A constraint only ever checks a partner: one assigned to anybody else would never apply.
         for (ConstraintAssignment assignment : assignments)
         {
             if (!couple.isPartner(assignment.getUserId()))
@@ -56,9 +69,11 @@ public class ConstraintChangeRequest
             }
         }
 
+        this.id = id;
         this.couple = couple;
         this.proposedBy = proposedBy;
         this.assignments = List.copyOf(assignments);
+        this.proposedAt = proposedAt;
     }
 
     public void approve(UserId userId)
@@ -74,7 +89,7 @@ public class ConstraintChangeRequest
     }
 
     /** A partner refuses the request. It is final: the therapist has to create a new one. */
-    public void reject(UserId userId)
+    public void reject(UserId userId, Instant at)
     {
         ensurePending();
 
@@ -83,11 +98,12 @@ public class ConstraintChangeRequest
             throw new DomainException("Only partners can reject");
         }
 
-        status = ConstraintChangeRequestStatus.REJECTED;
+        close(ConstraintChangeRequestStatus.REJECTED, at);
+        rejectedBy = userId;
     }
 
     /** The therapist takes back their own request before it is applied. */
-    public void withdraw(UserId userId)
+    public void withdraw(UserId userId, Instant at)
     {
         ensurePending();
 
@@ -96,7 +112,7 @@ public class ConstraintChangeRequest
             throw new DomainException("Only the therapist who proposed the constraints can withdraw them");
         }
 
-        status = ConstraintChangeRequestStatus.REJECTED;
+        close(ConstraintChangeRequestStatus.WITHDRAWN, at);
     }
 
     public boolean isFullyApproved()
@@ -105,10 +121,10 @@ public class ConstraintChangeRequest
     }
 
     /**
-     * Puts the approved assignments into the given set and closes the request. This is the only way to change a
-     * {@link ConstraintSet}, so a request cannot be applied twice, unapproved, or after it was rejected.
+     * Puts the approved assignments into the given set, keeps the ones they replace and closes the request. This is the
+     * only way to change a {@link ConstraintSet}, so a request cannot be applied twice, unapproved, or after it was closed.
      */
-    public void applyTo(ConstraintSet constraintSet)
+    public void applyTo(ConstraintSet constraintSet, Instant at)
     {
         if (constraintSet == null)
         {
@@ -122,9 +138,23 @@ public class ConstraintChangeRequest
             throw new DomainException("Constraints not fully approved");
         }
 
+        // Checked here too, so a failure leaves both the set and the request as they were.
+        if (at == null)
+        {
+            throw new DomainException("The instant the request is closed can't be null.");
+        }
+
+        List<ConstraintAssignment> previous = constraintSet.getAssignments();
+
         constraintSet.replaceWith(assignments);
 
-        status = ConstraintChangeRequestStatus.APPLIED;
+        previousAssignments = previous;
+        close(ConstraintChangeRequestStatus.APPLIED, at);
+    }
+
+    public ConstraintChangeRequestId id()
+    {
+        return id;
     }
 
     public List<ConstraintAssignment> assignments()
@@ -140,6 +170,29 @@ public class ConstraintChangeRequest
     public ConstraintChangeRequestStatus status()
     {
         return status;
+    }
+
+    public boolean isPending()
+    {
+        return status == ConstraintChangeRequestStatus.PENDING;
+    }
+
+    /** The picture of this request for the archive: reading it can't change the request. */
+    public ConstraintRequestRecord toRecord()
+    {
+        return new ConstraintRequestRecord(id, proposedBy, assignments, status, approvals, proposedAt,
+                Optional.ofNullable(closedAt), Optional.ofNullable(rejectedBy), Optional.ofNullable(previousAssignments));
+    }
+
+    private void close(ConstraintChangeRequestStatus finalStatus, Instant at)
+    {
+        if (at == null)
+        {
+            throw new DomainException("The instant the request is closed can't be null.");
+        }
+
+        status = finalStatus;
+        closedAt = at;
     }
 
     private void ensurePending()

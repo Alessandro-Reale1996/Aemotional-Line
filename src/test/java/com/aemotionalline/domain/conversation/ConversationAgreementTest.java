@@ -87,7 +87,7 @@ public class ConversationAgreementTest
 
 	private static Conversation startConversation()
 	{
-		return Conversation.start(Ids.conversation(321L), COUPLE, settledNegotiation(60L));
+		return Conversation.start(Ids.conversation(321L), COUPLE, settledNegotiation(60L), Clock.systemUTC());
 	}
 
 	// MODIFY AGREEMENT:
@@ -139,7 +139,7 @@ public class ConversationAgreementTest
 	void shouldNotModifyTheAgreementWithTheNegotiationThatStartedTheConversation()
 	{
 		Negotiation first = settledNegotiation(60L);
-		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE, first);
+		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE, first, Clock.systemUTC());
 		conversation.modifyAgreement(settledNegotiation(70L));
 		Proposal current = conversation.getAgreement();
 
@@ -198,7 +198,7 @@ public class ConversationAgreementTest
 	void shouldNotOpenADiscussionWithTheNegotiationThatStartedTheConversation()
 	{
 		Negotiation first = settledNegotiation(60L);
-		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE, first);
+		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE, first, Clock.systemUTC());
 
 		assertThrows(DomainException.class, () -> conversation.openDiscussion(first));
 		assertEquals(1, conversation.getDiscussions().size());
@@ -285,6 +285,6 @@ public class ConversationAgreementTest
 	@Test
 	void shouldNotStartAConversationWithADiscussionNegotiation()
 	{
-		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), COUPLE, settledDiscussionNegotiation(60L)));
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), COUPLE, settledDiscussionNegotiation(60L), Clock.systemUTC()));
 	}
 }

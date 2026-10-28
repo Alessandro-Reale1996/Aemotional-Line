@@ -5,9 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +22,10 @@ import com.aemotionalline.domain.Ids;
 
 public class ConstraintChangeRequestTest
 {
+	private static final ConstraintChangeRequestId ID = new ConstraintChangeRequestId(new UUID(0L, 1L));
+	private static final Instant AT = Instant.parse("2026-10-28T10:00:00Z");
+	private static final Instant LATER = AT.plusSeconds(3600);
+
 	@Test
 	void shouldThrowExceptionWhenNotTherapistSendRequest()
 	{
@@ -33,7 +41,7 @@ public class ConstraintChangeRequestTest
 		List <ConstraintAssignment>assignments = new ArrayList<>();
 		assignments.add(constraintAssignment);
 		
-		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(couple.getPartnerOneId(), assignments, couple));
+		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(ID, couple.getPartnerOneId(), assignments, couple, AT));
 	}
 	
 	@Test
@@ -51,7 +59,7 @@ public class ConstraintChangeRequestTest
 		List <ConstraintAssignment>assignments = new ArrayList<>();
 		assignments.add(constraintAssignment);
 		
-		var costraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		var costraintChangeRequest = new ConstraintChangeRequest(ID, couple.getTherapistId(),assignments,couple, AT);
 		
 		UserId notPartner = Ids.user(40L);
 		
@@ -74,7 +82,7 @@ public class ConstraintChangeRequestTest
 		List <ConstraintAssignment>assignments = new ArrayList<>();
 		assignments.add(constraintAssignment);
 		
-		var costraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		var costraintChangeRequest = new ConstraintChangeRequest(ID, couple.getTherapistId(),assignments,couple, AT);
 		
 		assertThrows(DomainException.class, () -> costraintChangeRequest.approve(null));	
 	}
@@ -94,7 +102,7 @@ public class ConstraintChangeRequestTest
 		List <ConstraintAssignment>assignments = new ArrayList<>();
 		assignments.add(constraintAssignment);
 		
-		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		var constraintChangeRequest = new ConstraintChangeRequest(ID, couple.getTherapistId(),assignments,couple, AT);
 		
 		constraintChangeRequest.approve(partnerOne);
 		constraintChangeRequest.approve(partnerTwo);
@@ -116,7 +124,7 @@ public class ConstraintChangeRequestTest
 	
 	private static ConstraintChangeRequest requestFor(UserId user)
 	{
-		return new ConstraintChangeRequest(THERAPIST, List.of(assignmentFor(user)), COUPLE);
+		return new ConstraintChangeRequest(ID, THERAPIST, List.of(assignmentFor(user)), COUPLE, AT);
 	}
 	
 	private static ConstraintChangeRequest approvedRequest()
@@ -131,7 +139,7 @@ public class ConstraintChangeRequestTest
 	void shouldNotChangeWhenTheListPassedToTheConstructorIsModifiedLater()
 	{
 		List<ConstraintAssignment> source = new ArrayList<>(List.of(assignmentFor(PARTNER_ONE)));
-		ConstraintChangeRequest request = new ConstraintChangeRequest(THERAPIST, source, COUPLE);
+		ConstraintChangeRequest request = new ConstraintChangeRequest(ID, THERAPIST, source, COUPLE, AT);
 		
 		// The partners approve what they saw: a later change to the caller's list must not reach the request.
 		source.add(assignmentFor(PARTNER_TWO));
@@ -146,24 +154,24 @@ public class ConstraintChangeRequestTest
 		List<ConstraintAssignment> withNull = new ArrayList<>();
 		withNull.add(null);
 		
-		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(THERAPIST, null, COUPLE));
-		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(THERAPIST, withNull, COUPLE));
-		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(THERAPIST, List.of(assignmentFor(THERAPIST)), COUPLE));
-		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(THERAPIST, List.of(assignmentFor(Ids.user(40L))), COUPLE));
-		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(THERAPIST, List.of(), null));
+		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(ID, THERAPIST, null, COUPLE, AT));
+		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(ID, THERAPIST, withNull, COUPLE, AT));
+		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(ID, THERAPIST, List.of(assignmentFor(THERAPIST)), COUPLE, AT));
+		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(ID, THERAPIST, List.of(assignmentFor(Ids.user(40L))), COUPLE, AT));
+		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(ID, THERAPIST, List.of(), null, AT));
 	}
 	
 	@Test
 	void shouldAllowAnEmptyRequestToLiftEveryConstraint()
 	{
-		ConstraintChangeRequest request = new ConstraintChangeRequest(THERAPIST, List.of(), COUPLE);
+		ConstraintChangeRequest request = new ConstraintChangeRequest(ID, THERAPIST, List.of(), COUPLE, AT);
 		request.approve(PARTNER_ONE);
 		request.approve(PARTNER_TWO);
 		
 		ConstraintSet set = new ConstraintSet();
 		set.replaceWith(List.of(assignmentFor(PARTNER_ONE)));
 		
-		request.applyTo(set);
+		request.applyTo(set, AT);
 		
 		assertTrue(set.isEmpty());
 	}
@@ -189,12 +197,12 @@ public class ConstraintChangeRequestTest
 		ConstraintChangeRequest request = requestFor(PARTNER_ONE);
 		request.approve(PARTNER_ONE);
 		
-		request.reject(PARTNER_TWO);
+		request.reject(PARTNER_TWO, AT);
 		
 		assertEquals(ConstraintChangeRequestStatus.REJECTED, request.status());
 		assertThrows(DomainException.class, () -> request.approve(PARTNER_TWO));
-		assertThrows(DomainException.class, () -> request.reject(PARTNER_ONE));
-		assertThrows(DomainException.class, () -> request.applyTo(new ConstraintSet()));
+		assertThrows(DomainException.class, () -> request.reject(PARTNER_ONE, AT));
+		assertThrows(DomainException.class, () -> request.applyTo(new ConstraintSet(), AT));
 	}
 	
 	@Test
@@ -202,9 +210,9 @@ public class ConstraintChangeRequestTest
 	{
 		ConstraintChangeRequest request = requestFor(PARTNER_ONE);
 		
-		assertThrows(DomainException.class, () -> request.reject(THERAPIST));
-		assertThrows(DomainException.class, () -> request.reject(Ids.user(40L)));
-		assertThrows(DomainException.class, () -> request.reject(null));
+		assertThrows(DomainException.class, () -> request.reject(THERAPIST, AT));
+		assertThrows(DomainException.class, () -> request.reject(Ids.user(40L), AT));
+		assertThrows(DomainException.class, () -> request.reject(null, AT));
 		assertEquals(ConstraintChangeRequestStatus.PENDING, request.status());
 	}
 	
@@ -213,13 +221,13 @@ public class ConstraintChangeRequestTest
 	{
 		ConstraintChangeRequest request = requestFor(PARTNER_ONE);
 		
-		assertThrows(DomainException.class, () -> request.withdraw(PARTNER_ONE));
-		assertThrows(DomainException.class, () -> request.withdraw(null));
+		assertThrows(DomainException.class, () -> request.withdraw(PARTNER_ONE, AT));
+		assertThrows(DomainException.class, () -> request.withdraw(null, AT));
 		assertEquals(ConstraintChangeRequestStatus.PENDING, request.status());
 		
-		request.withdraw(THERAPIST);
+		request.withdraw(THERAPIST, AT);
 		
-		assertEquals(ConstraintChangeRequestStatus.REJECTED, request.status());
+		assertEquals(ConstraintChangeRequestStatus.WITHDRAWN, request.status());
 		assertThrows(DomainException.class, () -> request.approve(PARTNER_ONE));
 	}
 	
@@ -230,24 +238,98 @@ public class ConstraintChangeRequestTest
 		
 		ConstraintChangeRequest halfApproved = requestFor(PARTNER_ONE);
 		halfApproved.approve(PARTNER_ONE);
-		assertThrows(DomainException.class, () -> halfApproved.applyTo(set));
+		assertThrows(DomainException.class, () -> halfApproved.applyTo(set, AT));
 		assertTrue(set.isEmpty());
 		assertEquals(ConstraintChangeRequestStatus.PENDING, halfApproved.status());
 		
 		ConstraintChangeRequest request = approvedRequest();
-		request.applyTo(set);
+		request.applyTo(set, AT);
 		
 		assertEquals(1, set.getAssignments().size());
 		assertEquals(ConstraintChangeRequestStatus.APPLIED, request.status());
-		assertThrows(DomainException.class, () -> request.applyTo(set));
+		assertThrows(DomainException.class, () -> request.applyTo(set, AT));
 		assertThrows(DomainException.class, () -> request.approve(PARTNER_ONE));
-		assertThrows(DomainException.class, () -> request.reject(PARTNER_ONE));
-		assertThrows(DomainException.class, () -> request.withdraw(THERAPIST));
+		assertThrows(DomainException.class, () -> request.reject(PARTNER_ONE, AT));
+		assertThrows(DomainException.class, () -> request.withdraw(THERAPIST, AT));
 	}
 	
 	@Test
 	void shouldRejectANullConstraintSet()
 	{
-		assertThrows(DomainException.class, () -> approvedRequest().applyTo(null));
+		assertThrows(DomainException.class, () -> approvedRequest().applyTo(null, AT));
+	}
+
+	// HISTORY (6a.3): what the archive shows of a request.
+	
+	@Test
+	void shouldRecordWhoRejectedAndWhen()
+	{
+		ConstraintChangeRequest request = requestFor(PARTNER_ONE);
+		
+		request.reject(PARTNER_TWO, LATER);
+		
+		ConstraintRequestRecord record = request.toRecord();
+		assertEquals(ConstraintChangeRequestStatus.REJECTED, record.status());
+		assertEquals(Optional.of(PARTNER_TWO), record.rejectedBy());
+		assertEquals(Optional.of(LATER), record.closedAt());
+		assertEquals(AT, record.proposedAt());
+		assertEquals(Optional.empty(), record.previousAssignments());
+	}
+	
+	@Test
+	void shouldTellAWithdrawalFromARejection()
+	{
+		ConstraintChangeRequest request = requestFor(PARTNER_ONE);
+		
+		request.withdraw(THERAPIST, LATER);
+		
+		assertEquals(ConstraintChangeRequestStatus.WITHDRAWN, request.toRecord().status());
+		assertEquals(Optional.empty(), request.toRecord().rejectedBy());
+		assertEquals(Optional.of(LATER), request.toRecord().closedAt());
+	}
+	
+	@Test
+	void shouldKeepTheConstraintsAnAppliedRequestReplaced()
+	{
+		ConstraintSet set = new ConstraintSet();
+		ConstraintAssignment before = assignmentFor(PARTNER_TWO);
+		set.replaceWith(List.of(before));
+		ConstraintChangeRequest request = approvedRequest();
+		
+		request.applyTo(set, LATER);
+		
+		ConstraintRequestRecord record = request.toRecord();
+		assertEquals(Optional.of(List.of(before)), record.previousAssignments());
+		assertEquals(request.assignments(), set.getAssignments());
+		assertEquals(Set.of(PARTNER_ONE, PARTNER_TWO), record.approvals());
+		assertEquals(Optional.of(LATER), record.closedAt());
+	}
+	
+	@Test
+	void shouldGiveARecordThatCantChangeTheRequest()
+	{
+		ConstraintChangeRequest request = requestFor(PARTNER_ONE);
+		request.approve(PARTNER_ONE);
+		ConstraintRequestRecord record = request.toRecord();
+		
+		assertThrows(UnsupportedOperationException.class, () -> record.approvals().add(PARTNER_TWO));
+		assertThrows(UnsupportedOperationException.class, () -> record.assignments().clear());
+		assertEquals(false, request.isFullyApproved());
+	}
+	
+	@Test
+	void shouldRequireTheInstants()
+	{
+		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(ID, THERAPIST, List.of(), COUPLE, null));
+		assertThrows(DomainException.class, () -> new ConstraintChangeRequest(null, THERAPIST, List.of(), COUPLE, AT));
+		
+		ConstraintChangeRequest request = approvedRequest();
+		ConstraintSet set = new ConstraintSet();
+		
+		assertThrows(DomainException.class, () -> request.reject(PARTNER_ONE, null));
+		assertThrows(DomainException.class, () -> request.withdraw(THERAPIST, null));
+		assertThrows(DomainException.class, () -> request.applyTo(set, null));
+		assertEquals(ConstraintChangeRequestStatus.PENDING, request.status());
+		assertTrue(set.isEmpty());
 	}
 }

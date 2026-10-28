@@ -88,7 +88,7 @@ public class ConversationBlockedReplyTest
 	private static Conversation conversationExpanding(Paragraph... paragraphs)
 	{
 		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE,
-				settled(Negotiation.start(Ids.negotiation(60L), COUPLE, new AgreementProposal(Ids.proposal(60L), A, "TEXT"), Clock.systemUTC())));
+				settled(Negotiation.start(Ids.negotiation(60L), COUPLE, new AgreementProposal(Ids.proposal(60L), A, "TEXT"), Clock.systemUTC())), Clock.systemUTC());
 
 		send(conversation, FIRST, message(1L, A, paragraphs));
 		conversation.openDiscussion(discussionNegotiation(70L), paragraphs[0].getId());
@@ -196,7 +196,7 @@ public class ConversationBlockedReplyTest
 	{
 		SimpleParagraph origin = simple(1L);
 		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE,
-				settled(Negotiation.start(Ids.negotiation(60L), COUPLE, new AgreementProposal(Ids.proposal(60L), A, "TEXT"), Clock.systemUTC())));
+				settled(Negotiation.start(Ids.negotiation(60L), COUPLE, new AgreementProposal(Ids.proposal(60L), A, "TEXT"), Clock.systemUTC())), Clock.systemUTC());
 		send(conversation, FIRST, message(1L, A, origin));
 
 		assertDoesNotThrow(() -> send(conversation, FIRST, message(2L, B, replyingTo(2L, origin))));

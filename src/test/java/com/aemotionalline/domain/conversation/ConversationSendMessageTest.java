@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
-import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.TimeConstraint;
 import com.aemotionalline.domain.couple.Couple;
@@ -56,7 +55,7 @@ public class ConversationSendMessageTest
 
 		negotiation.acceptProposal(B);
 
-		return Conversation.start(Ids.conversation(321L), COUPLE, negotiation);
+		return Conversation.start(Ids.conversation(321L), COUPLE, negotiation, Clock.systemUTC());
 	}
 
 	private static Message message(long id, UserId sender, Paragraph... paragraphs)
@@ -381,54 +380,16 @@ public class ConversationSendMessageTest
 	{
 		Conversation conversation = startConversation();
 		
-		ConstraintChangeRequest request = new ConstraintChangeRequest(COUPLE.getTherapistId(),
-				List.of(new ConstraintAssignment(A, new TimeConstraint(LocalTime.of(9, 0)))), COUPLE);
-		request.approve(A);
-		request.approve(B);
-		conversation.applyConstraints(request);
+		var request = conversation.proposeConstraints(COUPLE.getTherapistId(),
+				List.of(new ConstraintAssignment(A, new TimeConstraint(LocalTime.of(9, 0)))));
+		conversation.approveConstraints(request, A);
+		conversation.approveConstraints(request, B);
 		
 		assertThrows(DomainException.class, () -> conversation.sendMessage(message(1L, A, simple(1L)), FIRST_DISCUSSION, null));
 		assertUnchanged(conversation, 0, 0, null);
 	}
 	
-	// CONSTRAINT CHANGE REQUESTS (6d):
-	
-	private static ConstraintChangeRequest approvedRequest(Couple couple)
-	{
-		ConstraintChangeRequest request = new ConstraintChangeRequest(couple.getTherapistId(),
-				List.of(new ConstraintAssignment(couple.getPartnerOneId(), new TimeConstraint(LocalTime.of(9, 0)))), couple);
-		request.approve(couple.getPartnerOneId());
-		request.approve(couple.getPartnerTwoId());
-		return request;
-	}
-	
-	@Test
-	void shouldNotApplyARequestOfAnotherCouple()
-	{
-		Conversation conversation = startConversation();
-		Couple other = new Couple(Ids.couple(2L), Ids.user(11L), Ids.user(21L), Ids.user(31L));
-		
-		assertThrows(DomainException.class, () -> conversation.applyConstraints(approvedRequest(other)));
-		assertTrue(conversation.getConstraintSet().isEmpty());
-	}
-	
-	@Test
-	void shouldNotApplyTheSameRequestTwice()
-	{
-		Conversation conversation = startConversation();
-		ConstraintChangeRequest request = approvedRequest(COUPLE);
-		
-		conversation.applyConstraints(request);
-		
-		assertThrows(DomainException.class, () -> conversation.applyConstraints(request));
-		assertEquals(1, conversation.getConstraintSet().getAssignments().size());
-	}
-	
-	@Test
-	void shouldNotApplyANullRequest()
-	{
-		assertThrows(DomainException.class, () -> startConversation().applyConstraints(null));
-	}
+	// The life cycle of constraint change requests is tested in ConversationConstraintRequestTest.
 	
 	// SELF-CITATIONS (5g):
 	

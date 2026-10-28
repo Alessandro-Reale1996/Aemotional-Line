@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Clock;
 import java.time.LocalTime;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
-import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.TimeConstraint;
 import com.aemotionalline.domain.couple.Couple;
@@ -51,9 +51,9 @@ public class ConversationTest
 	    
 	    negotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, negotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, negotiation, Clock.systemUTC());
 
-	    assertNotNull(conversation.getConstraintSet());
+	    assertNotNull(conversation.getConstraintAssignments());
 	}
 	
 
@@ -78,7 +78,7 @@ public class ConversationTest
 	    
 	    negotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, negotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, negotiation, Clock.systemUTC());
 		
 		assertFalse(conversation.canSendMessage(therapist));
 			
@@ -105,7 +105,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation, Clock.systemUTC());
 	 
 	    Proposal discussionProposal = new DiscussionProposal(Ids.proposal(124L), couple.getPartnerOneId(), "TITLE", "SUBTITLE");
 
@@ -150,7 +150,7 @@ public class ConversationTest
 		
 		Negotiation otherNegotiation = acceptedNegotiation(60L, 123L, otherCouple);
 		
-		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), couple, otherNegotiation));
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), couple, otherNegotiation, Clock.systemUTC()));
 	}
 	
 	@Test
@@ -159,7 +159,7 @@ public class ConversationTest
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 		Couple otherCouple = new Couple(Ids.couple(2L), Ids.user(40L), Ids.user(50L), Ids.user(30L));
 		
-		Conversation conversation = Conversation.start(Ids.conversation(321L), couple, acceptedNegotiation(60L, 123L, couple));
+		Conversation conversation = Conversation.start(Ids.conversation(321L), couple, acceptedNegotiation(60L, 123L, couple), Clock.systemUTC());
 		
 		Negotiation otherNegotiation = acceptedNegotiation(70L, 124L, otherCouple);
 		
@@ -176,7 +176,7 @@ public class ConversationTest
 		
 		Negotiation negotiation = acceptedNegotiation(60L, 123L, couple);
 		
-		Conversation conversation = Conversation.start(Ids.conversation(321L), couple, negotiation);
+		Conversation conversation = Conversation.start(Ids.conversation(321L), couple, negotiation, Clock.systemUTC());
 		
 		Negotiation otherNegotiation = acceptedNegotiation(70L, 124L, otherCouple);
 		
@@ -191,7 +191,7 @@ public class ConversationTest
 		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 		Couple sameCoupleLoadedAgain = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
 		
-		Conversation conversation = Conversation.start(Ids.conversation(321L), couple, acceptedNegotiation(60L, 123L, sameCoupleLoadedAgain));
+		Conversation conversation = Conversation.start(Ids.conversation(321L), couple, acceptedNegotiation(60L, 123L, sameCoupleLoadedAgain), Clock.systemUTC());
 		
 		assertEquals(1, conversation.getDiscussions().size());
 	}
@@ -215,13 +215,13 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation, Clock.systemUTC());
 		
 		assertThrows(DomainException.class, () -> conversation.ensureCanSendMessage(therapist));
 	}
 	
 	@Test
-	void shouldThrowExceptionWhenConstraintsAreNotFullyApproved()
+	void shouldNotApplyConstraintsThatAreNotFullyApproved()
 	{
 		UserId partnerOne = Ids.user(10L);
 	    UserId partnerTwo = Ids.user(20L);
@@ -239,7 +239,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation, Clock.systemUTC());
 		
 		TimeConstraint constraint = new TimeConstraint(LocalTime.of(22, 0));
 		ConstraintAssignment constraintAssignment = new ConstraintAssignment(partnerOne, constraint);
@@ -247,11 +247,12 @@ public class ConversationTest
 		List <ConstraintAssignment>assignments = new ArrayList<>();
 		assignments.add(constraintAssignment);
 		
-		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		var constraintChangeRequest = conversation.proposeConstraints(couple.getTherapistId(), assignments);
 		
-		constraintChangeRequest.approve(partnerOne);
+		conversation.approveConstraints(constraintChangeRequest, partnerOne);
 		
-		assertThrows(DomainException.class, () -> conversation.applyConstraints(constraintChangeRequest));
+		// One approval is not consent: nothing is applied yet.
+		assertTrue(conversation.getConstraintAssignments().isEmpty());
 	}
 	
 	@Test
@@ -273,7 +274,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation, Clock.systemUTC());
 		
 		TimeConstraint failConstraint = new TimeConstraint(LocalTime.of(23, 0));
 
@@ -282,12 +283,11 @@ public class ConversationTest
 		List <ConstraintAssignment>assignments = new ArrayList<>();
 		assignments.add(constraintAssignment);
 		
-		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		var constraintChangeRequest = conversation.proposeConstraints(couple.getTherapistId(), assignments);
 		
-		constraintChangeRequest.approve(partnerOne);
-		constraintChangeRequest.approve(partnerTwo);
+		conversation.approveConstraints(constraintChangeRequest, partnerOne);
+		conversation.approveConstraints(constraintChangeRequest, partnerTwo);
 		
-		conversation.applyConstraints(constraintChangeRequest);
 		
 		Message message = new Message(Ids.message(110L),partnerOne);
 		
@@ -320,7 +320,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation, Clock.systemUTC());
 		
 		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
 				
@@ -329,12 +329,11 @@ public class ConversationTest
 		List <ConstraintAssignment>assignments = new ArrayList<>();
 		assignments.add(constraintAssignment);
 		
-		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		var constraintChangeRequest = conversation.proposeConstraints(couple.getTherapistId(), assignments);
 		
-		constraintChangeRequest.approve(partnerOne);
-		constraintChangeRequest.approve(partnerTwo);
+		conversation.approveConstraints(constraintChangeRequest, partnerOne);
+		conversation.approveConstraints(constraintChangeRequest, partnerTwo);
 		
-		conversation.applyConstraints(constraintChangeRequest);
 		
 		Message message = new Message(Ids.message(110L),partnerOne);
 		
@@ -369,7 +368,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation, Clock.systemUTC());
 		
 		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
 				
@@ -378,12 +377,11 @@ public class ConversationTest
 		List <ConstraintAssignment>assignments = new ArrayList<>();
 		assignments.add(constraintAssignment);
 		
-		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		var constraintChangeRequest = conversation.proposeConstraints(couple.getTherapistId(), assignments);
 		
-		constraintChangeRequest.approve(partnerOne);
-		constraintChangeRequest.approve(partnerTwo);
+		conversation.approveConstraints(constraintChangeRequest, partnerOne);
+		conversation.approveConstraints(constraintChangeRequest, partnerTwo);
 		
-		conversation.applyConstraints(constraintChangeRequest);
 		
 		Message message = new Message(Ids.message(110L),partnerOne);
 		
@@ -427,7 +425,7 @@ public class ConversationTest
 	    
 	    conversationNegotiation.acceptProposal(couple.getPartnerTwoId());
 
-	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation);
+	    Conversation conversation = Conversation.start(Ids.conversation(321L), couple, conversationNegotiation, Clock.systemUTC());
 		
 		TimeConstraint Constraint = new TimeConstraint(LocalTime.of(22, 0));
 				
@@ -436,12 +434,11 @@ public class ConversationTest
 		List <ConstraintAssignment>assignments = new ArrayList<>();
 		assignments.add(constraintAssignment);
 		
-		var constraintChangeRequest = new ConstraintChangeRequest(couple.getTherapistId(),assignments,couple);
+		var constraintChangeRequest = conversation.proposeConstraints(couple.getTherapistId(), assignments);
 		
-		constraintChangeRequest.approve(partnerOne);
-		constraintChangeRequest.approve(partnerTwo);
+		conversation.approveConstraints(constraintChangeRequest, partnerOne);
+		conversation.approveConstraints(constraintChangeRequest, partnerTwo);
 		
-		conversation.applyConstraints(constraintChangeRequest);
 		
 		Message message = new Message(Ids.message(110L), partnerOne);
 		

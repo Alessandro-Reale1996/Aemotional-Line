@@ -1,5 +1,6 @@
 package com.aemotionalline.domain.message;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +19,9 @@ public class Message
 	private final List<Paragraph> paragraphs;
 	
 	private boolean sealed;
+	
+	// When the message was sent, set once by sealing; null while it is a draft.
+	private Instant sentAt;
 	
 	// The questions of the answered message that this message left without an answer, recorded when it is sent
 	// (spec 1.3.3: the user may skip a question, but the choice is tracked). Final once the message is sealed.
@@ -88,13 +92,14 @@ public class Message
 		return questionsLeftUnanswered;
 	}
 	
-	public void seal()
+	public Instant getSentAt()
 	{
-		seal(List.of());
+		return sentAt;
 	}
 	
-	// Seals the message and records, in the same step, the questions it left unanswered: the record can't change later.
-	public void seal(List<ParagraphId> questionsLeftUnanswered)
+	// Seals the message and records, in the same step, when it was sent and the questions it left unanswered:
+	// the record can't change later.
+	public void seal(List<ParagraphId> questionsLeftUnanswered, Instant sentAt)
 	{
 		if (sealed)
 		{
@@ -106,7 +111,13 @@ public class Message
 			throw new DomainException("The questions left unanswered can't be null.");
 		}
 		
+		if (sentAt == null)
+		{
+			throw new DomainException("The instant the message was sent can't be null.");
+		}
+		
 		this.questionsLeftUnanswered = List.copyOf(questionsLeftUnanswered);
+		this.sentAt = sentAt;
 		this.sealed = true;
 		
 		for (Paragraph paragraph : paragraphs)
