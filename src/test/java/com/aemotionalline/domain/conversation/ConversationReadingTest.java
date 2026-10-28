@@ -20,6 +20,9 @@ import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.ConstraintScope;
+import com.aemotionalline.domain.constraint.GeoPosition;
+import com.aemotionalline.domain.constraint.LocationConstraint;
+import com.aemotionalline.domain.constraint.LocationConstraint.Direction;
 import com.aemotionalline.domain.constraint.ReplyDelayConstraint;
 import com.aemotionalline.domain.constraint.TimeConstraint;
 import com.aemotionalline.domain.couple.Couple;
@@ -53,6 +56,14 @@ public class ConversationReadingTest
 	private static ConstraintContext at(Instant now)
 	{
 		return at(LocalTime.NOON, now);
+	}
+
+	private static final GeoPosition HOME = new GeoPosition(45.4642, 9.19);
+	private static final GeoPosition FAR = new GeoPosition(45.48, 9.19);   // about 1.76 km from HOME
+
+	private static ConstraintContext at(GeoPosition position)
+	{
+		return new ConstraintContext(LocalTime.NOON, T0, position);
 	}
 
 	// A's first message is sent; B has not read it.
@@ -235,5 +246,61 @@ public class ConversationReadingTest
 	{
 		assertThrows(DomainException.class, () -> new ReplyDelayConstraint(null));
 		assertThrows(DomainException.class, () -> new ReplyDelayConstraint(Duration.ofSeconds(-1)));
+	}
+
+	// LOCATION:
+
+	@Test
+	void shouldOpenAMessageOnlyInThePlaceSet()
+	{
+		Message first = message(1L, A);
+		Conversation conversation = conversationWithMessageFromA(first);
+		constrain(conversation, B, new LocationConstraint(HOME, 200, Direction.WITHIN));
+
+		assertThrows(DomainException.class, () -> conversation.readMessage(B, FIRST, first.getId(), at(FAR)));
+		assertEquals(Optional.empty(), conversation.findDiscussion(FIRST).getReadAt(first.getId()));
+
+		assertDoesNotThrow(() -> conversation.readMessage(B, FIRST, first.getId(), at(HOME)));
+		assertEquals(Optional.of(T0), conversation.findDiscussion(FIRST).getReadAt(first.getId()));
+	}
+
+	@Test
+	void shouldOpenAMessageOnlyAwayFromThePlaceSet()
+	{
+		Message first = message(1L, A);
+		Conversation conversation = conversationWithMessageFromA(first);
+		constrain(conversation, B, new LocationConstraint(HOME, 200, Direction.BEYOND));
+
+		assertThrows(DomainException.class, () -> conversation.readMessage(B, FIRST, first.getId(), at(HOME)));
+		assertDoesNotThrow(() -> conversation.readMessage(B, FIRST, first.getId(), at(FAR)));
+	}
+
+	@Test
+	void shouldBlockReadingWhenTheContextHasNoPosition()
+	{
+		Message first = message(1L, A);
+		Conversation conversation = conversationWithMessageFromA(first);
+		constrain(conversation, B, new LocationConstraint(HOME, 200, Direction.WITHIN));
+
+		assertThrows(DomainException.class, () -> conversation.readMessage(B, FIRST, first.getId(), at(T0)));
+		assertEquals(Optional.empty(), conversation.findDiscussion(FIRST).getReadAt(first.getId()));
+
+		// Unable to read, the partner can't reply either.
+		assertThrows(DomainException.class, () -> conversation.sendMessage(message(2L, B), FIRST, at(HOME)));
+	}
+
+	@Test
+	void shouldLetAWritingLocationConstraintRestrictOnlyTheReply()
+	{
+		Message first = message(1L, A);
+		Conversation conversation = conversationWithMessageFromA(first);
+		constrain(conversation, B, new LocationConstraint(HOME, 200, Direction.BEYOND, ConstraintScope.WRITE));
+
+		assertDoesNotThrow(() -> conversation.readMessage(B, FIRST, first.getId(), at(HOME)));
+
+		assertThrows(DomainException.class, () -> conversation.sendMessage(message(2L, B), FIRST, at(HOME)));
+		assertEquals(1, conversation.findDiscussion(FIRST).getMessages().size());
+
+		assertDoesNotThrow(() -> conversation.sendMessage(message(2L, B), FIRST, at(FAR)));
 	}
 }
