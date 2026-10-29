@@ -18,6 +18,18 @@ public class ConversationEncapsulationTest
 		assertNotPublic(Discussion.class, "setLastSender");
 	}
 
+	// Closing a discussion must go through Conversation, which checks who is acting and takes the instant from its clock.
+	@Test
+	void shouldNotExposeDiscussionClosingMutatorsOutsideThePackage()
+	{
+		assertNotPublic(Discussion.class, "requestClosing");
+		assertNotPublic(Discussion.class, "answerClosing");
+		assertNotPublic(Discussion.class, "withdrawClosing");
+		assertNotPublic(Discussion.class, "requestTherapistClosing");
+		assertNotPublic(Discussion.class, "decideTherapistClosing");
+		assertNotPublic(Discussion.class, "declareOutcome");
+	}
+
 	@Test
 	void shouldNotExposeGraphMutatorsOutsideThePackage()
 	{

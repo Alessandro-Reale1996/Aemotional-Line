@@ -432,6 +432,9 @@ public class Conversation
 	    
 	    Discussion discussion = findDiscussion(discussionid);
 	    
+	    // A closed discussion is read-only.
+	    discussion.ensureOpen();
+	    
 	    // Turn-taking is checked here, before any change: the same partner cannot write twice without a reply.
 	    if (sender.equals(discussion.getLastSender()))
 	    {
@@ -710,6 +713,100 @@ public class Conversation
 		}
 		
 		return ids;
+	}
+	
+	// CLOSING A SPECIFIC DISCUSSION (nobody closes it alone; see Discussion for the state rules).
+	
+	/** A partner asks the other to close a specific discussion; any time, whatever the turn. */
+	public void requestClosing(DiscussionId discussionId, UserId partner)
+	{
+		ensurePartner(partner);
+		
+		specificDiscussion(discussionId).requestClosing(partner, clock.instant());
+	}
+	
+	/** The other partner accepts: the discussion closes now, and each partner then declares its outcome. */
+	public void acceptClosing(DiscussionId discussionId, UserId partner)
+	{
+		ensurePartner(partner);
+		
+		specificDiscussion(discussionId).answerClosing(partner, true, clock.instant());
+	}
+	
+	public void refuseClosing(DiscussionId discussionId, UserId partner)
+	{
+		ensurePartner(partner);
+		
+		specificDiscussion(discussionId).answerClosing(partner, false, clock.instant());
+	}
+	
+	public void withdrawClosing(DiscussionId discussionId, UserId partner)
+	{
+		ensurePartner(partner);
+		
+		specificDiscussion(discussionId).withdrawClosing(partner, clock.instant());
+	}
+	
+	/**
+	 * The special request: a partner who already tried, without success, to close the discussion with the other asks the
+	 * therapist, with a justification. The therapist sees every earlier closing request with its instants.
+	 */
+	public void requestTherapistClosing(DiscussionId discussionId, UserId partner, String justification)
+	{
+		ensurePartner(partner);
+		
+		specificDiscussion(discussionId).requestTherapistClosing(partner, justification, clock.instant());
+	}
+	
+	public void confirmTherapistClosing(DiscussionId discussionId, UserId therapist)
+	{
+		ensureTherapist(therapist);
+		
+		specificDiscussion(discussionId).decideTherapistClosing(true, clock.instant());
+	}
+	
+	public void refuseTherapistClosing(DiscussionId discussionId, UserId therapist)
+	{
+		ensureTherapist(therapist);
+		
+		specificDiscussion(discussionId).decideTherapistClosing(false, clock.instant());
+	}
+	
+	/** Once the discussion is closed, each partner declares, once, whether its topic was resolved or stalled, and why. */
+	public void declareOutcome(DiscussionId discussionId, UserId partner, OutcomeDeclaration.Outcome outcome, String reason)
+	{
+		ensurePartner(partner);
+		
+		specificDiscussion(discussionId).declareOutcome(partner, outcome, reason, clock.instant());
+	}
+	
+	// The main discussion is the conversation itself: it is never closed.
+	private Discussion specificDiscussion(DiscussionId discussionId)
+	{
+		Discussion discussion = findDiscussion(discussionId);
+		
+		if (discussion.equals(discussions.iterator().next()))
+		{
+			throw new DomainException("The main discussion can't be closed.");
+		}
+		
+		return discussion;
+	}
+	
+	private void ensurePartner(UserId user)
+	{
+		if (!couple.isPartner(user))
+		{
+			throw new DomainException("Only a partner of the couple can do this.");
+		}
+	}
+	
+	private void ensureTherapist(UserId user)
+	{
+		if (!couple.isTherapist(user))
+		{
+			throw new DomainException("Only the couple's therapist can do this.");
+		}
 	}
 	
 	public Discussion findDiscussion(DiscussionId discussionId)
