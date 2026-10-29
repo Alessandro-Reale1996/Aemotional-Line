@@ -1,8 +1,9 @@
 package com.aemotionalline.domain.negotiation;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.Couple;
@@ -19,8 +20,15 @@ public class Negotiation
 	private final Couple couple;
 	private final ProposalArchive proposals;
 	private final Clock clock;
+	// The request to talk as the other partner received it: a frozen copy of the initial proposal, kept even if it is
+	// never sent (a refused or withdrawn request). The initial proposal itself is the first draft and may still be edited.
+	private final Proposal request;
+	private final Instant startedAt;
 	
 	private NegotiationStatus negotiationStatus;
+	// Who ended the negotiation without an agreement (refused the request or abandoned it), and when.
+	private UserId closedBy;
+	private Instant closedAt;
 	
 	private UserId currentResponder;
 	private Proposal currentProposal;
@@ -32,6 +40,10 @@ public class Negotiation
 		this.couple = couple;
 		this.clock = clock;
 		this.currentProposal = initialProposal;
+		this.request = initialProposal.draftFor(initialProposal.getId(), initialProposal.getAuthor());
+		// Bound so that nobody can start another negotiation with it and change it.
+		this.request.bindToNegotiation();
+		this.startedAt = clock.instant();
 		
 		this.currentResponder = initialResponder; 
 		this.proposals = new ProposalArchive();
@@ -39,12 +51,13 @@ public class Negotiation
 	}
 	
 	// The clock is injected so that the sentAt timestamps of the proposals are deterministic under test.
+	// The initial proposal must be a fresh one: it is bound to this negotiation, last, once every check has passed.
 	public static Negotiation start(NegotiationId id, Couple couple, Proposal initialProposal, Clock clock)
 	{
-		Objects.requireNonNull(id);
-		Objects.requireNonNull(couple);
-		Objects.requireNonNull(initialProposal);
-		Objects.requireNonNull(clock);
+		if (id == null || couple == null || initialProposal == null || clock == null)
+		{
+			throw new DomainException("An id, a couple, an initial proposal and a clock are required to start a negotiation.");
+		}
 		
 		if (!couple.isPartner(initialProposal.getAuthor()))
 		{
@@ -57,6 +70,8 @@ public class Negotiation
 		{
 			throw new DomainException("The author of the initial proposal can't be the initial responder.");
 		}
+		
+		initialProposal.bindToNegotiation();
 		
 		return negotiation;
 	}
@@ -91,6 +106,32 @@ public class Negotiation
 		return currentProposal;
 	}
 
+	public Proposal getRequest()
+	{
+		return request;
+	}
+
+	public Instant getStartedAt()
+	{
+		return startedAt;
+	}
+
+	public Optional<UserId> getClosedBy()
+	{
+		return Optional.ofNullable(closedBy);
+	}
+
+	public Optional<Instant> getClosedAt()
+	{
+		return Optional.ofNullable(closedAt);
+	}
+
+	/** Ended without an agreement: the request was refused or a partner abandoned. */
+	public boolean isFailed()
+	{
+		return negotiationStatus == NegotiationStatus.REFUSED || negotiationStatus == NegotiationStatus.ABANDONED;
+	}
+
     
     // Accepting the request to talk hands the turn back to the author, who must now send the first proposal.
     public void acceptNegotiation(UserId user) 
@@ -111,6 +152,23 @@ public class Negotiation
     	ensureNegotiationStatus(NegotiationStatus.DRAFT);
 
         negotiationStatus = NegotiationStatus.REFUSED;
+        closedBy = user;
+        closedAt = clock.instant();
+    }
+    
+    /**
+     * Either partner may give up while the negotiation is open (the request is waiting, or proposals are being
+     * exchanged), whoever's turn it is: nobody stays hostage to a negotiation the other doesn't carry on. The requester
+     * withdrawing before the answer is an abandonment too. It is final; the draft in progress is never part of the
+     * history, which only holds the proposals that were sent.
+     */
+    public void abandon(UserId user)
+    {
+    	ensureOpen(user);
+    	
+    	negotiationStatus = NegotiationStatus.ABANDONED;
+    	closedBy = user;
+    	closedAt = clock.instant();
     }
     
     public void acceptProposal(UserId user)
@@ -144,6 +202,7 @@ public class Negotiation
     	proposals.getLast().setProposalStatus(ProposalStatus.REFUSED);
     	
     	Proposal proposal = proposals.getLast().draftFor(idResponse, user);
+    	proposal.bindToNegotiation();
     	
     	this.currentProposal = proposal;
     }
@@ -209,8 +268,19 @@ public class Negotiation
     }
     
     // Every rule violation throws DomainException, so the REST layer can map them all to one client error.
-    // Terminal states (refused, or last proposal accepted) are checked first: once reached, nobody can act again.
+    // Terminal states (refused, abandoned, or last proposal accepted) are checked first: once reached, nobody can act again.
     private void ensureCanAct(UserId user) 
+    {
+        ensureOpen(user);
+
+        if (!currentResponder.equals(user)) 
+        {
+            throw new DomainException("It is not this user's turn");
+        }
+    }
+    
+    // Everything but the turn: a partner acting on a negotiation that hasn't ended.
+    private void ensureOpen(UserId user)
     {
         if (user == null)
         {
@@ -222,6 +292,11 @@ public class Negotiation
             throw new DomainException("The negotiation was refused.");
         }
         
+        if (negotiationStatus == NegotiationStatus.ABANDONED)
+        {
+            throw new DomainException("The negotiation was abandoned.");
+        }
+        
         if (!proposals.isEmpty() && proposals.getLast().getProposalStatus() == ProposalStatus.ACCEPTED)
         {
         	throw new DomainException("The negotiation is concluded: the last proposal was accepted.");
@@ -230,11 +305,6 @@ public class Negotiation
         if (!this.couple.isPartner(user)) 
         {
             throw new DomainException("User does not belong to the couple");
-        }
-
-        if (!currentResponder.equals(user)) 
-        {
-            throw new DomainException("It is not this user's turn");
         }
     }	
     

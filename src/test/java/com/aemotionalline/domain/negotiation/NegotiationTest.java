@@ -417,4 +417,65 @@ public class NegotiationTest
 		assertEquals(now, negotiation.getLastProposal().getSentAt());
 	}
 
+	// A PROPOSAL BELONGS TO ONE NEGOTIATION:
+
+	private static final Couple OWNERSHIP_COUPLE = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
+
+	@Test
+	void shouldNotStartTwoNegotiationsWithTheSameDraft()
+	{
+		Proposal draft = new AgreementProposal(Ids.proposal(0L), OWNERSHIP_COUPLE.getPartnerOneId(), "TEXT");
+		Negotiation first = Negotiation.start(Ids.negotiation(100L), OWNERSHIP_COUPLE, draft, Clock.systemUTC());
+
+		assertThrows(DomainException.class, () -> Negotiation.start(Ids.negotiation(200L), OWNERSHIP_COUPLE, draft, Clock.systemUTC()));
+
+		// The first negotiation still owns its draft and can use it.
+		first.acceptNegotiation(OWNERSHIP_COUPLE.getPartnerTwoId());
+		first.sendProposal(OWNERSHIP_COUPLE.getPartnerOneId(), "JUSTIFICATION");
+		assertEquals(draft, first.getLastProposal());
+	}
+
+	@Test
+	void shouldNotStartANegotiationWithAProposalAnotherOneAlreadySent()
+	{
+		Negotiation other = Negotiation.start(Ids.negotiation(100L), OWNERSHIP_COUPLE,
+				new AgreementProposal(Ids.proposal(0L), OWNERSHIP_COUPLE.getPartnerOneId(), "TEXT"), Clock.systemUTC());
+		other.acceptNegotiation(OWNERSHIP_COUPLE.getPartnerTwoId());
+		other.sendProposal(OWNERSHIP_COUPLE.getPartnerOneId(), "JUSTIFICATION");
+		other.acceptProposal(OWNERSHIP_COUPLE.getPartnerTwoId());
+		Proposal sent = other.getLastProposal();
+
+		assertThrows(DomainException.class, () -> Negotiation.start(Ids.negotiation(200L), OWNERSHIP_COUPLE, sent, Clock.systemUTC()));
+
+		// The other negotiation's history is untouched.
+		assertEquals(ProposalStatus.ACCEPTED, sent.getProposalStatus());
+		assertEquals("JUSTIFICATION", sent.getJustification());
+	}
+
+	@Test
+	void shouldNotStartANegotiationWithTheDraftAnotherOneCreatedOnRefusal()
+	{
+		Negotiation other = Negotiation.start(Ids.negotiation(100L), OWNERSHIP_COUPLE,
+				new AgreementProposal(Ids.proposal(0L), OWNERSHIP_COUPLE.getPartnerOneId(), "TEXT"), Clock.systemUTC());
+		other.acceptNegotiation(OWNERSHIP_COUPLE.getPartnerTwoId());
+		other.sendProposal(OWNERSHIP_COUPLE.getPartnerOneId(), "JUSTIFICATION");
+		other.refuseProposal(OWNERSHIP_COUPLE.getPartnerTwoId(), Ids.proposal(1L));
+
+		assertThrows(DomainException.class, () -> Negotiation.start(Ids.negotiation(200L), OWNERSHIP_COUPLE, other.getCurrentProposal(), Clock.systemUTC()));
+	}
+
+	@Test
+	void shouldRejectMissingStartArgumentsWithADomainException()
+	{
+		Proposal draft = new AgreementProposal(Ids.proposal(0L), OWNERSHIP_COUPLE.getPartnerOneId(), "TEXT");
+
+		assertThrows(DomainException.class, () -> Negotiation.start(null, OWNERSHIP_COUPLE, draft, Clock.systemUTC()));
+		assertThrows(DomainException.class, () -> Negotiation.start(Ids.negotiation(100L), null, draft, Clock.systemUTC()));
+		assertThrows(DomainException.class, () -> Negotiation.start(Ids.negotiation(100L), OWNERSHIP_COUPLE, null, Clock.systemUTC()));
+		assertThrows(DomainException.class, () -> Negotiation.start(Ids.negotiation(100L), OWNERSHIP_COUPLE, draft, null));
+
+		// None of the rejected starts took the draft: it can still start a negotiation.
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), OWNERSHIP_COUPLE, draft, Clock.systemUTC());
+		assertEquals(draft, negotiation.getCurrentProposal());
+	}
 }

@@ -20,6 +20,7 @@ import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.ParagraphType;
 import com.aemotionalline.domain.message.QuestionParagraph;
 import com.aemotionalline.domain.negotiation.Negotiation;
+import com.aemotionalline.domain.negotiation.NegotiationStatus;
 import com.aemotionalline.domain.negotiation.AgreementProposal;
 import com.aemotionalline.domain.negotiation.DiscussionProposal;
 import com.aemotionalline.domain.negotiation.DiscussionTitle;
@@ -46,6 +47,8 @@ public class Conversation
 	private final ConversationGraph conversationGraph;
 	// Every negotiation that took effect, in order (spec 1.3.1); a negotiation can be used only once.
 	private final List<NegotiationRecord> negotiationHistory;
+	// Negotiations that ended without an agreement, in their own section of the archive.
+	private final List<FailedNegotiationRecord> failedNegotiations;
 	
 	private final Set<Discussion> discussions;
 	
@@ -65,6 +68,7 @@ public class Conversation
 		this.constraintRequests = new ArrayList<>();
 		this.discussions = new LinkedHashSet<>();
 		this.negotiationHistory = new ArrayList<>();
+		this.failedNegotiations = new ArrayList<>();
 		
 	}
 	
@@ -214,12 +218,58 @@ public class Conversation
 	
 	private void archive(Negotiation negotiation, NegotiationRecord.Purpose purpose, DiscussionId discussionId)
 	{
-		if (negotiationHistory.stream().anyMatch(record -> record.negotiation().equals(negotiation)))
+		ensureNotRecorded(negotiation);
+		
+		negotiationHistory.add(new NegotiationRecord(negotiation.getId(), purpose, Optional.ofNullable(discussionId), clock.instant(),
+				negotiation.getProposals()));
+	}
+	
+	private void ensureNotRecorded(Negotiation negotiation)
+	{
+		boolean recorded = negotiationHistory.stream().anyMatch(record -> record.negotiationId().equals(negotiation.getId()))
+				|| failedNegotiations.stream().anyMatch(record -> record.negotiationId().equals(negotiation.getId()));
+		
+		if (recorded)
 		{
 			throw new DomainException(negotiation.getId() + " was already used in this conversation.");
 		}
+	}
+	
+	/**
+	 * Keeps, in its own section of the archive, a negotiation of this conversation that ended without an agreement
+	 * (refused or abandoned): a failed attempt to change the agreement or to open a discussion. Only the history is
+	 * kept: the proposals that were sent, or the request when none was. The negotiation that should have started the
+	 * conversation can't get here (the conversation doesn't exist): the persistence layer keeps it.
+	 */
+	public void recordFailedNegotiation(Negotiation negotiation)
+	{
+		ensureNegotiationOfThisCouple(negotiation);
 		
-		negotiationHistory.add(new NegotiationRecord(negotiation, purpose, Optional.ofNullable(discussionId), clock.instant()));
+		if (!negotiation.isFailed())
+		{
+			throw new DomainException("Only a negotiation that ended without an agreement can be recorded as failed.");
+		}
+		
+		ensureNotRecorded(negotiation);
+		
+		List<Proposal> proposals = negotiation.getProposals().isEmpty() ? List.of(negotiation.getRequest()) : negotiation.getProposals();
+		
+		NegotiationRecord.Purpose attempted = negotiation.getRequest() instanceof AgreementProposal
+				? NegotiationRecord.Purpose.MODIFIED_AGREEMENT
+				: NegotiationRecord.Purpose.OPENED_DISCUSSION;
+		
+		FailedNegotiationRecord.Outcome outcome = negotiation.getNegotiationStatus() == NegotiationStatus.REFUSED
+				? FailedNegotiationRecord.Outcome.REFUSED
+				: FailedNegotiationRecord.Outcome.ABANDONED;
+		
+		failedNegotiations.add(new FailedNegotiationRecord(negotiation.getId(), attempted, outcome, negotiation.getClosedBy().get(),
+				negotiation.getStartedAt(), negotiation.getClosedAt().get(), proposals));
+	}
+	
+	/** The negotiations of this conversation that ended without an agreement, in the order they were recorded. */
+	public List<FailedNegotiationRecord> getFailedNegotiations()
+	{
+		return List.copyOf(failedNegotiations);
 	}
 	
 	/** The negotiations that took effect, in the order they did: the agreement's history and the discussions' titles. */

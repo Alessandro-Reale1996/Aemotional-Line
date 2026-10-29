@@ -70,7 +70,7 @@ public class ConversationNegotiationHistoryTest
 
 		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE, first, clock);
 
-		assertEquals(List.of(new NegotiationRecord(first, Purpose.STARTED_CONVERSATION, Optional.of(FIRST), T0)),
+		assertEquals(List.of(new NegotiationRecord(first.getId(), Purpose.STARTED_CONVERSATION, Optional.of(FIRST), T0, first.getProposals())),
 				conversation.getNegotiationHistory());
 	}
 
@@ -88,9 +88,9 @@ public class ConversationNegotiationHistoryTest
 		conversation.openDiscussion(branch);
 
 		assertEquals(List.of(
-				new NegotiationRecord(first, Purpose.STARTED_CONVERSATION, Optional.of(FIRST), T0),
-				new NegotiationRecord(change, Purpose.MODIFIED_AGREEMENT, Optional.empty(), T0.plus(Duration.ofDays(1))),
-				new NegotiationRecord(branch, Purpose.OPENED_DISCUSSION, Optional.of(SECOND), T0.plus(Duration.ofDays(2)))),
+				new NegotiationRecord(first.getId(), Purpose.STARTED_CONVERSATION, Optional.of(FIRST), T0, first.getProposals()),
+				new NegotiationRecord(change.getId(), Purpose.MODIFIED_AGREEMENT, Optional.empty(), T0.plus(Duration.ofDays(1)), change.getProposals()),
+				new NegotiationRecord(branch.getId(), Purpose.OPENED_DISCUSSION, Optional.of(SECOND), T0.plus(Duration.ofDays(2)), branch.getProposals())),
 				conversation.getNegotiationHistory());
 	}
 
@@ -106,7 +106,7 @@ public class ConversationNegotiationHistoryTest
 
 		conversation.openDiscussion(branch, origin.getId());
 
-		assertEquals(new NegotiationRecord(branch, Purpose.OPENED_DISCUSSION, Optional.of(SECOND), T0),
+		assertEquals(new NegotiationRecord(branch.getId(), Purpose.OPENED_DISCUSSION, Optional.of(SECOND), T0, branch.getProposals()),
 				conversation.getNegotiationHistory().getLast());
 	}
 
@@ -120,12 +120,12 @@ public class ConversationNegotiationHistoryTest
 
 		List<AgreementText> agreements = conversation.getNegotiationHistory().stream()
 				.filter(record -> record.purpose() != Purpose.OPENED_DISCUSSION)
-				.map(record -> (AgreementText) record.negotiation().getLastProposal().getContent())
+				.map(record -> (AgreementText) record.finalProposal().getContent())
 				.toList();
 
 		assertEquals(List.of(new AgreementText("AGREEMENT 60"), new AgreementText("AGREEMENT 70"), new AgreementText("AGREEMENT 90")), agreements);
 		// The justification of each step is kept with its proposal.
-		assertEquals("JUSTIFICATION 70", conversation.getNegotiationHistory().get(1).negotiation().getLastProposal().getJustification());
+		assertEquals("JUSTIFICATION 70", conversation.getNegotiationHistory().get(1).finalProposal().getJustification());
 	}
 
 	@Test
@@ -147,5 +147,25 @@ public class ConversationNegotiationHistoryTest
 
 		assertThrows(UnsupportedOperationException.class, () -> conversation.getNegotiationHistory().clear());
 		assertEquals(1, conversation.getNegotiationHistory().size());
+	}
+
+	@Test
+	void shouldKeepEveryProposalSentInTheNegotiationNotOnlyTheFinalOne()
+	{
+		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE, agreement(60L), clock);
+		Negotiation change = Negotiation.start(Ids.negotiation(70L), COUPLE, new AgreementProposal(Ids.proposal(70L), A, "FIRST TRY"), Clock.systemUTC());
+		change.acceptNegotiation(B);
+		change.sendProposal(A, "MINE");
+		change.refuseProposal(B, Ids.proposal(71L));
+		change.editCurrentProposal(B, new AgreementText("SECOND TRY"));
+		change.sendProposal(B, "BETTER");
+		change.acceptProposal(A);
+
+		conversation.modifyAgreement(change);
+
+		NegotiationRecord record = conversation.getNegotiationHistory().getLast();
+		assertEquals(List.of(Ids.proposal(70L), Ids.proposal(71L)), record.proposals().stream().map(Proposal::getId).toList());
+		assertEquals(new AgreementText("SECOND TRY"), record.finalProposal().getContent());
+		assertThrows(UnsupportedOperationException.class, () -> record.proposals().clear());
 	}
 }

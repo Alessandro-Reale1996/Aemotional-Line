@@ -22,6 +22,9 @@ public abstract class Proposal
     private Instant sentAt;
     
     private  ProposalStatus proposalStatus;
+    
+    // Set once by the negotiation that takes the proposal: a proposal belongs to one negotiation for its whole life.
+    private boolean bound;
 
     protected Proposal 	
 		    	(
@@ -66,6 +69,18 @@ public abstract class Proposal
 	public Instant getSentAt() 
 	{
 		return sentAt;
+	}
+	
+	// Only a fresh proposal can join a negotiation: one already taken (a draft of another negotiation, or a proposal it
+	// sent) would be shared, and the new negotiation would rewrite the other's history when it sends it.
+	void bindToNegotiation()
+	{
+		if (bound)
+		{
+			throw new DomainException("The proposal already belongs to a negotiation.");
+		}
+		
+		bound = true;
 	}
 	
 	// A refused proposal is answered with a draft of the same kind, starting from the refused content.
