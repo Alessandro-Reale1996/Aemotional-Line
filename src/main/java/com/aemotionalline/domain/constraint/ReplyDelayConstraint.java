@@ -23,6 +23,11 @@ public class ReplyDelayConstraint implements Constraint
 		this.delay = delay;
 	}
 
+	public Duration getDelay()
+	{
+		return delay;
+	}
+
 	@Override
 	public boolean isSatisfied(ConstraintContext context)
 	{

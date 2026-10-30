@@ -20,6 +20,11 @@ public class TimeConstraint implements Constraint
         this.scope = Objects.requireNonNull(scope);
     }
 
+    public LocalTime getNotBefore()
+    {
+        return notBefore;
+    }
+
     @Override
     public ConstraintScope getScope()
     {

@@ -26,13 +26,13 @@ import com.aemotionalline.domain.negotiation.StoredFacts;
  * a paragraph already rebuilt), so a restored conversation shares no mutable object with the original. A fingerprint
  * lists every observable fact, to compare an original with its restored copy.
  */
-final class ConversationFacts
+public final class ConversationFacts
 {
 	private ConversationFacts()
 	{
 	}
 
-	static ConversationSnapshot snapshot(Conversation conversation)
+	public static ConversationSnapshot snapshot(Conversation conversation)
 	{
 		List<MessageId> sendingOrder = sendingOrder(conversation);
 		Map<MessageId, Message> rebuilt = rebuildMessages(conversation, sendingOrder);
@@ -128,7 +128,7 @@ final class ConversationFacts
 
 	// FINGERPRINT:
 
-	static String fingerprint(Conversation conversation)
+	public static String fingerprint(Conversation conversation)
 	{
 		List<String> lines = new ArrayList<>();
 

@@ -45,6 +45,21 @@ public class LocationConstraint implements Constraint
 		this.scope = scope;
 	}
 
+	public GeoPosition getCenter()
+	{
+		return center;
+	}
+
+	public double getRadiusMetres()
+	{
+		return radiusMetres;
+	}
+
+	public Direction getDirection()
+	{
+		return direction;
+	}
+
 	@Override
 	public boolean isSatisfied(ConstraintContext context)
 	{
