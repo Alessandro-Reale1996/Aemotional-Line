@@ -3,6 +3,7 @@ package com.aemotionalline.domain.conversation;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -74,10 +75,25 @@ public class Conversation
 	
 	public static Conversation start(ConversationId id, Couple couple, Negotiation negotiation, Clock clock)
 	{
+		return start(id, couple, negotiation, clock, List.of());
+	}
+	
+	/**
+	 * Starts the conversation and records, in its section of failed negotiations, the couple's earlier attempts to start
+	 * it that ended without an agreement: until the conversation existed there was no archive to keep them in. They are
+	 * recorded in the order they were started, with the purpose of starting the conversation.
+	 */
+	public static Conversation start(ConversationId id, Couple couple, Negotiation negotiation, Clock clock, List<Negotiation> earlierFailedStarts)
+	{
 		Objects.requireNonNull(clock);
 		Objects.requireNonNull(id);
 		Objects.requireNonNull(couple);
 		Objects.requireNonNull(negotiation);
+		
+		if (earlierFailedStarts == null || earlierFailedStarts.stream().anyMatch(Objects::isNull))
+		{
+			throw new DomainException("The earlier failed starts can't be null.");
+		}
 		
 		Conversation conversation = new Conversation(id, couple, clock);
 		
@@ -86,6 +102,21 @@ public class Conversation
 		conversation.open(negotiation, AgreementProposal.class, null);
 		
 		conversation.setAgreement(negotiation.getLastProposal());
+		
+		// The conversation is new: if one of them is rejected, nothing outside it has changed.
+		List<Negotiation> inStartOrder = earlierFailedStarts.stream()
+				.sorted(Comparator.comparing(Negotiation::getStartedAt))
+				.toList();
+		
+		for (Negotiation failed : inStartOrder)
+		{
+			if (!(failed.getRequest() instanceof AgreementProposal))
+			{
+				throw new DomainException("Only a negotiation of the agreement could have started the conversation.");
+			}
+			
+			conversation.recordFailed(failed, NegotiationRecord.Purpose.STARTED_CONVERSATION);
+		}
 		
 		return conversation;
 	}
@@ -245,6 +276,15 @@ public class Conversation
 	{
 		ensureNegotiationOfThisCouple(negotiation);
 		
+		recordFailed(negotiation, negotiation.getRequest() instanceof AgreementProposal
+				? NegotiationRecord.Purpose.MODIFIED_AGREEMENT
+				: NegotiationRecord.Purpose.OPENED_DISCUSSION);
+	}
+	
+	private void recordFailed(Negotiation negotiation, NegotiationRecord.Purpose attempted)
+	{
+		ensureNegotiationOfThisCouple(negotiation);
+		
 		if (!negotiation.isFailed())
 		{
 			throw new DomainException("Only a negotiation that ended without an agreement can be recorded as failed.");
@@ -253,10 +293,6 @@ public class Conversation
 		ensureNotRecorded(negotiation);
 		
 		List<Proposal> proposals = negotiation.getProposals().isEmpty() ? List.of(negotiation.getRequest()) : negotiation.getProposals();
-		
-		NegotiationRecord.Purpose attempted = negotiation.getRequest() instanceof AgreementProposal
-				? NegotiationRecord.Purpose.MODIFIED_AGREEMENT
-				: NegotiationRecord.Purpose.OPENED_DISCUSSION;
 		
 		FailedNegotiationRecord.Outcome outcome = negotiation.getNegotiationStatus() == NegotiationStatus.REFUSED
 				? FailedNegotiationRecord.Outcome.REFUSED

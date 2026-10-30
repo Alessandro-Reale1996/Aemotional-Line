@@ -182,4 +182,81 @@ public class ConversationFailedNegotiationTest
 		assertThrows(UnsupportedOperationException.class, () -> conversation.getFailedNegotiations().clear());
 		assertThrows(UnsupportedOperationException.class, () -> conversation.getFailedNegotiations().getFirst().proposals().clear());
 	}
+
+	// EARLIER FAILED STARTS (recorded when the conversation finally starts):
+
+	private Negotiation settledStart()
+	{
+		Negotiation first = Negotiation.start(Ids.negotiation(60L), COUPLE, new AgreementProposal(Ids.proposal(60L), A, "TEXT"), Clock.systemUTC());
+		first.acceptNegotiation(B);
+		first.sendProposal(A, "JUSTIFICATION");
+		first.acceptProposal(B);
+
+		return first;
+	}
+
+	@Test
+	void shouldRecordTheEarlierFailedStartsInTheOrderTheyWereStarted()
+	{
+		Negotiation refused = agreementRequest(40L, COUPLE);
+		clock.advance(Duration.ofDays(1));
+		Negotiation abandoned = agreementRequest(50L, COUPLE);
+		refused.refuseNegotiation(B);
+		abandoned.abandon(A);
+
+		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE, settledStart(), clock, List.of(abandoned, refused));
+
+		List<FailedNegotiationRecord> failed = conversation.getFailedNegotiations();
+		assertEquals(List.of(refused.getId(), abandoned.getId()), failed.stream().map(FailedNegotiationRecord::negotiationId).toList());
+		assertEquals(List.of(Purpose.STARTED_CONVERSATION, Purpose.STARTED_CONVERSATION), failed.stream().map(FailedNegotiationRecord::attemptedPurpose).toList());
+		assertEquals(List.of(Outcome.REFUSED, Outcome.ABANDONED), failed.stream().map(FailedNegotiationRecord::outcome).toList());
+		assertEquals(1, conversation.getNegotiationHistory().size());
+	}
+
+	@Test
+	void shouldStartWithoutEarlierFailuresWhenThereAreNone()
+	{
+		assertTrue(Conversation.start(Ids.conversation(321L), COUPLE, settledStart(), clock, List.of()).getFailedNegotiations().isEmpty());
+		assertTrue(Conversation.start(Ids.conversation(321L), COUPLE, settledStart(), clock).getFailedNegotiations().isEmpty());
+	}
+
+	@Test
+	void shouldRejectEarlierStartsThatAreNotFailedAgreementNegotiationsOfTheCouple()
+	{
+		Negotiation open = agreementRequest(40L, COUPLE);
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), COUPLE, settledStart(), clock, List.of(open)));
+
+		Negotiation discussion = discussionRequest(41L);
+		discussion.abandon(A);
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), COUPLE, settledStart(), clock, List.of(discussion)));
+
+		Couple other = new Couple(Ids.couple(2L), Ids.user(11L), Ids.user(21L), Ids.user(31L));
+		Negotiation foreign = agreementRequest(42L, other);
+		foreign.refuseNegotiation(other.getPartnerTwoId());
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), COUPLE, settledStart(), clock, List.of(foreign)));
+
+		Negotiation refused = agreementRequest(43L, COUPLE);
+		refused.refuseNegotiation(B);
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), COUPLE, settledStart(), clock, List.of(refused, refused)));
+
+		Negotiation start = settledStart();
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), COUPLE, start, clock, List.of(start)));
+
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), COUPLE, settledStart(), clock, null));
+		List<Negotiation> withNull = new java.util.ArrayList<>();
+		withNull.add(null);
+		assertThrows(DomainException.class, () -> Conversation.start(Ids.conversation(321L), COUPLE, settledStart(), clock, withNull));
+	}
+
+	@Test
+	void shouldLabelALaterFailedAgreementNegotiationAsAChangeOfAgreement()
+	{
+		Conversation conversation = Conversation.start(Ids.conversation(321L), COUPLE, settledStart(), clock, List.of());
+		Negotiation later = agreementRequest(70L, COUPLE);
+		later.refuseNegotiation(B);
+
+		conversation.recordFailedNegotiation(later);
+
+		assertEquals(Purpose.MODIFIED_AGREEMENT, conversation.getFailedNegotiations().getFirst().attemptedPurpose());
+	}
 }
