@@ -76,6 +76,28 @@ public class ConstraintChangeRequest
         this.proposedAt = proposedAt;
     }
 
+    /**
+     * Reserved to the persistence layer: rebuilds a request from the record of its stored facts (for an applied
+     * request, the previous constraints are those of the request applied before it).
+     */
+    public static ConstraintChangeRequest restore(ConstraintRequestRecord record, Couple couple)
+    {
+        if (record == null)
+        {
+            throw new DomainException("A record is required to restore a constraint change request.");
+        }
+
+        ConstraintChangeRequest request = new ConstraintChangeRequest(record.id(), record.proposedBy(), record.assignments(), couple, record.proposedAt());
+
+        request.approvals.addAll(record.approvals());
+        request.status = record.status();
+        request.closedAt = record.closedAt().orElse(null);
+        request.rejectedBy = record.rejectedBy().orElse(null);
+        request.previousAssignments = record.previousAssignments().orElse(null);
+
+        return request;
+    }
+
     public void approve(UserId userId)
     {
         ensurePending();

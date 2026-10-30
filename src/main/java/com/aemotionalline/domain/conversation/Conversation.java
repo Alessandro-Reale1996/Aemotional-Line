@@ -5,8 +5,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -29,6 +31,7 @@ import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequest;
+import com.aemotionalline.domain.constraint.ConstraintChangeRequestStatus;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequestId;
 import com.aemotionalline.domain.constraint.ConstraintRequestRecord;
 import com.aemotionalline.domain.constraint.ConstraintContext;
@@ -122,6 +125,58 @@ public class Conversation
 	}
 	
 	
+	
+	/**
+	 * Reserved to the persistence layer: rebuilds a conversation from its stored facts, without replaying them. Those
+	 * facts were validated when they were produced, so the rules aren't checked again; only the shape is (a main
+	 * discussion, a first negotiation that started the conversation, every message in the sending order once). The
+	 * graph, the agreement in force and the constraints in force are derived. The conversation then goes on as before.
+	 */
+	public static Conversation restore(ConversationSnapshot snapshot, Clock clock)
+	{
+		if (snapshot == null || clock == null)
+		{
+			throw new DomainException("A snapshot and a clock are required to restore a conversation.");
+		}
+		
+		if (snapshot.discussions().isEmpty() || snapshot.negotiationHistory().isEmpty()
+				|| snapshot.negotiationHistory().getFirst().purpose() != NegotiationRecord.Purpose.STARTED_CONVERSATION)
+		{
+			throw new DomainException("A conversation has a main discussion and the negotiation that started it.");
+		}
+		
+		Conversation conversation = new Conversation(snapshot.id(), snapshot.couple(), clock);
+		
+		snapshot.discussions().forEach(discussion -> conversation.discussions.add(Discussion.restore(discussion)));
+		
+		Map<MessageId, Message> sent = new HashMap<>();
+		conversation.discussions.forEach(discussion -> discussion.getMessages().forEach(message -> sent.put(message.getId(), message)));
+		
+		if (snapshot.sendingOrder().size() != sent.size() || !sent.keySet().containsAll(snapshot.sendingOrder()))
+		{
+			throw new DomainException("The sending order must list every message of the conversation once.");
+		}
+		
+		snapshot.sendingOrder().forEach(messageId -> conversation.conversationGraph.addAllParagraphsInMessage(sent.get(messageId)));
+		
+		conversation.negotiationHistory.addAll(snapshot.negotiationHistory());
+		conversation.failedNegotiations.addAll(snapshot.failedNegotiations());
+		
+		conversation.agreement = snapshot.negotiationHistory().stream()
+				.filter(record -> record.purpose() != NegotiationRecord.Purpose.OPENED_DISCUSSION)
+				.reduce((first, second) -> second)
+				.get()
+				.finalProposal();
+		
+		snapshot.constraintRequests().forEach(record -> conversation.constraintRequests.add(ConstraintChangeRequest.restore(record, snapshot.couple())));
+		
+		snapshot.constraintRequests().stream()
+				.filter(record -> record.status() == ConstraintChangeRequestStatus.APPLIED)
+				.reduce((first, second) -> second)
+				.ifPresent(last -> conversation.constraintSet = ConstraintSet.restore(last.assignments()));
+		
+		return conversation;
+	}
 	
 	public ConversationId getId()
 	{

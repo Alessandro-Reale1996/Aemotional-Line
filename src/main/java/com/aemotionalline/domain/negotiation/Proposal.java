@@ -41,6 +41,32 @@ public abstract class Proposal
     }
  
 
+	/**
+	 * Reserved to the persistence layer: rebuilds a proposal from its stored facts, without going through a negotiation.
+	 * The kind (agreement or discussion title) follows the content. The proposal belongs to the negotiation or record
+	 * it is restored into, so it can't start another negotiation.
+	 */
+	public static Proposal restore(ProposalId id, UserId author, ProposalContent content, String justification, Instant sentAt, ProposalStatus status)
+	{
+		if (content == null || status == null)
+		{
+			throw new DomainException("A proposal needs its content and status.");
+		}
+		
+		Proposal proposal = switch (content)
+		{
+			case AgreementText text -> new AgreementProposal(id, author, text.text());
+			case DiscussionTitle title -> new DiscussionProposal(id, author, title.title(), title.subtitle());
+		};
+		
+		proposal.justification = justification;
+		proposal.sentAt = sentAt;
+		proposal.proposalStatus = status;
+		proposal.bound = true;
+		
+		return proposal;
+	}
+
 	public UserId getAuthor() 
 	{
 		return author;

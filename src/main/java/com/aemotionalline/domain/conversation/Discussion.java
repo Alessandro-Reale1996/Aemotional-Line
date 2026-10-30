@@ -64,6 +64,27 @@ public class Discussion
 		this.messages = new ArrayList<Message>();
 	}
 
+	// Reserved to Conversation.restore: rebuilds the discussion from its stored facts, without replaying them.
+	static Discussion restore(DiscussionSnapshot snapshot)
+	{
+		Discussion discussion = new Discussion(snapshot.id(), snapshot.title().orElse(null), snapshot.originParagraphId().orElse(null));
+		
+		discussion.messages.addAll(snapshot.messages());
+		discussion.lastSender = snapshot.messages().isEmpty() ? null : snapshot.messages().getLast().getSenderId();
+		discussion.readAt.putAll(snapshot.readAt());
+		discussion.closingRequests.addAll(snapshot.closingRequests());
+		discussion.therapistClosingRequests.addAll(snapshot.therapistClosingRequests());
+		
+		snapshot.closure().ifPresent(closure ->
+		{
+			discussion.closedWay = closure.way();
+			discussion.closedAt = closure.closedAt();
+			discussion.declarations.addAll(closure.declarations());
+		});
+		
+		return discussion;
+	}
+
 	public DiscussionId getId()
 	{
 		return id;

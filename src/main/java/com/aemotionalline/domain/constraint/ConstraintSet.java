@@ -23,6 +23,18 @@ public class ConstraintSet
 	
 	
 	
+	/**
+	 * Reserved to the persistence layer: a set holding the given assignments (the ones of the last applied request).
+	 * A set built here changes no conversation: only {@code Conversation.restore} puts one into a conversation.
+	 */
+	public static ConstraintSet restore(List<ConstraintAssignment> assignments)
+	{
+		ConstraintSet set = new ConstraintSet();
+		set.replaceWith(assignments);
+		
+		return set;
+	}
+	
 	public List<ConstraintAssignment> getAssignments()
 	{
 		return List.copyOf(assignments);

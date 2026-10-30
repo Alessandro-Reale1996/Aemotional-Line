@@ -35,19 +35,46 @@ public class Negotiation
 
 	private Negotiation(NegotiationId id, Couple couple, Proposal initialProposal, UserId initialResponder, Clock clock) 
 	{
-		super();
+		this(id, couple, clock, initialProposal.draftFor(initialProposal.getId(), initialProposal.getAuthor()), clock.instant());
+		
+		// Bound so that nobody can start another negotiation with it and change it.
+		this.request.bindToNegotiation();
+		this.currentProposal = initialProposal;
+		this.currentResponder = initialResponder; 
+		this.negotiationStatus = NegotiationStatus.DRAFT;
+	}
+	
+	private Negotiation(NegotiationId id, Couple couple, Clock clock, Proposal request, Instant startedAt)
+	{
 		this.id = id;
 		this.couple = couple;
 		this.clock = clock;
-		this.currentProposal = initialProposal;
-		this.request = initialProposal.draftFor(initialProposal.getId(), initialProposal.getAuthor());
-		// Bound so that nobody can start another negotiation with it and change it.
-		this.request.bindToNegotiation();
-		this.startedAt = clock.instant();
-		
-		this.currentResponder = initialResponder; 
+		this.request = request;
+		this.startedAt = startedAt;
 		this.proposals = new ProposalArchive();
-		this.negotiationStatus = NegotiationStatus.DRAFT;
+	}
+	
+	/**
+	 * Reserved to the persistence layer: rebuilds a negotiation from its stored facts, without replaying it. Those facts
+	 * were validated when they were produced, so no rule is checked again; the negotiation then goes on as before.
+	 */
+	public static Negotiation restore(NegotiationSnapshot snapshot, Clock clock)
+	{
+		if (snapshot == null || clock == null)
+		{
+			throw new DomainException("A snapshot and a clock are required to restore a negotiation.");
+		}
+		
+		Negotiation negotiation = new Negotiation(snapshot.id(), snapshot.couple(), clock, snapshot.request(), snapshot.startedAt());
+		
+		negotiation.negotiationStatus = snapshot.status();
+		negotiation.currentResponder = snapshot.currentResponder();
+		negotiation.currentProposal = snapshot.currentProposal().orElse(null);
+		negotiation.closedBy = snapshot.closedBy().orElse(null);
+		negotiation.closedAt = snapshot.closedAt().orElse(null);
+		snapshot.sentProposals().forEach(negotiation.proposals::add);
+		
+		return negotiation;
 	}
 	
 	// The clock is injected so that the sentAt timestamps of the proposals are deterministic under test.
