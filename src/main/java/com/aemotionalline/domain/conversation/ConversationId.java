@@ -3,6 +3,8 @@ package com.aemotionalline.domain.conversation;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.aemotionalline.domain.common.UuidV7;
+
 /** Identity of a conversation, a type of its own so it cannot be confused with a couple or user id. */
 public record ConversationId(UUID value)
 {
@@ -14,6 +16,6 @@ public record ConversationId(UUID value)
 	/** The domain creates its own ids, so an aggregate never has to wait for the database to have one. */
 	public static ConversationId random()
 	{
-		return new ConversationId(UUID.randomUUID());
+		return new ConversationId(UuidV7.generate());
 	}
 }

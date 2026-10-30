@@ -3,6 +3,8 @@ package com.aemotionalline.domain.message;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.aemotionalline.domain.common.UuidV7;
+
 /** Identity of a message, a type of its own so it cannot be confused with the other ids. */
 public record MessageId(UUID value)
 {
@@ -14,6 +16,6 @@ public record MessageId(UUID value)
 	/** The domain creates its own ids, so an aggregate never has to wait for the database to have one. */
 	public static MessageId random()
 	{
-		return new MessageId(UUID.randomUUID());
+		return new MessageId(UuidV7.generate());
 	}
 }

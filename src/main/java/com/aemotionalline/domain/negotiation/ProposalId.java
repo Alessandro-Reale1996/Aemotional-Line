@@ -3,6 +3,8 @@ package com.aemotionalline.domain.negotiation;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.aemotionalline.domain.common.UuidV7;
+
 /** Identity of a proposal, a type of its own so it cannot be confused with the other ids. */
 public record ProposalId(UUID value)
 {
@@ -14,6 +16,6 @@ public record ProposalId(UUID value)
 	/** The domain creates its own ids, so an aggregate never has to wait for the database to have one. */
 	public static ProposalId random()
 	{
-		return new ProposalId(UUID.randomUUID());
+		return new ProposalId(UuidV7.generate());
 	}
 }
