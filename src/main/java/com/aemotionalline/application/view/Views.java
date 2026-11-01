@@ -58,6 +58,12 @@ public final class Views
 				Optional.ofNullable(discussion.getLastSender()), messages);
 	}
 
+	/** One message as the viewer sees it (a closed envelope if the viewer may not see its content yet). */
+	public static MessageView message(Message message, Discussion discussion, Couple couple, UserId viewer)
+	{
+		return message(message, canSeeContent(viewer, couple, discussion, message), discussion);
+	}
+
 	private static MessageView message(Message message, boolean visible, Discussion discussion)
 	{
 		List<ParagraphView> paragraphs = visible ? message.getParagraphs().stream().map(Views::paragraph).toList() : List.of();
