@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jdbc.core.JdbcAggregateTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.aemotionalline.domain.couple.Couple;
@@ -28,6 +29,14 @@ public class JdbcCoupleRepository implements CoupleRepository
 	public Optional<Couple> findById(CoupleId id)
 	{
 		return rows.findById(id.value()).map(JdbcCoupleRepository::toDomain);
+	}
+
+	/** The lock lasts until the end of the caller's transaction, so there must be one. */
+	@Override
+	@Transactional(propagation = Propagation.MANDATORY)
+	public Optional<Couple> findByIdForUpdate(CoupleId id)
+	{
+		return rows.findLockedById(id.value()).map(JdbcCoupleRepository::toDomain);
 	}
 
 	@Override

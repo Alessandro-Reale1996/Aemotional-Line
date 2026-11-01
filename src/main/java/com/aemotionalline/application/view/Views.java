@@ -1,13 +1,19 @@
 package com.aemotionalline.application.view;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.aemotionalline.domain.conversation.Conversation;
 import com.aemotionalline.domain.conversation.Discussion;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
+import com.aemotionalline.domain.conversation.NegotiationRecord;
+import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.negotiation.AgreementText;
+import com.aemotionalline.domain.negotiation.DiscussionTitle;
+import com.aemotionalline.domain.negotiation.Negotiation;
+import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
 
 /**
@@ -49,7 +55,7 @@ public final class Views
 
 		return new DiscussionView(discussion.getId(), discussion.getTitle().map(title -> title.title()),
 				discussion.getTitle().map(title -> title.subtitle()), discussion.getOriginParagraphId(), discussion.isClosed(),
-				java.util.Optional.ofNullable(discussion.getLastSender()), messages);
+				Optional.ofNullable(discussion.getLastSender()), messages);
 	}
 
 	private static MessageView message(Message message, boolean visible, Discussion discussion)
@@ -58,6 +64,27 @@ public final class Views
 
 		return new MessageView(message.getId(), message.getSenderId(), message.getSentAt(), !visible, discussion.getReadAt(message.getId()),
 				paragraphs, visible ? message.getQuestionsLeftUnanswered() : List.of());
+	}
+
+	public static NegotiationView negotiation(Negotiation negotiation, NegotiationRecord.Purpose purpose, Optional<ParagraphId> origin, UserId viewer)
+	{
+		Proposal draft = negotiation.getCurrentProposal();
+		Optional<ProposalView> draftView = draft != null && draft.getAuthor().equals(viewer) ? Optional.of(proposal(draft)) : Optional.empty();
+
+		return new NegotiationView(negotiation.getId(), negotiation.getCouple().getId(), purpose, origin, negotiation.getNegotiationStatus(),
+				negotiation.getCurrentResponder(), proposal(negotiation.getRequest()), negotiation.getProposals().stream().map(Views::proposal).toList(),
+				draftView, negotiation.getStartedAt(), negotiation.getClosedBy(), negotiation.getClosedAt());
+	}
+
+	public static ProposalView proposal(Proposal proposal)
+	{
+		return switch (proposal.getContent())
+		{
+			case AgreementText text -> new ProposalView(proposal.getId(), proposal.getAuthor(), "AGREEMENT", text.text(), null, null,
+					proposal.getJustification(), proposal.getSentAt(), proposal.getProposalStatus());
+			case DiscussionTitle title -> new ProposalView(proposal.getId(), proposal.getAuthor(), "DISCUSSION_TITLE", null, title.title(),
+					title.subtitle(), proposal.getJustification(), proposal.getSentAt(), proposal.getProposalStatus());
+		};
 	}
 
 	public static ParagraphView paragraph(Paragraph paragraph)

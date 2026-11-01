@@ -60,6 +60,14 @@ public class JdbcConversationRepository implements ConversationRepository
 	}
 
 	@Override
+	@Transactional(readOnly = true)
+	public Optional<ConversationId> findIdByCouple(CoupleId coupleId)
+	{
+		return jdbc.sql("SELECT id FROM conversation WHERE couple_id = ?").param(coupleId.value())
+				.query((rs, row) -> new ConversationId(Columns.uuid(rs, "id"))).optional();
+	}
+
+	@Override
 	@Transactional
 	public void save(Conversation conversation)
 	{
