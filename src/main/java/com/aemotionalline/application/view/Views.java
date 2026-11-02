@@ -3,7 +3,14 @@ package com.aemotionalline.application.view;
 import java.util.List;
 import java.util.Optional;
 
+import com.aemotionalline.domain.constraint.Constraint;
+import com.aemotionalline.domain.constraint.ConstraintAssignment;
+import com.aemotionalline.domain.constraint.LocationConstraint;
+import com.aemotionalline.domain.constraint.ReplyDelayConstraint;
+import com.aemotionalline.domain.constraint.TimeConstraint;
 import com.aemotionalline.domain.conversation.Conversation;
+import com.aemotionalline.domain.conversation.DiscussionClosure;
+import com.aemotionalline.domain.conversation.OutcomeDeclaration;
 import com.aemotionalline.domain.conversation.Discussion;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.message.Message;
@@ -90,6 +97,72 @@ public final class Views
 					proposal.getJustification(), proposal.getSentAt(), proposal.getProposalStatus());
 			case DiscussionTitle title -> new ProposalView(proposal.getId(), proposal.getAuthor(), "DISCUSSION_TITLE", null, title.title(),
 					title.subtitle(), proposal.getJustification(), proposal.getSentAt(), proposal.getProposalStatus());
+		};
+	}
+
+	// CLOSING
+
+	public static ClosingView closing(Discussion discussion, Couple couple, UserId viewer)
+	{
+		boolean therapist = couple.isTherapist(viewer);
+
+		List<ClosingView.TherapistRequestView> therapistRequests = discussion.getTherapistClosingRequests().stream()
+				.map(request -> new ClosingView.TherapistRequestView(request.requester(),
+						therapist || request.requester().equals(viewer) ? Optional.of(request.justification()) : Optional.empty(),
+						request.sentAt(), request.previousRequests(), request.status(), request.decidedAt()))
+				.toList();
+
+		Optional<DiscussionClosure> closure = discussion.getClosure();
+		List<OutcomeDeclaration> declarations = closure.map(DiscussionClosure::declarations).orElse(List.of());
+		boolean bothDeclared = declarations.size() == 2;
+
+		List<ClosingView.DeclarationView> declarationViews = declarations.stream()
+				.map(declaration ->
+				{
+					boolean visible = therapist || bothDeclared || declaration.partner().equals(viewer);
+
+					return new ClosingView.DeclarationView(declaration.partner(), visible ? Optional.of(declaration.outcome()) : Optional.empty(),
+							visible ? Optional.of(declaration.reason()) : Optional.empty(), declaration.declaredAt());
+				})
+				.toList();
+
+		return new ClosingView(discussion.getId(), discussion.isClosed(), closure.map(DiscussionClosure::way), closure.map(DiscussionClosure::closedAt),
+				discussion.getClosingRequests(), therapistRequests, declarationViews);
+	}
+
+	// CONSTRAINTS
+
+	public static ConstraintsView constraints(Conversation conversation)
+	{
+		List<ConstraintsView.RequestView> requests = conversation.getConstraintRequestHistory().stream()
+				.map(request -> new ConstraintsView.RequestView(request.id(), request.proposedBy(), constraints(request.assignments()), request.status(),
+						request.approvals(), request.proposedAt(), request.closedAt(), request.rejectedBy(),
+						request.previousAssignments().map(Views::constraints)))
+				.toList();
+
+		return new ConstraintsView(constraints(conversation.getConstraintAssignments()), requests);
+	}
+
+	private static List<ConstraintView> constraints(List<ConstraintAssignment> assignments)
+	{
+		return assignments.stream().map(Views::constraint).toList();
+	}
+
+	private static ConstraintView constraint(ConstraintAssignment assignment)
+	{
+		Constraint constraint = assignment.getConstraint();
+
+		return switch (constraint)
+		{
+			case TimeConstraint time -> new ConstraintView(assignment.getUserId(), "TIME", time.getScope(), time.getNotBefore(), null, null, null, null,
+					null, time.getDescription());
+			case ReplyDelayConstraint delay -> new ConstraintView(assignment.getUserId(), "REPLY_DELAY", delay.getScope(), null, delay.getDelay(), null,
+					null, null, null, delay.getDescription());
+			case LocationConstraint location -> new ConstraintView(assignment.getUserId(), "LOCATION", location.getScope(), null, null,
+					location.getCenter().latitude(), location.getCenter().longitude(), location.getRadiusMetres(), location.getDirection(),
+					location.getDescription());
+			default -> new ConstraintView(assignment.getUserId(), constraint.getClass().getSimpleName(), constraint.getScope(), null, null, null, null,
+					null, null, constraint.getDescription());
 		};
 	}
 

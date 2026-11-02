@@ -46,10 +46,7 @@ public class ConversationService
 	@Transactional(readOnly = true)
 	public ConversationView view(UserId viewer, ConversationId id)
 	{
-		Conversation conversation = conversations.findById(id).orElseThrow(() -> new NotFoundException("Conversation not found."));
-		Access.ensureMember(conversation.getCouple(), viewer, "Conversation");
-
-		return Views.conversation(conversation, viewer);
+		return Views.conversation(readable(viewer, id), viewer);
 	}
 
 	/**
@@ -106,18 +103,12 @@ public class ConversationService
 
 	private Conversation locked(UserId user, ConversationId id)
 	{
-		Conversation conversation = conversations.findByIdForUpdate(id).orElseThrow(() -> new NotFoundException("Conversation not found."));
-		Access.ensureMember(conversation.getCouple(), user, "Conversation");
-
-		return conversation;
+		return ConversationAccess.locked(conversations, user, id);
 	}
 
 	private Conversation readable(UserId user, ConversationId id)
 	{
-		Conversation conversation = conversations.findById(id).orElseThrow(() -> new NotFoundException("Conversation not found."));
-		Access.ensureMember(conversation.getCouple(), user, "Conversation");
-
-		return conversation;
+		return ConversationAccess.readable(conversations, user, id);
 	}
 
 	// The draft's ids become the conversation's paragraphs (only the ones the sender can see); the server creates the new ids.
