@@ -11,6 +11,7 @@ import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.couple.CoupleId;
 import com.aemotionalline.domain.couple.CoupleRepository;
 import com.aemotionalline.domain.user.UserId;
+import com.aemotionalline.infrastructure.persistence.Utc;
 
 /** The domain's CoupleRepository on MariaDB. Ids are created by the domain, so insert and update are told apart here. */
 @Repository
@@ -40,11 +41,17 @@ public class JdbcCoupleRepository implements CoupleRepository
 	}
 
 	@Override
+	public Optional<Couple> findActiveCoupleOf(UserId patient)
+	{
+		return rows.findActiveOf(patient.value()).map(JdbcCoupleRepository::toDomain);
+	}
+
+	@Override
 	@Transactional
 	public void save(Couple couple)
 	{
 		CoupleRow row = new CoupleRow(couple.getId().value(), couple.getPartnerOneId().value(), couple.getPartnerTwoId().value(),
-				couple.getTherapistId().value());
+				couple.getTherapistId().value(), Utc.toColumn(couple.getEndedAt().orElse(null)));
 
 		if (rows.existsById(row.id()))
 		{
@@ -58,6 +65,7 @@ public class JdbcCoupleRepository implements CoupleRepository
 
 	private static Couple toDomain(CoupleRow row)
 	{
-		return new Couple(new CoupleId(row.id()), new UserId(row.partnerOneId()), new UserId(row.partnerTwoId()), new UserId(row.therapistId()));
+		return Couple.restore(new CoupleId(row.id()), new UserId(row.partnerOneId()), new UserId(row.partnerTwoId()), new UserId(row.therapistId()),
+				Utc.fromColumn(row.endedAt()));
 	}
 }
