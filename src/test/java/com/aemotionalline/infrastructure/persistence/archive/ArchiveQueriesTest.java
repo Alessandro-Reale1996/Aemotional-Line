@@ -17,6 +17,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 import com.aemotionalline.TestcontainersConfiguration;
+import com.aemotionalline.application.view.ArchiveEntry;
+import com.aemotionalline.application.view.ArchiveProposal;
 import com.aemotionalline.domain.MutableClock;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.GeoPosition;
@@ -38,7 +40,10 @@ import com.aemotionalline.domain.negotiation.AgreementText;
 import com.aemotionalline.domain.negotiation.DiscussionTitle;
 import com.aemotionalline.domain.user.UserId;
 
-/** The archive's searches by time and keyword on a saved conversation holding every kind of state (FullConversation). */
+/**
+ * The archive's searches by time and keyword on a saved conversation holding every kind of state (FullConversation), seen by
+ * the therapist (who sees everything); the closed-envelope rule for a partner is tested in ArchiveServiceTest.
+ */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 public class ArchiveQueriesTest
@@ -77,9 +82,9 @@ public class ArchiveQueriesTest
 		return full.conversation.findDiscussion(full.main).getMessages();
 	}
 
-	private static Set<ParagraphId> ids(List<ArchiveParagraph> paragraphs)
+	private static Set<ParagraphId> ids(List<ArchiveEntry> paragraphs)
 	{
-		return paragraphs.stream().map(ArchiveParagraph::paragraphId).collect(Collectors.toSet());
+		return paragraphs.stream().map(entry -> entry.paragraphId().orElseThrow()).collect(Collectors.toSet());
 	}
 
 	// BY TIME:
@@ -90,10 +95,10 @@ public class ArchiveQueriesTest
 		Message second = mainMessages().get(1);
 		Message third = mainMessages().get(2);
 
-		List<ArchiveParagraph> found = archive.messagesBetween(id, second.getSentAt(), third.getSentAt());
+		List<ArchiveEntry> found = archive.messagesBetween(id, full.therapist, true, second.getSentAt(), third.getSentAt());
 
-		assertEquals(second.getParagraphs().stream().map(Paragraph::getId).toList(), found.stream().map(ArchiveParagraph::paragraphId).toList());
-		ArchiveParagraph pointed = found.getFirst();
+		assertEquals(second.getParagraphs().stream().map(Paragraph::getId).toList(), found.stream().map(entry -> entry.paragraphId().orElseThrow()).toList());
+		ArchiveEntry pointed = found.getFirst();
 		assertEquals(ParagraphType.POINTED, pointed.type());
 		assertEquals(full.main, pointed.discussionId());
 		assertEquals(second.getId(), pointed.messageId());
@@ -106,8 +111,8 @@ public class ArchiveQueriesTest
 	{
 		Instant sent = mainMessages().getFirst().getSentAt();
 
-		assertTrue(archive.messagesBetween(id, sent.plusNanos(1_000), sent.plusNanos(1_000)).isEmpty());
-		assertThrows(IllegalArgumentException.class, () -> archive.messagesBetween(id, sent, sent.minusSeconds(1)));
+		assertTrue(archive.messagesBetween(id, full.therapist, true, sent.plusNanos(1_000), sent.plusNanos(1_000)).isEmpty());
+		assertThrows(IllegalArgumentException.class, () -> archive.messagesBetween(id, full.therapist, true, sent, sent.minusSeconds(1)));
 	}
 
 	// BY KEYWORD:
@@ -121,8 +126,8 @@ public class ArchiveQueriesTest
 				.collect(Collectors.toSet());
 
 		// The simple paragraphs' bodies are "Body àèìòù".
-		assertEquals(simple, ids(archive.search(id, "AEIOU").paragraphs()));
-		assertEquals(Set.of(full.q.getId()), ids(archive.search(id, "tell ME").paragraphs()));
+		assertEquals(simple, ids(archive.search(id, full.therapist, true, "AEIOU").paragraphs()));
+		assertEquals(Set.of(full.q.getId()), ids(archive.search(id, full.therapist, true, "tell ME").paragraphs()));
 	}
 
 	@Test
@@ -135,10 +140,10 @@ public class ArchiveQueriesTest
 				.map(Message::getId)
 				.collect(Collectors.toSet());
 
-		List<ArchiveParagraph> found = archive.search(id, "body").paragraphs();
+		List<ArchiveEntry> found = archive.search(id, full.therapist, true, "body").paragraphs();
 
 		assertTrue(found.stream().allMatch(paragraph -> ours.contains(paragraph.messageId())));
-		assertEquals(ids(archive.search(other.conversation.getId(), "body").paragraphs()).size(), found.size());
+		assertEquals(ids(archive.search(other.conversation.getId(), other.therapist, true, "body").paragraphs()).size(), found.size());
 	}
 
 	@Test
@@ -153,26 +158,26 @@ public class ArchiveQueriesTest
 		loaded.sendMessage(message, full.main, new ConstraintContext(LocalTime.NOON, new GeoPosition(45.48, 9.19)));
 		conversations.save(loaded);
 
-		assertEquals(Set.of(percent.getId()), ids(archive.search(id, "50%").paragraphs()));
-		assertTrue(archive.search(id, "%").paragraphs().stream().allMatch(paragraph -> paragraph.paragraphId().equals(percent.getId())));
-		assertTrue(archive.search(id, "_").isEmpty());
+		assertEquals(Set.of(percent.getId()), ids(archive.search(id, full.therapist, true, "50%").paragraphs()));
+		assertTrue(archive.search(id, full.therapist, true, "%").paragraphs().stream().allMatch(paragraph -> paragraph.paragraphId().orElseThrow().equals(percent.getId())));
+		assertTrue(archive.search(id, full.therapist, true, "_").isEmpty());
 	}
 
 	@Test
 	void shouldFindTheProposalsThatTookEffectAndThoseThatFailed()
 	{
-		List<ArchiveProposal> agreement = archive.search(id, "b's agreement").proposals();
+		List<ArchiveProposal> agreement = archive.search(id, full.therapist, true, "b's agreement").proposals();
 		assertEquals(1, agreement.size());
 		assertEquals(ArchiveProposal.Section.TOOK_EFFECT, agreement.getFirst().section());
 		assertEquals(NegotiationRecord.Purpose.MODIFIED_AGREEMENT, agreement.getFirst().purpose());
 		assertEquals(new AgreementText("B'S AGREEMENT"), agreement.getFirst().content());
 
 		// The failed attempt to start the conversation, and an abandoned discussion request (only its request was kept).
-		ArchiveProposal tooEarly = archive.search(id, "too early").proposals().getFirst();
+		ArchiveProposal tooEarly = archive.search(id, full.therapist, true, "too early").proposals().getFirst();
 		assertEquals(ArchiveProposal.Section.FAILED, tooEarly.section());
 		assertEquals(NegotiationRecord.Purpose.STARTED_CONVERSATION, tooEarly.purpose());
 
-		ArchiveProposal never = archive.search(id, "never").proposals().getFirst();
+		ArchiveProposal never = archive.search(id, full.therapist, true, "never").proposals().getFirst();
 		assertEquals(ArchiveProposal.Section.FAILED, never.section());
 		assertEquals(new DiscussionTitle("NEVER", "MIND"), never.content());
 	}
@@ -180,8 +185,8 @@ public class ArchiveQueriesTest
 	@Test
 	void shouldFindNothingAndRejectABlankText()
 	{
-		assertTrue(archive.search(id, "zzzz").isEmpty());
-		assertThrows(IllegalArgumentException.class, () -> archive.search(id, "  "));
-		assertThrows(IllegalArgumentException.class, () -> archive.search(id, null));
+		assertTrue(archive.search(id, full.therapist, true, "zzzz").isEmpty());
+		assertThrows(IllegalArgumentException.class, () -> archive.search(id, full.therapist, true, "  "));
+		assertThrows(IllegalArgumentException.class, () -> archive.search(id, full.therapist, true, null));
 	}
 }

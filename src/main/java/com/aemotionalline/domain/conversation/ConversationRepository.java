@@ -21,6 +21,9 @@ public interface ConversationRepository
 
 	Optional<Conversation> findByCouple(CoupleId coupleId);
 
+	/** The couple a conversation belongs to, without loading the conversation. */
+	Optional<CoupleId> findCoupleIdOf(ConversationId id);
+
 	/** The id of the couple's conversation, without loading it. */
 	Optional<ConversationId> findIdByCouple(CoupleId coupleId);
 

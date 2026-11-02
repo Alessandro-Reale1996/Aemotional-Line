@@ -1,4 +1,4 @@
-package com.aemotionalline.infrastructure.persistence.archive;
+package com.aemotionalline.application.view;
 
 import java.time.Instant;
 

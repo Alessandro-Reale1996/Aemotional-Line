@@ -61,6 +61,14 @@ public class JdbcConversationRepository implements ConversationRepository
 
 	@Override
 	@Transactional(readOnly = true)
+	public Optional<CoupleId> findCoupleIdOf(ConversationId id)
+	{
+		return jdbc.sql("SELECT couple_id FROM conversation WHERE id = ?").param(id.value())
+				.query((rs, row) -> new CoupleId(Columns.uuid(rs, "couple_id"))).optional();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public Optional<ConversationId> findIdByCouple(CoupleId coupleId)
 	{
 		return jdbc.sql("SELECT id FROM conversation WHERE couple_id = ?").param(coupleId.value())
