@@ -223,6 +223,8 @@ public class Conversation
 
 	    if (!negotiation.isAccepted())
 	    {
+		ensureCoupleActive();
+		
 	        throw new DomainException("Cannot modify agreement with an unaccepted negotiation.");
 	    }
 		
@@ -277,6 +279,8 @@ public class Conversation
 	// The kind of proposal tells what the negotiation was for: an agreement text can't title a discussion, nor the reverse.
 	private void open(Negotiation negotiation, Class<? extends Proposal> kind, ParagraphId originParagraphId)
 	{
+		ensureCoupleActive();
+		
 		ensureNegotiationOfThisCouple(negotiation);
 
 	    if (!negotiation.isAccepted())
@@ -329,6 +333,8 @@ public class Conversation
 	 */
 	public void recordFailedNegotiation(Negotiation negotiation)
 	{
+		ensureCoupleActive();
+		
 		ensureNegotiationOfThisCouple(negotiation);
 		
 		recordFailed(negotiation, negotiation.getRequest() instanceof AgreementProposal
@@ -392,7 +398,17 @@ public class Conversation
 
 	public boolean canSendMessage(UserId userId)
 	{
-		return  couple.isPartner(userId) && agreement.isAccepted();	
+		return couple.isActive() && couple.isPartner(userId) && agreement.isAccepted();
+	}
+	
+	// Once the therapist ended the couple, the conversation is read-only: everything pending stays frozen as it was.
+	// Opening a message is still allowed: it is consultation of the archive, not communication.
+	private void ensureCoupleActive()
+	{
+		if (!couple.isActive())
+		{
+			throw new DomainException("The couple has ended: the conversation is read-only.");
+		}
 	}
 	
 	public void ensureCanSendMessage(UserId userId)
@@ -411,6 +427,8 @@ public class Conversation
 	 */
 	public ConstraintChangeRequestId proposeConstraints(UserId therapist, List<ConstraintAssignment> assignments)
 	{
+		ensureCoupleActive();
+		
 		if (constraintRequests.stream().anyMatch(ConstraintChangeRequest::isPending))
 		{
 			throw new DomainException("Another constraint change request is still pending.");
@@ -426,6 +444,8 @@ public class Conversation
 	// The second approval is the consent of both partners: the constraints take effect at once.
 	public void approveConstraints(ConstraintChangeRequestId requestId, UserId partner)
 	{
+		ensureCoupleActive();
+		
 		ConstraintChangeRequest request = findConstraintRequest(requestId);
 		
 		request.approve(partner);
@@ -438,11 +458,15 @@ public class Conversation
 	
 	public void rejectConstraints(ConstraintChangeRequestId requestId, UserId partner)
 	{
+		ensureCoupleActive();
+		
 		findConstraintRequest(requestId).reject(partner, clock.instant());
 	}
 	
 	public void withdrawConstraints(ConstraintChangeRequestId requestId, UserId therapist)
 	{
+		ensureCoupleActive();
+		
 		findConstraintRequest(requestId).withdraw(therapist, clock.instant());
 	}
 	
@@ -505,6 +529,8 @@ public class Conversation
 	 */
 	public void sendMessage(Message message,DiscussionId discussionid, ConstraintContext context) 
 	{
+		ensureCoupleActive();
+		
 		if (message == null)
 		{
 			throw new DomainException("Message can't be null.");
@@ -811,6 +837,8 @@ public class Conversation
 	/** A partner asks the other to close a specific discussion; any time, whatever the turn. */
 	public void requestClosing(DiscussionId discussionId, UserId partner)
 	{
+		ensureCoupleActive();
+		
 		ensurePartner(partner);
 		
 		specificDiscussion(discussionId).requestClosing(partner, clock.instant());
@@ -819,6 +847,8 @@ public class Conversation
 	/** The other partner accepts: the discussion closes now, and each partner then declares its outcome. */
 	public void acceptClosing(DiscussionId discussionId, UserId partner)
 	{
+		ensureCoupleActive();
+		
 		ensurePartner(partner);
 		
 		specificDiscussion(discussionId).answerClosing(partner, true, clock.instant());
@@ -826,6 +856,8 @@ public class Conversation
 	
 	public void refuseClosing(DiscussionId discussionId, UserId partner)
 	{
+		ensureCoupleActive();
+		
 		ensurePartner(partner);
 		
 		specificDiscussion(discussionId).answerClosing(partner, false, clock.instant());
@@ -833,6 +865,8 @@ public class Conversation
 	
 	public void withdrawClosing(DiscussionId discussionId, UserId partner)
 	{
+		ensureCoupleActive();
+		
 		ensurePartner(partner);
 		
 		specificDiscussion(discussionId).withdrawClosing(partner, clock.instant());
@@ -844,6 +878,8 @@ public class Conversation
 	 */
 	public void requestTherapistClosing(DiscussionId discussionId, UserId partner, String justification)
 	{
+		ensureCoupleActive();
+		
 		ensurePartner(partner);
 		
 		specificDiscussion(discussionId).requestTherapistClosing(partner, justification, clock.instant());
@@ -851,6 +887,8 @@ public class Conversation
 	
 	public void confirmTherapistClosing(DiscussionId discussionId, UserId therapist)
 	{
+		ensureCoupleActive();
+		
 		ensureTherapist(therapist);
 		
 		specificDiscussion(discussionId).decideTherapistClosing(true, clock.instant());
@@ -858,6 +896,8 @@ public class Conversation
 	
 	public void refuseTherapistClosing(DiscussionId discussionId, UserId therapist)
 	{
+		ensureCoupleActive();
+		
 		ensureTherapist(therapist);
 		
 		specificDiscussion(discussionId).decideTherapistClosing(false, clock.instant());
@@ -866,6 +906,8 @@ public class Conversation
 	/** Once the discussion is closed, each partner declares, once, whether its topic was resolved or stalled, and why. */
 	public void declareOutcome(DiscussionId discussionId, UserId partner, OutcomeDeclaration.Outcome outcome, String reason)
 	{
+		ensureCoupleActive();
+		
 		ensurePartner(partner);
 		
 		specificDiscussion(discussionId).declareOutcome(partner, outcome, reason, clock.instant());

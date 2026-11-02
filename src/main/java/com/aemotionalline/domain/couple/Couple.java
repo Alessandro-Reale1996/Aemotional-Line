@@ -1,6 +1,8 @@
 package com.aemotionalline.domain.couple;
 
+import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.user.UserId;
@@ -8,6 +10,8 @@ import com.aemotionalline.domain.user.UserId;
 /**
  * The two partners and the therapist who supervises them. It is the authority on who may do what:
  * partners talk and approve, the therapist proposes constraints, and nobody else takes part.
+ * A couple is active until its therapist ends it, at the end of the therapy; that is final, and its conversation then
+ * becomes read-only (everything pending stays frozen; messages can still be opened).
  */
 public class Couple
 {
@@ -15,6 +19,9 @@ public class Couple
     private final UserId partnerOneId;
     private final UserId partnerTwoId;
     private final UserId therapistId;
+
+    // Null while the couple is active.
+    private Instant endedAt;
     
 
     
@@ -41,6 +48,41 @@ public class Couple
         this.therapistId = therapistId;
     }
     
+    /** Reserved to the persistence layer: rebuilds a couple, ended or not. */
+    public static Couple restore(CoupleId id, UserId partnerOneId, UserId partnerTwoId, UserId therapistId, Instant endedAt)
+    {
+        Couple couple = new Couple(id, partnerOneId, partnerTwoId, therapistId);
+        couple.endedAt = endedAt;
+
+        return couple;
+    }
+
+    /** Only the couple's therapist ends it, once. */
+    public void end(UserId therapist, Instant at)
+    {
+        if (!isTherapist(therapist))
+        {
+            throw new DomainException("Only the couple's therapist can end it.");
+        }
+
+        if (!isActive())
+        {
+            throw new DomainException("The couple has already ended.");
+        }
+
+        this.endedAt = Objects.requireNonNull(at);
+    }
+
+    public boolean isActive()
+    {
+        return endedAt == null;
+    }
+
+    public Optional<Instant> getEndedAt()
+    {
+        return Optional.ofNullable(endedAt);
+    }
+
     public CoupleId getId()
 	{
 		return id;
