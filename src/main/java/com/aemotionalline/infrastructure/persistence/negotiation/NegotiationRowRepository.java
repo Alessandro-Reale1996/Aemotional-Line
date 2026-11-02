@@ -15,5 +15,9 @@ interface NegotiationRowRepository extends ListCrudRepository<NegotiationRow, UU
 	@Lock(LockMode.PESSIMISTIC_WRITE)
 	Optional<NegotiationRow> findLockedById(UUID id);
 
+	// SELECT ... FOR UPDATE on every negotiation of the couple, in id order.
+	@Lock(LockMode.PESSIMISTIC_WRITE)
+	List<NegotiationRow> findLockedByCoupleIdOrderById(UUID coupleId);
+
 	List<NegotiationRow> findByCoupleIdAndStatusInOrderByStartedAt(UUID coupleId, Collection<String> statuses);
 }

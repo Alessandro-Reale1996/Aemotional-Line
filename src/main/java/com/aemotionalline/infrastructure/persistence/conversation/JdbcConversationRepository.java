@@ -75,6 +75,15 @@ public class JdbcConversationRepository implements ConversationRepository
 				.query((rs, row) -> new ConversationId(Columns.uuid(rs, "id"))).optional();
 	}
 
+	/** The lock lasts until the end of the caller's transaction, so there must be one. */
+	@Override
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void lockByCouple(CoupleId coupleId)
+	{
+		jdbc.sql("SELECT id FROM conversation WHERE couple_id = ? FOR UPDATE").param(coupleId.value())
+				.query((rs, row) -> Columns.uuid(rs, "id")).optional();
+	}
+
 	@Override
 	@Transactional
 	public void save(Conversation conversation)

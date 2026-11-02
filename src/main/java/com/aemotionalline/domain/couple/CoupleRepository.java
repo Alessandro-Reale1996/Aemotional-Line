@@ -1,5 +1,7 @@
 package com.aemotionalline.domain.couple;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import com.aemotionalline.domain.user.UserId;
@@ -17,6 +19,15 @@ public interface CoupleRepository
 
 	/** The active couple a patient is a partner of, if any: a patient is in at most one active couple at a time. */
 	Optional<Couple> findActiveCoupleOf(UserId patient);
+
+	/**
+	 * The active couples a therapist follows, locked until the end of the transaction (disabling the therapist ends them):
+	 * a locking read, so it also sees a couple born from an invitation accepted a moment ago.
+	 */
+	List<Couple> findActiveCouplesOfTherapistForUpdate(UserId therapist);
+
+	/** The couples ended before the instant, oldest end first (the retention period deletes their data). */
+	List<CoupleId> findIdsEndedBefore(Instant instant);
 
 	void save(Couple couple);
 }

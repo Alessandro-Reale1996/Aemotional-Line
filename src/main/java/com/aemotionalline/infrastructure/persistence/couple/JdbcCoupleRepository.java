@@ -1,5 +1,7 @@
 package com.aemotionalline.infrastructure.persistence.couple;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jdbc.core.JdbcAggregateTemplate;
@@ -44,6 +46,20 @@ public class JdbcCoupleRepository implements CoupleRepository
 	public Optional<Couple> findActiveCoupleOf(UserId patient)
 	{
 		return rows.findActiveOf(patient.value()).map(JdbcCoupleRepository::toDomain);
+	}
+
+	/** The locks last until the end of the caller's transaction, so there must be one. */
+	@Override
+	@Transactional(propagation = Propagation.MANDATORY)
+	public List<Couple> findActiveCouplesOfTherapistForUpdate(UserId therapist)
+	{
+		return rows.findActiveOfTherapistLocked(therapist.value()).stream().map(JdbcCoupleRepository::toDomain).toList();
+	}
+
+	@Override
+	public List<CoupleId> findIdsEndedBefore(Instant instant)
+	{
+		return rows.findEndedBefore(Utc.toColumn(instant)).stream().map(row -> new CoupleId(row.id())).toList();
 	}
 
 	@Override

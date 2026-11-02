@@ -27,5 +27,11 @@ public interface ConversationRepository
 	/** The id of the couple's conversation, without loading it. */
 	Optional<ConversationId> findIdByCouple(CoupleId coupleId);
 
+	/**
+	 * Locks the couple's conversation, if it has one, until the end of the transaction, without loading it: ending a couple
+	 * or deleting its data first waits for the operations in progress on the conversation. Taken after the couple's lock.
+	 */
+	void lockByCouple(CoupleId coupleId);
+
 	void save(Conversation conversation);
 }

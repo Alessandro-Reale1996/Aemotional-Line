@@ -27,6 +27,12 @@ public interface NegotiationRepository
 	 */
 	List<Negotiation> findFailedStartsOf(CoupleId coupleId);
 
+	/**
+	 * Locks every negotiation of the couple until the end of the transaction, without loading them: ending a couple or
+	 * deleting its data first waits for the operations in progress on them. Taken after the couple's and the conversation's.
+	 */
+	void lockAllOf(CoupleId coupleId);
+
 	void save(Negotiation negotiation);
 
 	void delete(NegotiationId id);

@@ -66,7 +66,9 @@ public class ConversationOfAnEndedCoupleTest
 		assertThrows(DomainException.class, () -> conversation.approveConstraints(full.pendingConstraints, full.b));
 		assertThrows(DomainException.class, () -> conversation.withdrawConstraints(full.pendingConstraints, full.therapist));
 
-		Negotiation failed = Negotiation.start(NegotiationId.random(), conversation.getCouple(), new AgreementProposal(ProposalId.random(), full.a, "X"),
+		// A negotiation that failed just before the end (the same couple, as it was then): it can't be recorded any more.
+		Couple beforeTheEnd = new Couple(conversation.getCouple().getId(), full.a, full.b, full.therapist);
+		Negotiation failed = Negotiation.start(NegotiationId.random(), beforeTheEnd, new AgreementProposal(ProposalId.random(), full.a, "X"),
 				Clock.systemUTC());
 		failed.abandon(full.a);
 		assertThrows(DomainException.class, () -> conversation.recordFailedNegotiation(failed));

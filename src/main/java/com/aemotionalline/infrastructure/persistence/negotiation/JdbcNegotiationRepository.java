@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.data.jdbc.core.JdbcAggregateTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.aemotionalline.domain.couple.Couple;
@@ -96,6 +97,14 @@ public class JdbcNegotiationRepository implements NegotiationRepository
 		{
 			template.insert(ProposalRows.toRow(negotiation.getCurrentProposal(), row.id(), null));
 		}
+	}
+
+	/** The locks last until the end of the caller's transaction, so there must be one. */
+	@Override
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void lockAllOf(CoupleId coupleId)
+	{
+		negotiations.findLockedByCoupleIdOrderById(coupleId.value());
 	}
 
 	@Override

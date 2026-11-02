@@ -16,6 +16,9 @@ import com.aemotionalline.domain.user.UserRepository;
  */
 final class TestCouples
 {
+	/** The password of every account saved here. */
+	static final String PASSWORD = "not-a-real-password";
+
 	private TestCouples()
 	{
 	}
@@ -35,7 +38,7 @@ final class TestCouples
 	static void activeAccount(UserRepository users, UserId id, Role role)
 	{
 		User user = User.pending(id, new EmailAddress(id.value() + "@example.org"), role.name().toLowerCase(), role);
-		user.activate(new PasswordHash("{noop}not-a-real-password"));
+		user.activate(new PasswordHash("{noop}" + PASSWORD));
 		users.save(user);
 	}
 }

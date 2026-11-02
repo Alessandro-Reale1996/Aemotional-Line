@@ -54,7 +54,10 @@ public class InvitationService
 
 	public CoupleInvitationId invite(UserId therapist, EmailAddress emailOne, String nameOne, EmailAddress emailTwo, String nameTwo)
 	{
-		User inviter = userService.ensureActiveWithRole(therapist, Role.THERAPIST);
+		// Locks the therapist's account: an invitation and the disabling of the account (which withdraws the pending
+		// invitations) can't overlap.
+		User inviter = users.findByIdForUpdate(therapist).filter(found -> found.getRole() == Role.THERAPIST && found.getStatus() == AccountStatus.ACTIVE)
+				.orElseThrow(() -> new NotFoundException("Not found."));
 
 		if (emailOne.equals(emailTwo))
 		{

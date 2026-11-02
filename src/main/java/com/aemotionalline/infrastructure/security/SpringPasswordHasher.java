@@ -1,5 +1,7 @@
 package com.aemotionalline.infrastructure.security;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -25,6 +27,7 @@ public class SpringPasswordHasher implements PasswordHasher
 	@Override
 	public boolean matches(String password, PasswordHash hash)
 	{
-		return password != null && encoder.matches(password, hash.value());
+		// bcrypt reads at most 72 bytes and recent encoders refuse longer input; no such password was ever accepted.
+		return password != null && password.getBytes(StandardCharsets.UTF_8).length <= 72 && encoder.matches(password, hash.value());
 	}
 }

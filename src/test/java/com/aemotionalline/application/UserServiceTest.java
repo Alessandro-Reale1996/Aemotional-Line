@@ -23,6 +23,8 @@ import com.aemotionalline.CapturingMailer.Kind;
 import com.aemotionalline.RecordingSessions;
 import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.couple.CoupleId;
+import com.aemotionalline.domain.couple.CoupleInvitation;
 import com.aemotionalline.domain.couple.CoupleInvitationId;
 import com.aemotionalline.domain.couple.CoupleInvitationRepository;
 import com.aemotionalline.domain.couple.CoupleInvitationStatus;
@@ -205,15 +207,33 @@ public class UserServiceTest
 	}
 
 	@Test
-	void shouldDisableATherapistAndEndTheirSessions()
+	void shouldDisableATherapistEndingTheirSessionsAndCouplesAndWithdrawingTheirInvitations()
 	{
 		UserId therapist = UserId.random();
-		TestCouples.activeAccount(users, therapist, Role.THERAPIST);
+		UserId a = UserId.random();
+		UserId b = UserId.random();
+		CoupleId couple = TestCouples.create(users, couples, therapist, a, b);
+		UserId otherTherapist = UserId.random();
+		CoupleId otherCouple = TestCouples.create(users, couples, otherTherapist, UserId.random(), UserId.random());
+		CoupleInvitationId pending = invitationService.invite(therapist, freshEmail(), "Carla", freshEmail(), "Dario");
+		Instant longAgo = clock.instant().minus(Duration.ofDays(8));
+		CoupleInvitation expired = CoupleInvitation.create(CoupleInvitationId.random(), therapist, UserId.random(), UserId.random(), longAgo,
+				longAgo.plus(InvitationService.VALIDITY));
+		invitations.save(expired);
 
 		userService.disableTherapist(administrator, therapist);
 
 		assertEquals(AccountStatus.DISABLED, users.findById(therapist).orElseThrow().getStatus());
 		assertTrue(sessions.wereEnded(therapist));
+		assertFalse(couples.findById(couple).orElseThrow().isActive());
+		assertTrue(couples.findById(otherCouple).orElseThrow().isActive());
+		assertEquals(CoupleInvitationStatus.WITHDRAWN, invitations.findById(pending).orElseThrow().getStatus());
+		// An expired invitation can't be accepted anyway: it is left as it was.
+		assertEquals(CoupleInvitationStatus.PENDING, invitations.findById(expired.getId()).orElseThrow().getStatus());
+		assertThrows(NotFoundException.class, () -> invitationService.invite(therapist, freshEmail(), "E", freshEmail(), "F"));
+		// The patients can be invited again by another therapist.
+		assertDoesNotThrow(() -> invitationService.invite(otherTherapist, users.findById(a).orElseThrow().getEmail(), "A",
+				users.findById(b).orElseThrow().getEmail(), "B"));
 	}
 
 	@Test

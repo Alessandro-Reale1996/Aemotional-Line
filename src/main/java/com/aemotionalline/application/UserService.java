@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.couple.CoupleInvitation;
 import com.aemotionalline.domain.couple.CoupleInvitationRepository;
+import com.aemotionalline.domain.couple.CoupleInvitationStatus;
 import com.aemotionalline.domain.couple.CoupleRepository;
 import com.aemotionalline.domain.user.AccountStatus;
 import com.aemotionalline.domain.user.EmailAddress;
@@ -37,10 +39,11 @@ public class UserService
 	private final PasswordHasher hasher;
 	private final Mailer mailer;
 	private final AccountSessions sessions;
+	private final CoupleService coupleService;
 	private final Clock clock;
 
 	UserService(UserRepository users, OneTimeLinkRepository links, CoupleRepository couples, CoupleInvitationRepository invitations,
-			PasswordHasher hasher, Mailer mailer, AccountSessions sessions, Clock clock)
+			PasswordHasher hasher, Mailer mailer, AccountSessions sessions, CoupleService coupleService, Clock clock)
 	{
 		this.users = users;
 		this.links = links;
@@ -49,6 +52,7 @@ public class UserService
 		this.hasher = hasher;
 		this.mailer = mailer;
 		this.sessions = sessions;
+		this.coupleService = coupleService;
 		this.clock = clock;
 	}
 
@@ -113,15 +117,22 @@ public class UserService
 		sessions.endAllOf(user.getId());
 	}
 
-	/** The administrator disables a therapist's account; its open sessions end at once. */
+	/**
+	 * The administrator disables a therapist's account: its open sessions end at once, its pending invitations are
+	 * withdrawn and its active couples end (frozen like any end; an administrator can then delete their data).
+	 */
 	public void disableTherapist(UserId administrator, UserId therapist)
 	{
+		// The account is locked before anything is read: an invitation the therapist is sending (which locks the same
+		// account) is either already visible here, or refused once this commits.
+		Optional<User> locked = users.findByIdForUpdate(therapist);
 		ensureActiveWithRole(administrator, Role.ADMINISTRATOR);
-		User user = users.findByIdForUpdate(therapist).filter(found -> found.getRole() == Role.THERAPIST)
-				.orElseThrow(() -> new NotFoundException("Therapist not found."));
+		User user = locked.filter(found -> found.getRole() == Role.THERAPIST).orElseThrow(() -> new NotFoundException("Therapist not found."));
 
 		user.disable();
 		users.save(user);
+		withdrawPendingInvitationsOf(therapist);
+		coupleService.endEveryActiveCoupleOf(therapist);
 		sessions.endAllOf(therapist);
 	}
 
@@ -155,6 +166,24 @@ public class UserService
 		return users.findById(user)
 				.filter(found -> found.getRole() == role && found.getStatus() == AccountStatus.ACTIVE)
 				.orElseThrow(() -> new NotFoundException("Not found."));
+	}
+
+	// Expired invitations are left alone: they can't be accepted anyway.
+	private void withdrawPendingInvitationsOf(UserId therapist)
+	{
+		Instant now = clock.instant();
+
+		for (CoupleInvitation pending : invitations.findPendingInvolving(therapist))
+		{
+			invitations.findByIdForUpdate(pending.getId())
+					.filter(invitation -> invitation.getTherapistId().equals(therapist) && invitation.getStatus() == CoupleInvitationStatus.PENDING
+							&& now.isBefore(invitation.getExpiresAt()))
+					.ifPresent(invitation ->
+					{
+						invitation.withdraw(therapist, now);
+						invitations.save(invitation);
+					});
+		}
 	}
 
 	private String issueLink(UserId user, OneTimeLink.Purpose purpose, Duration validity)

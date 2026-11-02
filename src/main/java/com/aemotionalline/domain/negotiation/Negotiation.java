@@ -86,6 +86,11 @@ public class Negotiation
 			throw new DomainException("An id, a couple, an initial proposal and a clock are required to start a negotiation.");
 		}
 		
+		if (!couple.isActive())
+		{
+			throw new DomainException("The couple has ended: no negotiation can start.");
+		}
+		
 		if (!couple.isPartner(initialProposal.getAuthor()))
 		{
 			throw new DomainException("Only a partner of the couple can start a negotiation.");
@@ -312,6 +317,12 @@ public class Negotiation
         if (user == null)
         {
             throw new DomainException("A user is required to act on the negotiation.");
+        }
+
+        // An ended couple freezes its negotiations as they were (CLAUDE.md, S1 decision): not even abandoning is allowed.
+        if (!couple.isActive())
+        {
+            throw new DomainException("The couple has ended: the negotiation is frozen.");
         }
 
         if ( negotiationStatus == NegotiationStatus.REFUSED) 
