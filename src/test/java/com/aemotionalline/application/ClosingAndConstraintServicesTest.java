@@ -52,7 +52,10 @@ public class ClosingAndConstraintServicesTest
 	private NegotiationService negotiations;
 
 	@Autowired
-	private CoupleService coupleService;
+	private com.aemotionalline.domain.user.UserRepository users;
+
+	@Autowired
+	private com.aemotionalline.domain.couple.CoupleRepository couples;
 
 	private UserId a;
 	private UserId b;
@@ -66,7 +69,7 @@ public class ClosingAndConstraintServicesTest
 		a = UserId.random();
 		b = UserId.random();
 		therapist = UserId.random();
-		CoupleId couple = coupleService.createCouple(therapist, a, b);
+		CoupleId couple = TestCouples.create(users, couples, therapist, a, b);
 
 		NegotiationId start = negotiations.startAgreementNegotiation(a, couple, "OUR AGREEMENT");
 		negotiations.acceptRequest(b, start);

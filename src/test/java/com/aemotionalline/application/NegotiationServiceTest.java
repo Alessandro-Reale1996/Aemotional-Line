@@ -52,7 +52,10 @@ public class NegotiationServiceTest
 	private NegotiationService service;
 
 	@Autowired
-	private CoupleService coupleService;
+	private com.aemotionalline.domain.user.UserRepository users;
+
+	@Autowired
+	private com.aemotionalline.domain.couple.CoupleRepository couples;
 
 	@Autowired
 	private ConversationRepository conversations;
@@ -77,7 +80,7 @@ public class NegotiationServiceTest
 		a = UserId.random();
 		b = UserId.random();
 		therapist = UserId.random();
-		couple = coupleService.createCouple(therapist, a, b);
+		couple = TestCouples.create(users, couples, therapist, a, b);
 	}
 
 	// A asks, B accepts to talk, A sends the request as the first proposal, B accepts it.

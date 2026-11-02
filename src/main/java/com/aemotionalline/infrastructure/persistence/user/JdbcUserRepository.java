@@ -80,6 +80,14 @@ public class JdbcUserRepository implements UserRepository
 		}
 	}
 
+	@Override
+	@Transactional
+	public void delete(UserId id)
+	{
+		jdbc.sql("DELETE FROM one_time_link WHERE user_id = ?").param(id.value()).update();
+		jdbc.sql("DELETE FROM user_account WHERE id = ?").param(id.value()).update();
+	}
+
 	private static User user(ResultSet rs) throws SQLException
 	{
 		String hash = rs.getString("password_hash");

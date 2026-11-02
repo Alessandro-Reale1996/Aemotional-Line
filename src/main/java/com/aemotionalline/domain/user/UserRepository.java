@@ -13,4 +13,7 @@ public interface UserRepository
 	Optional<User> findByEmail(EmailAddress email);
 
 	void save(User user);
+
+	/** Removes the account (and whatever only exists for it, such as its one-time links). */
+	void delete(UserId id);
 }
