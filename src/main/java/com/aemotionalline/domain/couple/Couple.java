@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.user.UserId;
 
 /**
@@ -62,12 +63,12 @@ public class Couple
     {
         if (!isTherapist(therapist))
         {
-            throw new DomainException("Only the couple's therapist can end it.");
+            throw new DomainException(ErrorCode.NOT_THE_THERAPIST, "Only the couple's therapist can end it.");
         }
 
         if (!isActive())
         {
-            throw new DomainException("The couple has already ended.");
+            throw new DomainException(ErrorCode.COUPLE_ENDED, "The couple has already ended.");
         }
 
         this.endedAt = Objects.requireNonNull(at);

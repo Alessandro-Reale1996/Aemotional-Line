@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.user.UserId;
 
 /**
@@ -33,12 +34,12 @@ public record OutcomeDeclaration(UserId partner, Outcome outcome, String reason,
 
 		if (reason == null || reason.isBlank())
 		{
-			throw new DomainException("The outcome needs a reason.");
+			throw new DomainException(ErrorCode.TEXT_REQUIRED, "The outcome needs a reason.");
 		}
 
 		if (reason.length() > MAX_REASON_LENGTH)
 		{
-			throw new DomainException("The reason can't be longer than " + MAX_REASON_LENGTH + " characters.");
+			throw new DomainException(ErrorCode.TEXT_TOO_LONG, "The reason can't be longer than " + MAX_REASON_LENGTH + " characters.");
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package com.aemotionalline.domain.message;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 
 /**
  * A free-form paragraph with the most generous limits. It can refer to any paragraph. Whether it may refer to a
@@ -22,7 +23,7 @@ public class SimpleParagraph extends Paragraph
 		
 		if(title != null && title.length() > MAX_TITLE_LENGTH)
         {
-            throw new DomainException(
+            throw new DomainException(ErrorCode.TEXT_TOO_LONG, 
                 "Paragraph title cannot exceed "
                 + MAX_TITLE_LENGTH
                 + " characters");
@@ -30,7 +31,7 @@ public class SimpleParagraph extends Paragraph
 		
 		if(subtitle != null && subtitle.length() > MAX_SUBTITLE_LENGTH)
         {
-            throw new DomainException(
+            throw new DomainException(ErrorCode.TEXT_TOO_LONG, 
                 "Paragraph subtitle cannot exceed "
                 + MAX_SUBTITLE_LENGTH
                 + " characters");
@@ -38,7 +39,7 @@ public class SimpleParagraph extends Paragraph
 		
 		if(body != null && body.length() > MAX_BODY_LENGTH)
         {
-            throw new DomainException(
+            throw new DomainException(ErrorCode.TEXT_TOO_LONG, 
                 "Paragraph body cannot exceed "
                 + MAX_BODY_LENGTH
                 + " characters");

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 
 /**
  * The smallest unit of a message and a node of the conversation graph. A paragraph replies to earlier ones
@@ -43,12 +44,12 @@ public  abstract class Paragraph
 		
         if (title == null || title.isBlank()) 
         {
-            throw new DomainException("Paragraph title cannot be blank");
+            throw new DomainException(ErrorCode.TEXT_REQUIRED, "Paragraph title cannot be blank");
         }
 
         if (body == null || body.isBlank()) 
         {
-            throw new DomainException("Paragraph body cannot be blank");
+            throw new DomainException(ErrorCode.TEXT_REQUIRED, "Paragraph body cannot be blank");
         }
 		
         this.id = id;

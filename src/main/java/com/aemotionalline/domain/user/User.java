@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 
 /**
  * An account. It is born PENDING (a patient invited by a therapist, a therapist created by the administrator) and is
@@ -37,9 +38,14 @@ public class User
 			throw new DomainException("A user needs an id, an email, a role and a status.");
 		}
 
-		if (displayName == null || displayName.isBlank() || displayName.strip().length() > MAX_DISPLAY_NAME_LENGTH)
+		if (displayName == null || displayName.isBlank())
 		{
-			throw new DomainException("A display name of at most " + MAX_DISPLAY_NAME_LENGTH + " characters is required.");
+			throw new DomainException(ErrorCode.TEXT_REQUIRED, "A display name is required.");
+		}
+
+		if (displayName.strip().length() > MAX_DISPLAY_NAME_LENGTH)
+		{
+			throw new DomainException(ErrorCode.TEXT_TOO_LONG, "The display name can't be longer than " + MAX_DISPLAY_NAME_LENGTH + " characters.");
 		}
 
 		this.id = id;

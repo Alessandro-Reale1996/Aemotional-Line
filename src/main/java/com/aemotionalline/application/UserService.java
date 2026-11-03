@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.aemotionalline.application.view.AccountView;
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.couple.CoupleInvitation;
 import com.aemotionalline.domain.couple.CoupleInvitationRepository;
 import com.aemotionalline.domain.couple.CoupleInvitationStatus;
@@ -71,7 +72,7 @@ public class UserService
 	{
 		if (users.findByEmail(email).isPresent())
 		{
-			throw new DomainException("An account with this email already exists.");
+			throw new DomainException(ErrorCode.EMAIL_ALREADY_USED, "An account with this email already exists.");
 		}
 
 		User user = User.pending(UserId.random(), email, displayName, role);
@@ -93,7 +94,7 @@ public class UserService
 
 		if (administrators.stream().anyMatch(administrator -> administrator.getStatus() == AccountStatus.ACTIVE))
 		{
-			throw new DomainException("An administrator already exists.");
+			throw new DomainException(ErrorCode.ADMINISTRATOR_EXISTS, "An administrator already exists.");
 		}
 
 		Optional<User> pending = administrators.stream().filter(administrator -> administrator.getStatus() == AccountStatus.PENDING).findFirst();
@@ -102,7 +103,7 @@ public class UserService
 		{
 			if (!pending.get().getEmail().equals(email))
 			{
-				throw new DomainException("Another administrator account is waiting for activation.");
+				throw new DomainException(ErrorCode.ADMINISTRATOR_PENDING, "Another administrator account is waiting for activation.");
 			}
 
 			links.invalidateUnused(pending.get().getId(), OneTimeLink.Purpose.ACTIVATION, clock.instant());
@@ -112,7 +113,7 @@ public class UserService
 
 		if (users.findByEmail(email).isPresent())
 		{
-			throw new DomainException("An account with this email already exists.");
+			throw new DomainException(ErrorCode.EMAIL_ALREADY_USED, "An account with this email already exists.");
 		}
 
 		User administrator = User.pending(UserId.random(), email, displayName, Role.ADMINISTRATOR);
@@ -198,7 +199,7 @@ public class UserService
 
 		if (couples.findActiveCoupleOf(patient).isPresent())
 		{
-			throw new DomainException("An account in an active couple can't be deleted.");
+			throw new DomainException(ErrorCode.ACCOUNT_IN_ACTIVE_COUPLE, "An account in an active couple can't be deleted.");
 		}
 
 		Instant now = clock.instant();
@@ -271,6 +272,6 @@ public class UserService
 	// One message for every kind of bad link: unknown, used, expired or of another purpose.
 	private static InvalidRequestException invalidLink()
 	{
-		return new InvalidRequestException("The link is not valid or has expired.");
+		return new InvalidRequestException(RequestErrorCode.INVALID_LINK, "The link is not valid or has expired.");
 	}
 }

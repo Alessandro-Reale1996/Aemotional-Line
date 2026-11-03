@@ -1,6 +1,7 @@
 package com.aemotionalline.domain.negotiation;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 
 /**
  * Title and subtitle (a short description) of a specific discussion ("discorso specifico"). Neither can be empty;
@@ -15,22 +16,22 @@ public record DiscussionTitle(String title, String subtitle) implements Proposal
 	{
 		if (title == null || title.isBlank())
 		{
-			throw new DomainException("The discussion title cannot be blank.");
+			throw new DomainException(ErrorCode.TEXT_REQUIRED, "The discussion title cannot be blank.");
 		}
 		
 		if (title.length() > MAX_TITLE_LENGTH)
 		{
-			throw new DomainException("The discussion title can't be longer than " + MAX_TITLE_LENGTH + " characters.");
+			throw new DomainException(ErrorCode.TEXT_TOO_LONG, "The discussion title can't be longer than " + MAX_TITLE_LENGTH + " characters.");
 		}
 		
 		if (subtitle == null || subtitle.isBlank())
 		{
-			throw new DomainException("The discussion subtitle cannot be blank.");
+			throw new DomainException(ErrorCode.TEXT_REQUIRED, "The discussion subtitle cannot be blank.");
 		}
 		
 		if (subtitle.length() > MAX_SUBTITLE_LENGTH)
 		{
-			throw new DomainException("The discussion subtitle can't be longer than " + MAX_SUBTITLE_LENGTH + " characters.");
+			throw new DomainException(ErrorCode.TEXT_TOO_LONG, "The discussion subtitle can't be longer than " + MAX_SUBTITLE_LENGTH + " characters.");
 		}
 	}
 }

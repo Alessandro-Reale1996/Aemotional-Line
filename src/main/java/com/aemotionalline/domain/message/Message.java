@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.user.UserId;
 
 /**
@@ -76,7 +77,7 @@ public class Message
 	{
 		if (paragraphs.isEmpty())
 		{
-			throw new DomainException("Message must contain at least one paragraph");
+			throw new DomainException(ErrorCode.MESSAGE_EMPTY, "Message must contain at least one paragraph");
 		}
 		
 		return true;

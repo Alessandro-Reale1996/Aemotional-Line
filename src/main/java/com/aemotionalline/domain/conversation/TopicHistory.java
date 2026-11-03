@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.ParagraphId;
@@ -54,7 +55,7 @@ public record TopicHistory(Paragraph paragraph, Rule rule, List<TopicHistoryEntr
 		Map<ParagraphId, TopicHistoryEntry> sent = entriesBySentParagraph(conversation);
 
 		TopicHistoryEntry chosen = Optional.ofNullable(sent.get(paragraphId))
-				.orElseThrow(() -> new DomainException("Paragraph " + paragraphId.value() + " was not sent in this conversation."));
+				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "Paragraph " + paragraphId.value() + " was not sent in this conversation."));
 
 		ConversationGraph graph = conversation.getConversationGraph();
 		List<Paragraph> component = graph.findConversationBranchContaining(chosen.paragraph());

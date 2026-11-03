@@ -1,6 +1,7 @@
 package com.aemotionalline.domain.constraint;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 
 /**
  * Allows acting only within a radius of a place, or only beyond it (spec 1.2: "a una certa distanza da un determinato
@@ -36,7 +37,7 @@ public class LocationConstraint implements Constraint
 
 		if (!Double.isFinite(radiusMetres) || radiusMetres <= 0)
 		{
-			throw new DomainException("The radius must be a positive number of metres.");
+			throw new DomainException(ErrorCode.INVALID_CONSTRAINT, "The radius must be a positive number of metres.");
 		}
 
 		this.center = center;

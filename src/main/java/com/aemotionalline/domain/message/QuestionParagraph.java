@@ -1,6 +1,7 @@
 package com.aemotionalline.domain.message;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 
 /**
  * A question addressed to the other partner. It stays "open" until a {@link PointedParagraph} references it.
@@ -20,7 +21,7 @@ public class QuestionParagraph extends Paragraph
 
 		if(title != null && title.length() > MAX_TITLE_LENGTH)
         {
-            throw new DomainException(
+            throw new DomainException(ErrorCode.TEXT_TOO_LONG, 
                 "Paragraph title cannot exceed "
                 + MAX_TITLE_LENGTH
                 + " characters");
@@ -28,7 +29,7 @@ public class QuestionParagraph extends Paragraph
 		
 		if(body != null && body.length() > MAX_BODY_LENGTH)
         {
-            throw new DomainException(
+            throw new DomainException(ErrorCode.TEXT_TOO_LONG, 
                 "Paragraph body cannot exceed "
                 + MAX_BODY_LENGTH
                 + " characters");

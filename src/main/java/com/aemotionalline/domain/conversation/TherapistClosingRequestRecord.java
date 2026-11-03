@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.user.UserId;
 
 /**
@@ -42,12 +43,12 @@ public record TherapistClosingRequestRecord(
 
 		if (justification == null || justification.isBlank())
 		{
-			throw new DomainException("The request to the therapist needs a justification.");
+			throw new DomainException(ErrorCode.TEXT_REQUIRED, "The request to the therapist needs a justification.");
 		}
 
 		if (justification.length() > MAX_JUSTIFICATION_LENGTH)
 		{
-			throw new DomainException("The justification can't be longer than " + MAX_JUSTIFICATION_LENGTH + " characters.");
+			throw new DomainException(ErrorCode.TEXT_TOO_LONG, "The justification can't be longer than " + MAX_JUSTIFICATION_LENGTH + " characters.");
 		}
 	}
 

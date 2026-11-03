@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.user.UserId;
 
 /**
@@ -88,7 +89,7 @@ public class ConstraintSet
 
 	        if (context == null)
 	        {
-	            throw new DomainException("A constraint context is required to check the sender's constraints.");
+	            throw new DomainException(ErrorCode.CONSTRAINT_NOT_SATISFIED, "A constraint context is required to check the sender's constraints.");
 	        }
 
 	        userAssignments
@@ -96,7 +97,7 @@ public class ConstraintSet
 						            {
 						                if (!assignment.getConstraint().isSatisfied(context)) 
 						                {
-						                    throw new DomainException("Constraint violated");
+						                    throw new DomainException(ErrorCode.CONSTRAINT_NOT_SATISFIED, "Constraint violated");
 						                }
 						            }
 					            );

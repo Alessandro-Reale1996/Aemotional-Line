@@ -13,6 +13,6 @@ public class IncorrectPasswordException extends InvalidRequestException
 
 	public IncorrectPasswordException()
 	{
-		super("The password is not correct.");
+		super(RequestErrorCode.INCORRECT_PASSWORD, "The password is not correct.");
 	}
 }

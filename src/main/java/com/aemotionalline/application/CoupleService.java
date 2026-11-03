@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.aemotionalline.application.CoupleDeletion.Cause;
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.conversation.ConversationRepository;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.couple.CoupleId;
@@ -85,7 +86,7 @@ public class CoupleService
 
 		if (couple.isActive())
 		{
-			throw new DomainException("The couple must be ended before its data can be deleted.");
+			throw new DomainException(ErrorCode.COUPLE_NOT_ENDED, "The couple must be ended before its data can be deleted.");
 		}
 
 		CoupleLocks.lockContentOf(conversations, negotiations, id);

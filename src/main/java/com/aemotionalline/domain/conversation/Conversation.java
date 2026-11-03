@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.constraint.ConstraintScope;
 import com.aemotionalline.domain.message.Message;
@@ -270,7 +271,7 @@ public class Conversation
 		
 		if (discussions.stream().anyMatch(other -> other.getOriginParagraphId().equals(Optional.of(originParagraphId))))
 		{
-			throw new DomainException("A paragraph can be expanded by only one discussion.");
+			throw new DomainException(ErrorCode.PARAGRAPH_ALREADY_EXPANDED, "A paragraph can be expanded by only one discussion.");
 		}
 		
 		open(negotiation, DiscussionProposal.class, originParagraphId);
@@ -407,13 +408,21 @@ public class Conversation
 	{
 		if (!couple.isActive())
 		{
-			throw new DomainException("The couple has ended: the conversation is read-only.");
+			throw new DomainException(ErrorCode.COUPLE_ENDED, "The couple has ended: the conversation is read-only.");
 		}
 	}
 	
+	// Each reason has its own code: the couple has ended, the therapist tries to write, the agreement isn't in force.
 	public void ensureCanSendMessage(UserId userId)
 	{
-		if (!canSendMessage(userId))
+		ensureCoupleActive();
+
+		if (!couple.isPartner(userId))
+		{
+			throw new DomainException(ErrorCode.NOT_A_PARTNER, "Only a partner of the couple can send messages.");
+		}
+
+		if (!agreement.isAccepted())
 		{
 			throw new DomainException("User cannot send messages in the current conversation state");
 		}
@@ -431,7 +440,7 @@ public class Conversation
 		
 		if (constraintRequests.stream().anyMatch(ConstraintChangeRequest::isPending))
 		{
-			throw new DomainException("Another constraint change request is still pending.");
+			throw new DomainException(ErrorCode.CONSTRAINT_REQUEST_PENDING, "Another constraint change request is still pending.");
 		}
 		
 		ConstraintChangeRequest request = new ConstraintChangeRequest(ConstraintChangeRequestId.random(), therapist, assignments, couple, clock.instant());
@@ -481,7 +490,7 @@ public class Conversation
 		return constraintRequests.stream()
 				.filter(request -> request.id().equals(requestId))
 				.findFirst()
-				.orElseThrow(() -> new DomainException("No such constraint change request in this conversation."));
+				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "No such constraint change request in this conversation."));
 	}
 	
 	/**
@@ -505,7 +514,7 @@ public class Conversation
 		Message message = discussion.getMessages().stream()
 				.filter(sent -> sent.getId().equals(messageId))
 				.findFirst()
-				.orElseThrow(() -> new DomainException("The message is not in this discussion."));
+				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "The message is not in this discussion."));
 		
 		if (couple.isTherapist(reader) || reader.equals(message.getSenderId()))
 		{
@@ -514,7 +523,7 @@ public class Conversation
 		
 		if (!couple.isPartner(reader))
 		{
-			throw new DomainException("User does not belong to the couple");
+			throw new DomainException(ErrorCode.NOT_A_PARTNER, "User does not belong to the couple");
 		}
 		
 		constraintSet.ensureSatisfiedBy(reader, context == null ? null : context.withNow(now), ConstraintScope.READ);
@@ -555,7 +564,7 @@ public class Conversation
 	    // Turn-taking is checked here, before any change: the same partner cannot write twice without a reply.
 	    if (sender.equals(discussion.getLastSender()))
 	    {
-	    	throw new DomainException("A new message can't be sent if an answer wasn't received.");
+	    	throw new DomainException(ErrorCode.NOT_YOUR_TURN, "A new message can't be sent if an answer wasn't received.");
 	    }
 	    
 	    // A reply requires having read the message being answered (the last of the discussion).
@@ -569,7 +578,7 @@ public class Conversation
 	    	
 	    	if (readAt.isEmpty())
 	    	{
-	    		throw new DomainException("The message being answered must be read before replying.");
+	    		throw new DomainException(ErrorCode.MESSAGE_NOT_OPENED, "The message being answered must be read before replying.");
 	    	}
 	    	
 	    	checkedContext = checkedContext == null ? null : checkedContext.withReadAt(readAt.get());
@@ -721,7 +730,7 @@ public class Conversation
 			
 			if (answersTheOrigin && paragraph.getReferences().stream().noneMatch(reference -> reference.getId().equals(origin.get())))
 			{
-				throw new DomainException("Paragraph " + paragraph.getId().value()
+				throw new DomainException(ErrorCode.ORIGIN_REFERENCE_REQUIRED, "Paragraph " + paragraph.getId().value()
 						+ " must refer to the paragraph its discussion expands.");
 			}
 			
@@ -729,7 +738,7 @@ public class Conversation
 			{
 				if (!answerable.contains(reference.getId()))
 				{
-					throw new DomainException("Paragraph " + paragraph.getId().value()
+					throw new DomainException(ErrorCode.REFERENCE_NOT_ALLOWED, "Paragraph " + paragraph.getId().value()
 							+ " can only refer to paragraphs of the message being answered.");
 				}
 				
@@ -737,7 +746,7 @@ public class Conversation
 				
 				if (!blocking.isEmpty())
 				{
-					throw new DomainException("Paragraph " + reference.getId().value() + " can't be answered here: it is expanded by discussion "
+					throw new DomainException(ErrorCode.PARAGRAPH_EXPANDED_ELSEWHERE, "Paragraph " + reference.getId().value() + " can't be answered here: it is expanded by discussion "
 							+ blocking.getFirst().discussionNumber() + ".");
 				}
 				
@@ -745,13 +754,13 @@ public class Conversation
 				
 				if (reference.getType() == ParagraphType.QUESTION && paragraph.getType() != ParagraphType.POINTED && !expandsThisQuestion)
 				{
-					throw new DomainException("Only pointed paragraphs can answer a question: paragraph "
+					throw new DomainException(ErrorCode.QUESTION_NEEDS_POINTED_ANSWER, "Only pointed paragraphs can answer a question: paragraph "
 							+ paragraph.getId().value() + " refers to question " + reference.getId().value() + ".");
 				}
 				
 				if (paragraph.getType() == ParagraphType.POINTED && !questionsAnswered.add(reference.getId()))
 				{
-					throw new DomainException("Question " + reference.getId().value() + " can receive only one answer.");
+					throw new DomainException(ErrorCode.QUESTION_ALREADY_ANSWERED, "Question " + reference.getId().value() + " can receive only one answer.");
 				}
 			}
 			
@@ -782,13 +791,13 @@ public class Conversation
 		{
 			if (!sender.equals(authorOf(cited.getId())))
 			{
-				throw new DomainException("Paragraph " + paragraph.getId().value()
+				throw new DomainException(ErrorCode.SELF_CITATION_NOT_ALLOWED, "Paragraph " + paragraph.getId().value()
 						+ " can only cite paragraphs its sender already sent.");
 			}
 			
 			if (!topic.contains(cited.getId()))
 			{
-				throw new DomainException("Paragraph " + paragraph.getId().value()
+				throw new DomainException(ErrorCode.SELF_CITATION_NOT_ALLOWED, "Paragraph " + paragraph.getId().value()
 						+ " can only cite paragraphs of its own topic.");
 			}
 		}
@@ -930,7 +939,7 @@ public class Conversation
 	{
 		if (!couple.isPartner(user))
 		{
-			throw new DomainException("Only a partner of the couple can do this.");
+			throw new DomainException(ErrorCode.NOT_A_PARTNER, "Only a partner of the couple can do this.");
 		}
 	}
 	
@@ -938,7 +947,7 @@ public class Conversation
 	{
 		if (!couple.isTherapist(user))
 		{
-			throw new DomainException("Only the couple's therapist can do this.");
+			throw new DomainException(ErrorCode.NOT_THE_THERAPIST, "Only the couple's therapist can do this.");
 		}
 	}
 	
@@ -947,7 +956,7 @@ public class Conversation
 		return	discussions.stream()
 				.filter(d -> d.getId().equals(discussionId))
 				.findFirst()
-				.orElseThrow(() -> new DomainException("Discussion not found"));
+				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "Discussion not found"));
 	}
 	
 	

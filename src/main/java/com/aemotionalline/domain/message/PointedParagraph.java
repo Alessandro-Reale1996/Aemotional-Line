@@ -1,6 +1,7 @@
 package com.aemotionalline.domain.message;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 
 /**
  * A direct answer to a question ("paragrafo puntuale"). It answers exactly one {@link QuestionParagraph},
@@ -20,7 +21,7 @@ public class PointedParagraph extends Paragraph
 		
 		if(body != null && body.length() > MAX_BODY_LENGTH)
         {
-            throw new DomainException(
+            throw new DomainException(ErrorCode.TEXT_TOO_LONG, 
                 "Paragraph body cannot exceed "
                 + MAX_BODY_LENGTH
                 + " characters");

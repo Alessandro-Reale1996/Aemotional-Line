@@ -32,19 +32,19 @@ final class PasswordPolicy
 	{
 		if (password == null || password.codePointCount(0, password.length()) < MIN_LENGTH)
 		{
-			throw new InvalidRequestException("The password must be at least " + MIN_LENGTH + " characters long.");
+			throw new InvalidRequestException(RequestErrorCode.PASSWORD_TOO_SHORT, "The password must be at least " + MIN_LENGTH + " characters long.");
 		}
 
 		if (password.codePointCount(0, password.length()) > MAX_LENGTH || password.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES)
 		{
-			throw new InvalidRequestException("The password must be at most " + MAX_LENGTH + " characters long.");
+			throw new InvalidRequestException(RequestErrorCode.PASSWORD_TOO_LONG, "The password must be at most " + MAX_LENGTH + " characters long.");
 		}
 
 		String lower = password.toLowerCase(Locale.ROOT);
 
 		if (COMMON.contains(lower) || lower.equals(email.value()))
 		{
-			throw new InvalidRequestException("This password is too easy to guess: choose another one.");
+			throw new InvalidRequestException(RequestErrorCode.PASSWORD_TOO_EASY, "This password is too easy to guess: choose another one.");
 		}
 	}
 

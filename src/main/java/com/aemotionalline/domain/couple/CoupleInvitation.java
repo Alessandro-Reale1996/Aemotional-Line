@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.user.UserId;
 
 /**
@@ -85,7 +86,7 @@ public class CoupleInvitation
 
 		if (!acceptedBy.add(partner))
 		{
-			throw new DomainException("This partner has already accepted.");
+			throw new DomainException(ErrorCode.INVITATION_ALREADY_ACCEPTED, "This partner has already accepted.");
 		}
 
 		if (acceptedBy.size() < 2)
@@ -113,7 +114,7 @@ public class CoupleInvitation
 	{
 		if (!therapistId.equals(therapist))
 		{
-			throw new DomainException("Only the therapist who sent the invitation can withdraw it.");
+			throw new DomainException(ErrorCode.NOT_THE_THERAPIST, "Only the therapist who sent the invitation can withdraw it.");
 		}
 
 		ensurePendingAt(now);
@@ -140,7 +141,7 @@ public class CoupleInvitation
 	{
 		if (!isInvited(partner))
 		{
-			throw new DomainException("Only the two invited partners can answer the invitation.");
+			throw new DomainException(ErrorCode.NOT_A_PARTNER, "Only the two invited partners can answer the invitation.");
 		}
 	}
 
@@ -148,12 +149,12 @@ public class CoupleInvitation
 	{
 		if (status != CoupleInvitationStatus.PENDING)
 		{
-			throw new DomainException("The invitation is already " + status + ".");
+			throw new DomainException(ErrorCode.INVITATION_CLOSED, "The invitation is already " + status + ".");
 		}
 
 		if (!now.isBefore(expiresAt))
 		{
-			throw new DomainException("The invitation has expired.");
+			throw new DomainException(ErrorCode.INVITATION_EXPIRED, "The invitation has expired.");
 		}
 	}
 

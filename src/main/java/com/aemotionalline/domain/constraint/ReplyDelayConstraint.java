@@ -3,6 +3,7 @@ package com.aemotionalline.domain.constraint;
 import java.time.Duration;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 
 /**
  * Forbids replying before a delay has passed since the message being answered was first read (spec 1.2:
@@ -17,7 +18,7 @@ public class ReplyDelayConstraint implements Constraint
 	{
 		if (delay == null || delay.isNegative())
 		{
-			throw new DomainException("The delay can't be null or negative.");
+			throw new DomainException(ErrorCode.INVALID_CONSTRAINT, "The delay can't be null or negative.");
 		}
 
 		this.delay = delay;

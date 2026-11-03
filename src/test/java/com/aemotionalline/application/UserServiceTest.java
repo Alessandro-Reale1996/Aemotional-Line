@@ -134,13 +134,13 @@ public class UserServiceTest
 		UserId therapist = userService.createTherapist(administrator, email, "Dott. Bianchi");
 		String code = mailer.lastCode(email, Kind.ACTIVATION).orElseThrow();
 
-		assertThrows(InvalidRequestException.class, () -> userService.activate(code, "k".repeat(PasswordPolicy.MIN_LENGTH - 1)));
-		assertThrows(InvalidRequestException.class, () -> userService.activate(code, "x".repeat(PasswordPolicy.MAX_LENGTH + 1)));
+		assertPasswordRefused(RequestErrorCode.PASSWORD_TOO_SHORT, () -> userService.activate(code, "k".repeat(PasswordPolicy.MIN_LENGTH - 1)));
+		assertPasswordRefused(RequestErrorCode.PASSWORD_TOO_LONG, () -> userService.activate(code, "x".repeat(PasswordPolicy.MAX_LENGTH + 1)));
 		// 40 characters, but 80 bytes: past bcrypt's 72.
-		assertThrows(InvalidRequestException.class, () -> userService.activate(code, "è".repeat(40)));
-		assertThrows(InvalidRequestException.class, () -> userService.activate(code, "AmoreMio1234"));
-		assertThrows(InvalidRequestException.class, () -> userService.activate(code, email.value().toUpperCase()));
-		assertThrows(InvalidRequestException.class, () -> userService.activate(code, null));
+		assertPasswordRefused(RequestErrorCode.PASSWORD_TOO_LONG, () -> userService.activate(code, "è".repeat(40)));
+		assertPasswordRefused(RequestErrorCode.PASSWORD_TOO_EASY, () -> userService.activate(code, "AmoreMio1234"));
+		assertPasswordRefused(RequestErrorCode.PASSWORD_TOO_EASY, () -> userService.activate(code, email.value().toUpperCase()));
+		assertPasswordRefused(RequestErrorCode.PASSWORD_TOO_SHORT, () -> userService.activate(code, null));
 
 		assertEquals(AccountStatus.PENDING, users.findById(therapist).orElseThrow().getStatus());
 		assertDoesNotThrow(() -> userService.activate(code, GOOD_PASSWORD));
@@ -293,10 +293,16 @@ public class UserServiceTest
 		assertTrue(users.findById(therapist).isPresent());
 	}
 
+	private static void assertPasswordRefused(RequestErrorCode code, Runnable action)
+	{
+		assertEquals(code, assertThrows(InvalidRequestException.class, action::run).getCode());
+	}
+
 	private static void assertInvalidLink(Runnable action)
 	{
 		InvalidRequestException failure = assertThrows(InvalidRequestException.class, action::run);
 		assertEquals(INVALID_LINK, failure.getMessage());
+		assertEquals(RequestErrorCode.INVALID_LINK, failure.getCode());
 	}
 
 	private static EmailAddress freshEmail()

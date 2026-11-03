@@ -12,6 +12,7 @@ import com.aemotionalline.application.view.NegotiationEffect;
 import com.aemotionalline.application.view.NegotiationView;
 import com.aemotionalline.application.view.Views;
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.conversation.Conversation;
 import com.aemotionalline.domain.conversation.ConversationId;
 import com.aemotionalline.domain.conversation.ConversationRepository;
@@ -73,7 +74,7 @@ public class NegotiationService
 
 		if (agreementInProgress)
 		{
-			throw new DomainException("An agreement negotiation is already in progress.");
+			throw new DomainException(ErrorCode.AGREEMENT_NEGOTIATION_IN_PROGRESS, "An agreement negotiation is already in progress.");
 		}
 
 		Purpose purpose = conversations.findIdByCouple(coupleId).isPresent() ? Purpose.MODIFIED_AGREEMENT : Purpose.STARTED_CONVERSATION;
@@ -106,12 +107,12 @@ public class NegotiationService
 
 			if (conversation.getDiscussions().stream().anyMatch(discussion -> discussion.getOriginParagraphId().equals(origin)))
 			{
-				throw new DomainException("This paragraph is already expanded by a discussion.");
+				throw new DomainException(ErrorCode.PARAGRAPH_ALREADY_EXPANDED, "This paragraph is already expanded by a discussion.");
 			}
 
 			if (purposes.findInProgressOf(couple.getId()).stream().anyMatch(purpose -> purpose.origin().equals(origin)))
 			{
-				throw new DomainException("A request to expand this paragraph is already in progress.");
+				throw new DomainException(ErrorCode.EXPANSION_ALREADY_REQUESTED, "A request to expand this paragraph is already in progress.");
 			}
 		}
 

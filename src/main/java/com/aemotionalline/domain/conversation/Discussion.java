@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.MessageId;
 import com.aemotionalline.domain.message.ParagraphId;
@@ -145,7 +146,7 @@ public class Discussion
 	{
 		if (isClosed())
 		{
-			throw new DomainException("The discussion is closed.");
+			throw new DomainException(ErrorCode.DISCUSSION_CLOSED, "The discussion is closed.");
 		}
 	}
 	
@@ -155,7 +156,7 @@ public class Discussion
 		if (closingRequests.stream().anyMatch(ClosingRequestRecord::isPending)
 				|| therapistClosingRequests.stream().anyMatch(TherapistClosingRequestRecord::isPending))
 		{
-			throw new DomainException("A closing request is already pending for this discussion.");
+			throw new DomainException(ErrorCode.CLOSING_REQUEST_PENDING, "A closing request is already pending for this discussion.");
 		}
 	}
 	
@@ -163,7 +164,7 @@ public class Discussion
 	{
 		if (closingRequests.isEmpty() || !closingRequests.getLast().isPending())
 		{
-			throw new DomainException("There is no pending closing request.");
+			throw new DomainException(ErrorCode.NO_PENDING_CLOSING_REQUEST, "There is no pending closing request.");
 		}
 		
 		return closingRequests.getLast();
@@ -173,7 +174,7 @@ public class Discussion
 	{
 		if (therapistClosingRequests.isEmpty() || !therapistClosingRequests.getLast().isPending())
 		{
-			throw new DomainException("There is no pending request to the therapist.");
+			throw new DomainException(ErrorCode.NO_PENDING_CLOSING_REQUEST, "There is no pending request to the therapist.");
 		}
 		
 		return therapistClosingRequests.getLast();
@@ -239,7 +240,7 @@ public class Discussion
 		
 		if (!failedAttempt)
 		{
-			throw new DomainException("The therapist can be asked only after a failed attempt to close the discussion with the other partner.");
+			throw new DomainException(ErrorCode.THERAPIST_REQUEST_NOT_ALLOWED_YET, "The therapist can be asked only after a failed attempt to close the discussion with the other partner.");
 		}
 		
 		therapistClosingRequests.add(new TherapistClosingRequestRecord(requester, justification, at, closingRequests,
@@ -263,12 +264,12 @@ public class Discussion
 	{
 		if (!isClosed())
 		{
-			throw new DomainException("The outcome is declared once the discussion is closed.");
+			throw new DomainException(ErrorCode.DISCUSSION_NOT_CLOSED, "The outcome is declared once the discussion is closed.");
 		}
 		
 		if (declarations.stream().anyMatch(declaration -> declaration.partner().equals(partner)))
 		{
-			throw new DomainException("This partner already declared the outcome.");
+			throw new DomainException(ErrorCode.OUTCOME_ALREADY_DECLARED, "This partner already declared the outcome.");
 		}
 		
 		declarations.add(new OutcomeDeclaration(partner, outcome, reason, at));
@@ -285,7 +286,7 @@ public class Discussion
 	{
 		if (lastSender.equals(this.lastSender)) 
 		{
-			throw new DomainException("A new message can't be sent if an answer wasn't received.");
+			throw new DomainException(ErrorCode.NOT_YOUR_TURN, "A new message can't be sent if an answer wasn't received.");
 		}
 		
 		this.lastSender = lastSender;

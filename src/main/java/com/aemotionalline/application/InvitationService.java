@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.aemotionalline.application.view.InvitationView;
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.couple.CoupleInvitation;
 import com.aemotionalline.domain.couple.CoupleInvitationId;
@@ -62,7 +63,7 @@ public class InvitationService
 
 		if (emailOne.equals(emailTwo))
 		{
-			throw new DomainException("The two partners need two different emails.");
+			throw new DomainException(ErrorCode.SAME_EMAIL_TWICE, "The two partners need two different emails.");
 		}
 
 		UserId one = patientFor(emailOne, nameOne);
@@ -154,7 +155,7 @@ public class InvitationService
 		// One message whatever the reason, so the therapist learns nothing about other people's accounts or couples.
 		if (user.getRole() != Role.PATIENT || user.getStatus() == AccountStatus.DISABLED || couples.findActiveCoupleOf(user.getId()).isPresent())
 		{
-			throw new DomainException("This person can't be invited now.");
+			throw new DomainException(ErrorCode.CANNOT_BE_INVITED, "This person can't be invited now.");
 		}
 
 		return user.getId();
@@ -169,7 +170,7 @@ public class InvitationService
 	{
 		if (couples.findActiveCoupleOf(patient).isPresent())
 		{
-			throw new DomainException("A partner is already in an active couple.");
+			throw new DomainException(ErrorCode.PARTNER_IN_ACTIVE_COUPLE, "A partner is already in an active couple.");
 		}
 	}
 

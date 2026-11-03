@@ -3,6 +3,7 @@ package com.aemotionalline.domain.user;
 import java.util.Locale;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 
 /** An account's email, which is also its login name: trimmed and lower-cased, so the same address can't be registered twice. */
 public record EmailAddress(String value)
@@ -13,7 +14,7 @@ public record EmailAddress(String value)
 	{
 		if (value == null || value.isBlank())
 		{
-			throw new DomainException("An email address is required.");
+			throw new DomainException(ErrorCode.INVALID_EMAIL, "An email address is required.");
 		}
 
 		value = value.strip().toLowerCase(Locale.ROOT);
@@ -22,7 +23,7 @@ public record EmailAddress(String value)
 
 		if (value.length() > MAX_LENGTH || at <= 0 || at != value.lastIndexOf('@') || at == value.length() - 1 || value.chars().anyMatch(Character::isWhitespace))
 		{
-			throw new DomainException("Invalid email address.");
+			throw new DomainException(ErrorCode.INVALID_EMAIL, "Invalid email address.");
 		}
 	}
 }

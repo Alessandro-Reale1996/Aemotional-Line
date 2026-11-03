@@ -26,6 +26,7 @@ import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.CoupleDeletion.Cause;
 import com.aemotionalline.domain.MutableClock;
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.conversation.ConversationId;
 import com.aemotionalline.domain.conversation.ConversationRepository;
 import com.aemotionalline.domain.conversation.FullConversation;
@@ -172,7 +173,8 @@ public class CoupleServiceTest
 		UserId therapist = UserId.random();
 		CoupleId couple = TestCouples.create(users, couples, therapist, UserId.random(), UserId.random());
 
-		assertThrows(DomainException.class, () -> coupleService.deleteData(therapist, couple, TestCouples.PASSWORD));
+		assertEquals(ErrorCode.COUPLE_NOT_ENDED,
+				assertThrows(DomainException.class, () -> coupleService.deleteData(therapist, couple, TestCouples.PASSWORD)).getCode());
 		assertTrue(couples.findById(couple).isPresent());
 	}
 
@@ -203,7 +205,8 @@ public class CoupleServiceTest
 		CoupleId couple = TestCouples.create(users, couples, therapist, UserId.random(), UserId.random());
 		coupleService.end(therapist, couple);
 
-		assertThrows(IncorrectPasswordException.class, () -> coupleService.deleteData(therapist, couple, "not the password"));
+		assertEquals(RequestErrorCode.INCORRECT_PASSWORD,
+				assertThrows(IncorrectPasswordException.class, () -> coupleService.deleteData(therapist, couple, "not the password")).getCode());
 		assertEquals(1, users.findById(therapist).orElseThrow().getFailedLogins());
 
 		for (int attempt = 2; attempt <= User.MAX_FAILED_LOGINS; attempt++)

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.ParagraphId;
@@ -163,7 +164,7 @@ public class ConversationGraph
 	    return paragraphs.stream()
 	        .filter(p -> p.getId().equals(id))
 	        .findFirst()
-	        .orElseThrow(() -> new DomainException("Paragraph " + id.value() + " is not in the conversation graph."));
+	        .orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "Paragraph " + id.value() + " is not in the conversation graph."));
 	}
 	
 	public List<Paragraph> findRepliesTo(Paragraph paragraph)

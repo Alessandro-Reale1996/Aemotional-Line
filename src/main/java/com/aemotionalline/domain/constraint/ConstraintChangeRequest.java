@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.user.UserId;
 
@@ -46,7 +47,7 @@ public class ConstraintChangeRequest
 
         if (!couple.isTherapist(proposedBy))
         {
-            throw new DomainException("Only therapist can propose constraints");
+            throw new DomainException(ErrorCode.NOT_THE_THERAPIST, "Only therapist can propose constraints");
         }
 
         if (assignments == null)
@@ -104,7 +105,7 @@ public class ConstraintChangeRequest
 
         if (!couple.isPartner(userId))
         {
-            throw new DomainException("Only partners can approve");
+            throw new DomainException(ErrorCode.NOT_A_PARTNER, "Only partners can approve");
         }
 
         approvals.add(userId);
@@ -117,7 +118,7 @@ public class ConstraintChangeRequest
 
         if (!couple.isPartner(userId))
         {
-            throw new DomainException("Only partners can reject");
+            throw new DomainException(ErrorCode.NOT_A_PARTNER, "Only partners can reject");
         }
 
         close(ConstraintChangeRequestStatus.REJECTED, at);
@@ -131,7 +132,7 @@ public class ConstraintChangeRequest
 
         if (!proposedBy.equals(userId))
         {
-            throw new DomainException("Only the therapist who proposed the constraints can withdraw them");
+            throw new DomainException(ErrorCode.NOT_THE_THERAPIST, "Only the therapist who proposed the constraints can withdraw them");
         }
 
         close(ConstraintChangeRequestStatus.WITHDRAWN, at);
@@ -221,7 +222,7 @@ public class ConstraintChangeRequest
     {
         if (status != ConstraintChangeRequestStatus.PENDING)
         {
-            throw new DomainException("The request is already " + status + ".");
+            throw new DomainException(ErrorCode.CONSTRAINT_REQUEST_CLOSED, "The request is already " + status + ".");
         }
     }
 }

@@ -22,6 +22,7 @@ import com.aemotionalline.CapturingMailer.Kind;
 import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.view.InvitationView;
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.couple.CoupleInvitation;
 import com.aemotionalline.domain.couple.CoupleInvitationId;
@@ -127,7 +128,8 @@ public class InvitationServiceTest
 		EmailAddress email = freshEmail();
 
 		assertThrows(NotFoundException.class, () -> invitationService.invite(patient, freshEmail(), "Anna", freshEmail(), "Bruno"));
-		assertThrows(DomainException.class, () -> invitationService.invite(therapist, email, "Anna", email, "Anna again"));
+		assertEquals(ErrorCode.SAME_EMAIL_TWICE,
+				assertThrows(DomainException.class, () -> invitationService.invite(therapist, email, "Anna", email, "Anna again")).getCode());
 		assertTrue(users.findByEmail(email).isEmpty());
 	}
 
@@ -149,6 +151,7 @@ public class InvitationServiceTest
 			DomainException refused = assertThrows(DomainException.class,
 					() -> invitationService.invite(therapist, emailOf(person), "X", freshEmail(), "Y"));
 			assertEquals("This person can't be invited now.", refused.getMessage());
+			assertEquals(ErrorCode.CANNOT_BE_INVITED, refused.getCode());
 		}
 	}
 

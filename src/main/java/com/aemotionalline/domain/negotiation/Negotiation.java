@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.user.UserId;
 
@@ -88,12 +89,12 @@ public class Negotiation
 		
 		if (!couple.isActive())
 		{
-			throw new DomainException("The couple has ended: no negotiation can start.");
+			throw new DomainException(ErrorCode.COUPLE_ENDED, "The couple has ended: no negotiation can start.");
 		}
 		
 		if (!couple.isPartner(initialProposal.getAuthor()))
 		{
-			throw new DomainException("Only a partner of the couple can start a negotiation.");
+			throw new DomainException(ErrorCode.NOT_A_PARTNER, "Only a partner of the couple can start a negotiation.");
 		}
 		
 		Negotiation negotiation = new Negotiation(id, couple, initialProposal, setFirstCurrentResponder(couple, initialProposal), clock);
@@ -249,7 +250,7 @@ public class Negotiation
     {
     	if(this.proposals.isEmpty())
     	{
-    		throw new DomainException("No proposal has been sent yet.");
+    		throw new DomainException(ErrorCode.NEGOTIATION_WRONG_PHASE, "No proposal has been sent yet.");
     	}
     	
     	return proposals.getLast();
@@ -263,12 +264,12 @@ public class Negotiation
     	
     	if(this.currentProposal == null)
     	{
-    		throw new DomainException("There is not a proposal to edit.");
+    		throw new DomainException(ErrorCode.NEGOTIATION_WRONG_PHASE, "There is not a proposal to edit.");
     	}
     	
     	if(!currentProposal.getAuthor().equals(user))
     	{
-    		throw new DomainException("Only the author of the proposal can edit it.");
+    		throw new DomainException(ErrorCode.NOT_YOUR_TURN, "Only the author of the proposal can edit it.");
     	}
     	
     	this.currentProposal.setContent(content);
@@ -282,7 +283,7 @@ public class Negotiation
     	
     	if(this.currentProposal == null)
     	{
-    		throw new DomainException("There is not a proposal to send.");
+    		throw new DomainException(ErrorCode.NEGOTIATION_WRONG_PHASE, "There is not a proposal to send.");
     	}
     	
     	currentProposal.setProposalStatus(ProposalStatus.WAITING_FOR_RESPONSE);
@@ -307,7 +308,7 @@ public class Negotiation
 
         if (!currentResponder.equals(user)) 
         {
-            throw new DomainException("It is not this user's turn");
+            throw new DomainException(ErrorCode.NOT_YOUR_TURN, "It is not this user's turn");
         }
     }
     
@@ -322,27 +323,27 @@ public class Negotiation
         // An ended couple freezes its negotiations as they were (CLAUDE.md, S1 decision): not even abandoning is allowed.
         if (!couple.isActive())
         {
-            throw new DomainException("The couple has ended: the negotiation is frozen.");
+            throw new DomainException(ErrorCode.COUPLE_ENDED, "The couple has ended: the negotiation is frozen.");
         }
 
         if ( negotiationStatus == NegotiationStatus.REFUSED) 
         {
-            throw new DomainException("The negotiation was refused.");
+            throw new DomainException(ErrorCode.NEGOTIATION_ENDED, "The negotiation was refused.");
         }
         
         if (negotiationStatus == NegotiationStatus.ABANDONED)
         {
-            throw new DomainException("The negotiation was abandoned.");
+            throw new DomainException(ErrorCode.NEGOTIATION_ENDED, "The negotiation was abandoned.");
         }
         
         if (!proposals.isEmpty() && proposals.getLast().getProposalStatus() == ProposalStatus.ACCEPTED)
         {
-        	throw new DomainException("The negotiation is concluded: the last proposal was accepted.");
+        	throw new DomainException(ErrorCode.NEGOTIATION_ENDED, "The negotiation is concluded: the last proposal was accepted.");
         }
 
         if (!this.couple.isPartner(user)) 
         {
-            throw new DomainException("User does not belong to the couple");
+            throw new DomainException(ErrorCode.NOT_A_PARTNER, "User does not belong to the couple");
         }
     }	
     
@@ -363,7 +364,7 @@ public class Negotiation
     {
     	if (getLastProposal().getProposalStatus() != ProposalStatus.WAITING_FOR_RESPONSE)
     	{
-    		throw new DomainException("The last proposal is not waiting for a response.");
+    		throw new DomainException(ErrorCode.NEGOTIATION_WRONG_PHASE, "The last proposal is not waiting for a response.");
     	}
     }
     
@@ -371,7 +372,7 @@ public class Negotiation
     {
     	if(this.negotiationStatus != expected)
     	{
-    		throw new DomainException("The current negotiation status doesn't allow this operation: " + expected + " was expected, " + negotiationStatus + " was found.");
+    		throw new DomainException(ErrorCode.NEGOTIATION_WRONG_PHASE, "The current negotiation status doesn't allow this operation: " + expected + " was expected, " + negotiationStatus + " was found.");
     	}
     }
     
