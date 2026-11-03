@@ -4,21 +4,32 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
  * A minimal browser for the HTTP security tests: it keeps the cookies the server sets (and drops the ones it expires),
- * sends them back, and, like the React app, copies the XSRF-TOKEN cookie into the X-XSRF-TOKEN header of every POST.
+ * sends them back, and, like the React app, copies the CSRF cookie into the X-XSRF-TOKEN header of every POST. It ignores
+ * the cookies' attributes (Secure, SameSite...): the tests check those on the Set-Cookie headers.
  */
 final class ApiClient
 {
-	record Response(int status, String body, List<String> setCookies)
+	static final String SESSION = "__Host-SESSION";
+	static final String CSRF = SecurityConfiguration.CSRF_COOKIE;
+
+	record Response(int status, String body, List<String> setCookies, HttpHeaders headers)
 	{
+		/** The Set-Cookie header of that cookie, if this response set it. */
+		Optional<String> setCookie(String name)
+		{
+			return setCookies.stream().filter(cookie -> cookie.startsWith(name + "=")).findFirst();
+		}
 	}
 
 	private final HttpClient http = HttpClient.newHttpClient();
@@ -33,6 +44,12 @@ final class ApiClient
 	Response get(String path)
 	{
 		return send(HttpRequest.newBuilder(URI.create(base + path)).GET(), true);
+	}
+
+	/** A GET with extra headers, given as name, value, name, value... */
+	Response get(String path, String... headers)
+	{
+		return send(HttpRequest.newBuilder(URI.create(base + path)).headers(headers).GET(), true);
 	}
 
 	Response post(String path, String json)
@@ -73,9 +90,9 @@ final class ApiClient
 			request.header("Cookie", cookies.entrySet().stream().map(cookie -> cookie.getKey() + "=" + cookie.getValue()).collect(Collectors.joining("; ")));
 		}
 
-		if (withCsrfHeader && cookies.containsKey("XSRF-TOKEN"))
+		if (withCsrfHeader && cookies.containsKey(CSRF))
 		{
-			request.header("X-XSRF-TOKEN", cookies.get("XSRF-TOKEN"));
+			request.header("X-XSRF-TOKEN", cookies.get(CSRF));
 		}
 
 		try
@@ -84,7 +101,7 @@ final class ApiClient
 			List<String> setCookies = response.headers().allValues("Set-Cookie");
 			setCookies.forEach(this::keep);
 
-			return new Response(response.statusCode(), response.body(), setCookies);
+			return new Response(response.statusCode(), response.body(), setCookies, response.headers());
 		}
 		catch (IOException failure)
 		{

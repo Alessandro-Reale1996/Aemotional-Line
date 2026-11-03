@@ -37,8 +37,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Login, "who am I", account activation and password reset (CLAUDE.md, S4 decision 1); logout is handled by the security
- * filters (POST /api/auth/logout). The client first calls GET /api/auth/csrf to get the XSRF-TOKEN cookie, then sends its
- * value in the X-XSRF-TOKEN header with every POST.
+ * filters (POST /api/auth/logout). The client first calls GET /api/auth/csrf to get the __Host-XSRF-TOKEN cookie, then
+ * sends its value in the X-XSRF-TOKEN header with every POST.
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -84,7 +84,7 @@ class AuthController
 	{
 	}
 
-	/** Renders the XSRF-TOKEN cookie, whose value the client sends back in the X-XSRF-TOKEN header. */
+	/** Renders the __Host-XSRF-TOKEN cookie, whose value the client sends back in the X-XSRF-TOKEN header. */
 	@GetMapping("/csrf")
 	ResponseEntity<Void> csrf(CsrfToken token)
 	{

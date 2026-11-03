@@ -1,6 +1,7 @@
 package com.aemotionalline.infrastructure.security;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -19,13 +20,14 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * The HTTP security of the API (CLAUDE.md, security points 2 and 4, S4): a session cookie after a JSON login (sessions in
  * MariaDB through Spring Session), CSRF protection with the token in a cookie the React app reads and sends back in the
- * X-XSRF-TOKEN header, no login page and no HTTP Basic, JSON errors. Paths: the login steps are open, /api/admin/** needs
+ * X-XSRF-TOKEN header, no login page and no HTTP Basic, JSON errors, hardened cookies and headers (S5). Paths: the login steps are open, /api/admin/** needs
  * the administrator role, the rest of /api/** a login; anything else is closed until the frontend is served. Only in the
  * web application: the first-administrator command runs without it.
  */
@@ -33,10 +35,19 @@ import jakarta.servlet.http.HttpServletResponse;
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SecurityConfiguration
 {
+	/** The __Host- prefix: browsers accept the cookie only if Secure, for the whole host (Path=/) and with no Domain. */
+	public static final String CSRF_COOKIE = "__Host-XSRF-TOKEN";
+
+	/** Readable by the app (not HttpOnly), and otherwise as strict as the session cookie (S5). */
 	@Bean
 	CookieCsrfTokenRepository csrfTokens()
 	{
-		return CookieCsrfTokenRepository.withHttpOnlyFalse();
+		CookieCsrfTokenRepository tokens = CookieCsrfTokenRepository.withHttpOnlyFalse();
+		tokens.setCookieName(CSRF_COOKIE);
+		tokens.setCookiePath("/");
+		tokens.setCookieCustomizer(cookie -> cookie.secure(true).sameSite("Strict"));
+
+		return tokens;
 	}
 
 	@Bean
@@ -72,7 +83,13 @@ public class SecurityConfiguration
 				.exceptionHandling(errors -> errors
 						.authenticationEntryPoint((request, response, failure) -> error(response, HttpStatus.UNAUTHORIZED, "Authentication required."))
 						.accessDeniedHandler((request, response, failure) -> error(response, HttpStatus.FORBIDDEN, "Access denied.")))
-				.logout(logout -> logout.logoutUrl("/api/auth/logout").logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)));
+				.logout(logout -> logout.logoutUrl("/api/auth/logout").logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
+				// HSTS goes out on HTTPS requests only (TLS ends at the proxy, see server.forward-headers-strategy). No
+				// referrer: the activation and reset pages carry their one-time code in the address. Spring's other default
+				// headers stay (nosniff, no framing, no caching).
+				.headers(headers -> headers
+						.httpStrictTransportSecurity(hsts -> hsts.maxAgeInSeconds(Duration.ofDays(365).toSeconds()).includeSubDomains(true).preload(false))
+						.referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER)));
 
 		return http.build();
 	}

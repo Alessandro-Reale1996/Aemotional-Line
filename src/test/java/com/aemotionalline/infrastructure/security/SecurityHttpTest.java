@@ -85,7 +85,7 @@ public class SecurityHttpTest
 		assertEquals(200, login.status());
 		assertTrue(login.body().contains("\"id\":\"" + user.getId().value() + "\""), login.body());
 		assertTrue(login.body().contains("\"role\":\"THERAPIST\""), login.body());
-		assertNotNull(client.cookie("SESSION"));
+		assertNotNull(client.cookie(ApiClient.SESSION));
 		assertEquals(200, client.get("/api/auth/me").status());
 
 		// The sessions table names the account by id; it expires after 30 minutes without requests.
@@ -104,7 +104,7 @@ public class SecurityHttpTest
 		assertEquals(401, client.get("/api/conversations").status());
 		client.post("/api/auth/login", "{\"email\":\"nobody@example.org\",\"password\":\"wrong password\"}");
 
-		assertNull(client.cookie("SESSION"));
+		assertNull(client.cookie(ApiClient.SESSION));
 	}
 
 	@Test
@@ -119,7 +119,7 @@ public class SecurityHttpTest
 
 		assertEquals(403, forged.status());
 		assertEquals("{\"error\":\"Access denied.\"}", forged.body());
-		assertNull(client.cookie("SESSION"));
+		assertNull(client.cookie(ApiClient.SESSION));
 	}
 
 	@Test
@@ -167,18 +167,69 @@ public class SecurityHttpTest
 		ApiClient client = new ApiClient(port);
 
 		client.logIn(first.getEmail().value(), PASSWORD);
-		String session = client.cookie("SESSION");
-		String token = client.cookie("XSRF-TOKEN");
+		String session = client.cookie(ApiClient.SESSION);
+		String token = client.cookie(ApiClient.CSRF);
 		client.logIn(second.getEmail().value(), PASSWORD);
 
-		assertNotEquals(session, client.cookie("SESSION"));
-		assertNotEquals(token, client.cookie("XSRF-TOKEN"));
+		assertNotEquals(session, client.cookie(ApiClient.SESSION));
+		assertNotEquals(token, client.cookie(ApiClient.CSRF));
 		assertTrue(client.get("/api/auth/me").body().contains(second.getId().value().toString()));
 
 		// The old session id no longer opens anything.
 		ApiClient stale = new ApiClient(port);
-		stale.setCookie("SESSION", session);
+		stale.setCookie(ApiClient.SESSION, session);
 		assertEquals(401, stale.get("/api/auth/me").status());
+	}
+
+	// COOKIES AND HEADERS (S5)
+
+	@Test
+	void shouldSetCookiesOnlyForHttpsTheWholeHostAndThisSite()
+	{
+		User user = account(Role.PATIENT);
+		ApiClient client = new ApiClient(port);
+
+		ApiClient.Response login = client.logIn(user.getEmail().value(), PASSWORD);
+
+		String session = login.setCookie(ApiClient.SESSION).orElseThrow();
+		assertTrue(session.contains("; Secure"), session);
+		assertTrue(session.contains("; HttpOnly"), session);
+		assertTrue(session.contains("; SameSite=Strict"), session);
+		assertTrue(session.contains("; Path=/"), session);
+		assertFalse(session.contains("Domain="), session);
+
+		// The app must read the CSRF cookie: not HttpOnly, otherwise as strict.
+		String csrf = login.setCookie(ApiClient.CSRF).filter(cookie -> !cookie.contains("Max-Age=0")).orElseThrow();
+		assertTrue(csrf.contains("; Secure"), csrf);
+		assertFalse(csrf.contains("HttpOnly"), csrf);
+		assertTrue(csrf.contains("; SameSite=Strict"), csrf);
+		assertTrue(csrf.contains("; Path=/"), csrf);
+		assertFalse(csrf.contains("Domain="), csrf);
+	}
+
+	@Test
+	void shouldSendStrictTransportSecurityOverHttpsOnly()
+	{
+		ApiClient client = new ApiClient(port);
+
+		// Through the proxy (loopback is trusted), the request was HTTPS.
+		ApiClient.Response https = client.get("/api/auth/csrf", "X-Forwarded-Proto", "https");
+		assertEquals(List.of("max-age=31536000 ; includeSubDomains"), https.headers().allValues("Strict-Transport-Security"));
+
+		ApiClient.Response http = client.get("/api/auth/csrf");
+		assertEquals(List.of(), http.headers().allValues("Strict-Transport-Security"));
+	}
+
+	@Test
+	void shouldNeverSendTheAddressAsReferrer()
+	{
+		ApiClient client = new ApiClient(port);
+
+		for (ApiClient.Response response : List.of(client.get("/api/auth/csrf"), client.get("/api/auth/me"), client.get("/index.html")))
+		{
+			assertEquals(List.of("no-referrer"), response.headers().allValues("Referrer-Policy"));
+			assertEquals(List.of("nosniff"), response.headers().allValues("X-Content-Type-Options"));
+		}
 	}
 
 	// LOGOUT AND ENDED SESSIONS
@@ -194,7 +245,7 @@ public class SecurityHttpTest
 
 		assertEquals(204, phone.post("/api/auth/logout", "").status());
 
-		assertNull(phone.cookie("SESSION"));
+		assertNull(phone.cookie(ApiClient.SESSION));
 		assertEquals(401, phone.get("/api/auth/me").status());
 		assertEquals(200, computer.get("/api/auth/me").status());
 	}
