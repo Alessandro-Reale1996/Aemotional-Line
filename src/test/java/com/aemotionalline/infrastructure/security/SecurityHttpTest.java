@@ -17,8 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.aemotionalline.CapturingMailer;
 import com.aemotionalline.CapturingMailer.Kind;
@@ -30,6 +28,8 @@ import com.aemotionalline.domain.user.Role;
 import com.aemotionalline.domain.user.User;
 import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.user.UserRepository;
+import com.aemotionalline.web.ApiClient;
+import com.aemotionalline.web.TestEndpoints;
 
 /**
  * The HTTP security of the API, over real HTTP (CLAUDE.md, S4): login and its session cookie, CSRF, the same answer for
@@ -37,22 +37,10 @@ import com.aemotionalline.domain.user.UserRepository;
  * rules, the 30-minute expiry, activation and password reset.
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@Import({ TestcontainersConfiguration.class, SecurityHttpTest.AdminProbe.class })
+@Import({ TestcontainersConfiguration.class, TestEndpoints.class })
 public class SecurityHttpTest
 {
 	private static final String PASSWORD = "un cavallo sul tetto blu";
-	private static final String INVALID_CREDENTIALS = "{\"error\":\"Invalid credentials.\"}";
-
-	/** An endpoint under /api/admin, only in this test: the REST phase will add the real ones. */
-	@RestController
-	static class AdminProbe
-	{
-		@GetMapping("/api/admin/probe")
-		String probe()
-		{
-			return "administrator";
-		}
-	}
 
 	@LocalServerPort
 	private int port;
@@ -118,7 +106,7 @@ public class SecurityHttpTest
 				"{\"email\":\"" + user.getEmail().value() + "\",\"password\":\"" + PASSWORD + "\"}");
 
 		assertEquals(403, forged.status());
-		assertEquals("{\"error\":\"Access denied.\"}", forged.body());
+		assertEquals("ACCESS_DENIED", forged.code());
 		assertNull(client.cookie(ApiClient.SESSION));
 	}
 
@@ -139,7 +127,8 @@ public class SecurityHttpTest
 			ApiClient.Response refused = new ApiClient(port).logIn(credentials[0], credentials[1]);
 
 			assertEquals(401, refused.status());
-			assertEquals(INVALID_CREDENTIALS, refused.body());
+			assertEquals("INVALID_CREDENTIALS", refused.code());
+			assertEquals("Invalid credentials.", refused.json().path("detail").asString());
 		}
 	}
 
@@ -156,7 +145,7 @@ public class SecurityHttpTest
 
 		ApiClient.Response locked = client.logIn(user.getEmail().value(), PASSWORD);
 		assertEquals(401, locked.status());
-		assertEquals(INVALID_CREDENTIALS, locked.body());
+		assertEquals("INVALID_CREDENTIALS", locked.code());
 	}
 
 	@Test
@@ -309,7 +298,7 @@ public class SecurityHttpTest
 
 		ApiClient.Response refused = anonymous.get("/api/admin/probe");
 		assertEquals(401, refused.status());
-		assertEquals("{\"error\":\"Authentication required.\"}", refused.body());
+		assertEquals("AUTHENTICATION_REQUIRED", refused.code());
 		assertEquals(401, anonymous.get("/api/auth/me").status());
 		assertEquals(403, patient.get("/api/admin/probe").status());
 		assertEquals(200, administrator.get("/api/admin/probe").status());
@@ -331,7 +320,7 @@ public class SecurityHttpTest
 
 		ApiClient.Response weak = client.post("/api/auth/activate", "{\"code\":\"" + code + "\",\"password\":\"short\"}");
 		assertEquals(400, weak.status());
-		assertTrue(weak.body().startsWith("{\"error\":"), weak.body());
+		assertEquals("PASSWORD_TOO_SHORT", weak.code());
 		assertEquals(400, client.post("/api/auth/activate", "{\"code\":\"not-a-code\",\"password\":\"" + PASSWORD + "\"}").status());
 		assertEquals(204, client.post("/api/auth/activate", "{\"code\":\"" + code + "\",\"password\":\"" + PASSWORD + "\"}").status());
 

@@ -17,20 +17,20 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.aemotionalline.application.InvalidRequestException;
 import com.aemotionalline.application.LoggedInUser;
 import com.aemotionalline.application.LoginService;
 import com.aemotionalline.application.UserService;
 import com.aemotionalline.application.view.AccountView;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.user.EmailAddress;
+import com.aemotionalline.infrastructure.web.HttpErrorCode;
+import com.aemotionalline.infrastructure.web.Problems;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -72,18 +72,6 @@ class AuthController
 	{
 	}
 
-	record Account(String id, String email, String displayName, String role)
-	{
-		static Account of(AccountView view)
-		{
-			return new Account(view.id().value().toString(), view.email(), view.displayName(), view.role().name());
-		}
-	}
-
-	record ApiError(String error)
-	{
-	}
-
 	/** Renders the __Host-XSRF-TOKEN cookie, whose value the client sends back in the X-XSRF-TOKEN header. */
 	@GetMapping("/csrf")
 	ResponseEntity<Void> csrf(CsrfToken token)
@@ -100,7 +88,7 @@ class AuthController
 
 		if (user.isEmpty())
 		{
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError("Invalid credentials."));
+			return ResponseEntity.of(Problems.of(HttpStatus.UNAUTHORIZED, HttpErrorCode.INVALID_CREDENTIALS, "Invalid credentials.")).build();
 		}
 
 		SessionUser principal = new SessionUser(user.get().id().value(), user.get().role());
@@ -115,13 +103,13 @@ class AuthController
 		// The login replaced the CSRF token: render the new cookie with this response.
 		((CsrfToken) request.getAttribute(CsrfToken.class.getName())).getToken();
 
-		return ResponseEntity.ok(Account.of(users.account(user.get().id())));
+		return ResponseEntity.ok(users.account(user.get().id()));
 	}
 
 	@GetMapping("/me")
-	Account me(@AuthenticationPrincipal SessionUser user)
+	AccountView me(@AuthenticationPrincipal SessionUser user)
 	{
-		return Account.of(users.account(user.userId()));
+		return users.account(user.userId());
 	}
 
 	@PostMapping("/activate")
@@ -161,11 +149,5 @@ class AuthController
 		users.resetPassword(body.code(), body.password());
 
 		return ResponseEntity.noContent().build();
-	}
-
-	@ExceptionHandler(InvalidRequestException.class)
-	ResponseEntity<ApiError> invalid(InvalidRequestException failure)
-	{
-		return ResponseEntity.badRequest().body(new ApiError(failure.getMessage()));
 	}
 }

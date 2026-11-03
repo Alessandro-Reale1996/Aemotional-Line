@@ -2,6 +2,7 @@ package com.aemotionalline.infrastructure.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -43,14 +44,17 @@ import com.aemotionalline.domain.user.Role;
 import com.aemotionalline.domain.user.User;
 import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.user.UserRepository;
+import com.aemotionalline.web.ApiClient;
+import com.aemotionalline.web.TestEndpoints;
 
 /**
  * No personal content and no secret reaches the logs (CLAUDE.md, security point 5c and S5): a whole scenario runs, over
  * HTTP and through the services, with a random marker in every name, email, password, text and justification, plus
- * failed logins and malformed requests; neither the marker nor any one-time code may appear in the output.
+ * failed logins, malformed requests and an unexpected failure whose message carries the marker; neither the marker nor
+ * any one-time code may appear in the output, while the unexpected failure is logged under its error id.
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@Import({ TestcontainersConfiguration.class, SecurityHttpTest.AdminProbe.class })
+@Import({ TestcontainersConfiguration.class, TestEndpoints.class })
 @ExtendWith(OutputCaptureExtension.class)
 public class LogContentTest
 {
@@ -125,6 +129,11 @@ public class LogContentTest
 		stranger.post("/api/auth/password-reset/confirm", "{\"code\":\"" + marker + "\",\"password\":\"" + password + "\"}");
 		stranger.postWithoutCsrfHeader("/api/auth/login", "{\"email\":\"" + emailA.value() + "\",\"password\":\"" + password + "\"}");
 
+		// An unexpected failure whose message carries the marker: the log gets its id and types, not the message.
+		ApiClient.Response failure = client.get("/api/test/errors/" + marker);
+		assertEquals(500, failure.status());
+		String errorId = failure.json().path("errorId").asString();
+
 		// A password reset, done over HTTP.
 		stranger.post("/api/auth/password-reset", "{\"email\":\"" + emailB.value() + "\"}");
 		String resetCode = mailer.lastCode(emailB, Kind.PASSWORD_RESET).orElseThrow();
@@ -153,6 +162,7 @@ public class LogContentTest
 		assertEquals(204, client.post("/api/auth/logout", "").status());
 
 		String logs = output.getAll();
+		assertTrue(logs.contains(errorId) && logs.contains(IllegalStateException.class.getName()), "the unexpected error is logged under its id");
 		assertFalse(logs.contains(marker), () -> "personal content in the logs:\n" + linesWith(logs, marker));
 
 		for (String secret : secrets)

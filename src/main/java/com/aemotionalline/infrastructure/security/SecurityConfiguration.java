@@ -1,15 +1,14 @@
 package com.aemotionalline.infrastructure.security;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
@@ -22,12 +21,16 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 
-import jakarta.servlet.http.HttpServletResponse;
+import com.aemotionalline.infrastructure.web.HttpErrorCode;
+import com.aemotionalline.infrastructure.web.Problems;
+
+import tools.jackson.databind.json.JsonMapper;
+
 
 /**
  * The HTTP security of the API (CLAUDE.md, security points 2 and 4, S4): a session cookie after a JSON login (sessions in
  * MariaDB through Spring Session), CSRF protection with the token in a cookie the React app reads and sends back in the
- * X-XSRF-TOKEN header, no login page and no HTTP Basic, JSON errors, hardened cookies and headers (S5). Paths: the login steps are open, /api/admin/** needs
+ * X-XSRF-TOKEN header, no login page and no HTTP Basic, errors as Problem Details, hardened cookies and headers (S5). Paths: the login steps are open, /api/admin/** needs
  * the administrator role, the rest of /api/** a login; anything else is closed until the frontend is served. Only in the
  * web application: the first-administrator command runs without it.
  */
@@ -64,9 +67,12 @@ public class SecurityConfiguration
 	}
 
 	@Bean
-	SecurityFilterChain api(HttpSecurity http, CookieCsrfTokenRepository csrfTokens, SecurityContextRepository securityContexts) throws Exception
+	SecurityFilterChain api(HttpSecurity http, CookieCsrfTokenRepository csrfTokens, SecurityContextRepository securityContexts, JsonMapper json,
+			@Value("${springdoc.api-docs.enabled:false}") boolean apiDocs) throws Exception
 	{
 		http.authorizeHttpRequests(paths -> paths
+				// The OpenAPI spec and Swagger UI exist only in development (REST point 7).
+				.requestMatchers(apiDocs ? new String[] { "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**" } : new String[0]).permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout", "/api/auth/activate", "/api/auth/password-reset",
 						"/api/auth/password-reset/confirm").permitAll()
@@ -81,8 +87,10 @@ public class SecurityConfiguration
 				.formLogin(form -> form.disable())
 				.httpBasic(basic -> basic.disable())
 				.exceptionHandling(errors -> errors
-						.authenticationEntryPoint((request, response, failure) -> error(response, HttpStatus.UNAUTHORIZED, "Authentication required."))
-						.accessDeniedHandler((request, response, failure) -> error(response, HttpStatus.FORBIDDEN, "Access denied.")))
+						.authenticationEntryPoint((request, response, failure) -> Problems.write(request, response, json, HttpStatus.UNAUTHORIZED,
+								HttpErrorCode.AUTHENTICATION_REQUIRED, "Authentication required."))
+						.accessDeniedHandler((request, response, failure) -> Problems.write(request, response, json, HttpStatus.FORBIDDEN,
+								HttpErrorCode.ACCESS_DENIED, "Access denied.")))
 				.logout(logout -> logout.logoutUrl("/api/auth/logout").logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
 				// HSTS goes out on HTTPS requests only (TLS ends at the proxy, see server.forward-headers-strategy). No
 				// referrer: the activation and reset pages carry their one-time code in the address. Spring's other default
@@ -92,13 +100,5 @@ public class SecurityConfiguration
 						.referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER)));
 
 		return http.build();
-	}
-
-	// The same shape as the controllers' errors: {"error": "..."}; the messages are fixed texts, nothing to escape.
-	static void error(HttpServletResponse response, HttpStatus status, String message) throws IOException
-	{
-		response.setStatus(status.value());
-		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		response.getWriter().write("{\"error\":\"" + message + "\"}");
 	}
 }

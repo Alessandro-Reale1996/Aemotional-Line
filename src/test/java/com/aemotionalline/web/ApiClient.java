@@ -1,4 +1,4 @@
-package com.aemotionalline.infrastructure.security;
+package com.aemotionalline.web;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -13,22 +13,41 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * A minimal browser for the HTTP security tests: it keeps the cookies the server sets (and drops the ones it expires),
- * sends them back, and, like the React app, copies the CSRF cookie into the X-XSRF-TOKEN header of every POST. It ignores
- * the cookies' attributes (Secure, SameSite...): the tests check those on the Set-Cookie headers.
- */
-final class ApiClient
-{
-	static final String SESSION = "__Host-SESSION";
-	static final String CSRF = SecurityConfiguration.CSRF_COOKIE;
+import com.aemotionalline.infrastructure.security.SecurityConfiguration;
 
-	record Response(int status, String body, List<String> setCookies, HttpHeaders headers)
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
+/**
+ * A minimal browser for the HTTP tests: it keeps the cookies the server sets (and drops the ones it expires), sends them
+ * back, and, like the React app, copies the CSRF cookie into the X-XSRF-TOKEN header of every POST, PUT and DELETE. It
+ * ignores the cookies' attributes (Secure, SameSite...): the tests check those on the Set-Cookie headers. The answers'
+ * JSON can be read, to take ids from one answer and chain the next request.
+ */
+public final class ApiClient
+{
+	public static final String SESSION = "__Host-SESSION";
+	public static final String CSRF = SecurityConfiguration.CSRF_COOKIE;
+
+	private static final JsonMapper JSON = JsonMapper.builder().build();
+
+	public record Response(int status, String body, List<String> setCookies, HttpHeaders headers)
 	{
 		/** The Set-Cookie header of that cookie, if this response set it. */
-		Optional<String> setCookie(String name)
+		public Optional<String> setCookie(String name)
 		{
 			return setCookies.stream().filter(cookie -> cookie.startsWith(name + "=")).findFirst();
+		}
+
+		public JsonNode json()
+		{
+			return JSON.readTree(body);
+		}
+
+		/** The stable code of an error answer (Problem Details). */
+		public String code()
+		{
+			return json().path("code").asString();
 		}
 	}
 
@@ -36,49 +55,67 @@ final class ApiClient
 	private final String base;
 	private final Map<String, String> cookies = new LinkedHashMap<>();
 
-	ApiClient(int port)
+	public ApiClient(int port)
 	{
 		this.base = "http://localhost:" + port;
 	}
 
-	Response get(String path)
+	public Response get(String path)
 	{
 		return send(HttpRequest.newBuilder(URI.create(base + path)).GET(), true);
 	}
 
 	/** A GET with extra headers, given as name, value, name, value... */
-	Response get(String path, String... headers)
+	public Response get(String path, String... headers)
 	{
 		return send(HttpRequest.newBuilder(URI.create(base + path)).headers(headers).GET(), true);
 	}
 
-	Response post(String path, String json)
+	public Response post(String path, String json)
 	{
 		return send(HttpRequest.newBuilder(URI.create(base + path)).header("Content-Type", "application/json")
 				.POST(HttpRequest.BodyPublishers.ofString(json)), true);
 	}
 
+	public Response put(String path, String json)
+	{
+		return send(HttpRequest.newBuilder(URI.create(base + path)).header("Content-Type", "application/json")
+				.PUT(HttpRequest.BodyPublishers.ofString(json)), true);
+	}
+
+	public Response delete(String path)
+	{
+		return send(HttpRequest.newBuilder(URI.create(base + path)).DELETE(), true);
+	}
+
+	/** A request with any method and body, for the error tests (e.g. a method the endpoint doesn't take). */
+	public Response send(String method, String path, String json)
+	{
+		return send(HttpRequest.newBuilder(URI.create(base + path)).header("Content-Type", "application/json")
+				.method(method, HttpRequest.BodyPublishers.ofString(json)), true);
+	}
+
 	/** A POST without the CSRF header, as a forged request from another site would be. */
-	Response postWithoutCsrfHeader(String path, String json)
+	public Response postWithoutCsrfHeader(String path, String json)
 	{
 		return send(HttpRequest.newBuilder(URI.create(base + path)).header("Content-Type", "application/json")
 				.POST(HttpRequest.BodyPublishers.ofString(json)), false);
 	}
 
 	/** Gets the CSRF cookie, then logs in. */
-	Response logIn(String email, String password)
+	public Response logIn(String email, String password)
 	{
 		get("/api/auth/csrf");
 
 		return post("/api/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}");
 	}
 
-	String cookie(String name)
+	public String cookie(String name)
 	{
 		return cookies.get(name);
 	}
 
-	void setCookie(String name, String value)
+	public void setCookie(String name, String value)
 	{
 		cookies.put(name, value);
 	}
