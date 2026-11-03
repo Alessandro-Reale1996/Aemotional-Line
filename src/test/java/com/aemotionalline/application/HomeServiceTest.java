@@ -78,7 +78,7 @@ public class HomeServiceTest
 		UserId a = UserId.random();
 		UserId b = UserId.random();
 		CoupleId ended = TestCouples.create(users, couples, therapist, a, b);
-		coupleService.end(therapist, ended);
+		coupleService.end(therapist, ended, TestCouples.PASSWORD);
 		UserId c = UserId.random();
 		TestCouples.activeAccount(users, c, Role.PATIENT);
 		CoupleId active = createCoupleWithExistingPatients(therapist, a, c);
@@ -97,7 +97,7 @@ public class HomeServiceTest
 		assertEquals(List.of(), home.couples(UserId.random()));
 
 		// B deletes their account after the end: their name is gone, the couple stays.
-		userService.deleteOwnPatientAccount(b);
+		userService.deleteOwnPatientAccount(b, TestCouples.PASSWORD);
 		CoupleView seenByTherapist = home.couples(therapist).stream().filter(couple -> couple.id().equals(ended)).findFirst().orElseThrow();
 		assertNull(seenByTherapist.partnerTwo().displayName());
 		assertEquals(b, seenByTherapist.partnerTwo().id());
@@ -152,7 +152,7 @@ public class HomeServiceTest
 		assertEquals(List.of(), only(home.summary(b)).unopenedMessages());
 
 		// An ended couple leaves nothing to do.
-		coupleService.end(therapist, couple);
+		coupleService.end(therapist, couple, TestCouples.PASSWORD);
 		assertEquals(List.of(), home.summary(b).couples());
 	}
 

@@ -221,7 +221,7 @@ public class UserServiceTest
 				longAgo.plus(InvitationService.VALIDITY));
 		invitations.save(expired);
 
-		userService.disableTherapist(administrator, therapist);
+		userService.disableTherapist(administrator, therapist, TestCouples.PASSWORD);
 
 		assertEquals(AccountStatus.DISABLED, users.findById(therapist).orElseThrow().getStatus());
 		assertTrue(sessions.wereEnded(therapist));
@@ -237,6 +237,24 @@ public class UserServiceTest
 	}
 
 	@Test
+	void shouldAskThePasswordBeforeDisablingATherapistOrDeletingOnesAccount()
+	{
+		UserId therapist = UserId.random();
+		TestCouples.activeAccount(users, therapist, Role.THERAPIST);
+		UserId patient = UserId.random();
+		TestCouples.activeAccount(users, patient, Role.PATIENT);
+
+		assertThrows(IncorrectPasswordException.class, () -> userService.disableTherapist(administrator, therapist, "not the password"));
+		assertThrows(IncorrectPasswordException.class, () -> userService.deleteOwnPatientAccount(patient, "not the password"));
+
+		assertEquals(AccountStatus.ACTIVE, users.findById(therapist).orElseThrow().getStatus());
+		assertTrue(users.findById(patient).isPresent());
+		// Each wrong password counted as a failed login of the account that gave it.
+		assertEquals(1, users.findById(administrator).orElseThrow().getFailedLogins());
+		assertEquals(1, users.findById(patient).orElseThrow().getFailedLogins());
+	}
+
+	@Test
 	void shouldDisableOnlyTherapistsAndOnlyByAnAdministrator()
 	{
 		UserId therapist = UserId.random();
@@ -244,9 +262,9 @@ public class UserServiceTest
 		TestCouples.activeAccount(users, therapist, Role.THERAPIST);
 		TestCouples.activeAccount(users, patient, Role.PATIENT);
 
-		assertThrows(NotFoundException.class, () -> userService.disableTherapist(administrator, patient));
-		assertThrows(NotFoundException.class, () -> userService.disableTherapist(administrator, UserId.random()));
-		assertThrows(NotFoundException.class, () -> userService.disableTherapist(therapist, therapist));
+		assertThrows(NotFoundException.class, () -> userService.disableTherapist(administrator, patient, TestCouples.PASSWORD));
+		assertThrows(NotFoundException.class, () -> userService.disableTherapist(administrator, UserId.random(), TestCouples.PASSWORD));
+		assertThrows(NotFoundException.class, () -> userService.disableTherapist(therapist, therapist, TestCouples.PASSWORD));
 		assertEquals(AccountStatus.ACTIVE, users.findById(therapist).orElseThrow().getStatus());
 	}
 
@@ -262,7 +280,7 @@ public class UserServiceTest
 		CoupleInvitationId invitation = invitationService.invite(therapist, patientEmail, "Anna", freshEmail(), "Bruno");
 		userService.requestPasswordReset(patientEmail);
 
-		userService.deleteOwnPatientAccount(patient);
+		userService.deleteOwnPatientAccount(patient, TestCouples.PASSWORD);
 
 		assertTrue(users.findById(patient).isEmpty());
 		assertTrue(sessions.wereEnded(patient));
@@ -278,7 +296,7 @@ public class UserServiceTest
 		UserId partner = UserId.random();
 		TestCouples.create(users, couples, UserId.random(), partner, UserId.random());
 
-		assertThrows(DomainException.class, () -> userService.deleteOwnPatientAccount(partner));
+		assertThrows(DomainException.class, () -> userService.deleteOwnPatientAccount(partner, TestCouples.PASSWORD));
 		assertTrue(users.findById(partner).isPresent());
 	}
 
@@ -288,8 +306,8 @@ public class UserServiceTest
 		UserId therapist = UserId.random();
 		TestCouples.activeAccount(users, therapist, Role.THERAPIST);
 
-		assertThrows(NotFoundException.class, () -> userService.deleteOwnPatientAccount(therapist));
-		assertThrows(NotFoundException.class, () -> userService.deleteOwnPatientAccount(administrator));
+		assertThrows(NotFoundException.class, () -> userService.deleteOwnPatientAccount(therapist, TestCouples.PASSWORD));
+		assertThrows(NotFoundException.class, () -> userService.deleteOwnPatientAccount(administrator, TestCouples.PASSWORD));
 		assertTrue(users.findById(therapist).isPresent());
 	}
 

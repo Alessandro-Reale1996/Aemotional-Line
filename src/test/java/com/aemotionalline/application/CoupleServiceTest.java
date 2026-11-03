@@ -24,6 +24,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 
 import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.CoupleDeletion.Cause;
+import com.aemotionalline.application.view.EndedCoupleView;
 import com.aemotionalline.domain.MutableClock;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.common.ErrorCode;
@@ -103,7 +104,7 @@ public class CoupleServiceTest
 		NegotiationId inProgress = negotiationService.startDiscussionNegotiation(started.a(), started.conversation(), "Holidays", "Where", Optional.empty());
 		negotiationService.acceptRequest(started.b(), inProgress);
 
-		coupleService.end(started.therapist(), started.couple());
+		coupleService.end(started.therapist(), started.couple(), TestCouples.PASSWORD);
 
 		assertFalse(couples.findById(started.couple()).orElseThrow().isActive());
 		assertThrows(DomainException.class, () -> send(started.b(), started));
@@ -128,13 +129,26 @@ public class CoupleServiceTest
 		UserId otherTherapist = UserId.random();
 		TestCouples.activeAccount(users, otherTherapist, Role.THERAPIST);
 
-		assertThrows(DomainException.class, () -> coupleService.end(a, couple));
-		assertThrows(NotFoundException.class, () -> coupleService.end(otherTherapist, couple));
-		assertThrows(NotFoundException.class, () -> coupleService.end(therapist, CoupleId.random()));
+		assertThrows(DomainException.class, () -> coupleService.end(a, couple, TestCouples.PASSWORD));
+		assertThrows(NotFoundException.class, () -> coupleService.end(otherTherapist, couple, TestCouples.PASSWORD));
+		assertThrows(NotFoundException.class, () -> coupleService.end(therapist, CoupleId.random(), TestCouples.PASSWORD));
 		assertTrue(couples.findById(couple).orElseThrow().isActive());
 
-		coupleService.end(therapist, couple);
-		assertThrows(DomainException.class, () -> coupleService.end(therapist, couple));
+		coupleService.end(therapist, couple, TestCouples.PASSWORD);
+		assertThrows(DomainException.class, () -> coupleService.end(therapist, couple, TestCouples.PASSWORD));
+	}
+
+	@Test
+	void shouldEndTheCoupleOnlyWithTheTherapistsPassword()
+	{
+		UserId therapist = UserId.random();
+		CoupleId couple = TestCouples.create(users, couples, therapist, UserId.random(), UserId.random());
+
+		assertEquals(RequestErrorCode.INCORRECT_PASSWORD,
+				assertThrows(IncorrectPasswordException.class, () -> coupleService.end(therapist, couple, "not the password")).getCode());
+
+		assertTrue(couples.findById(couple).orElseThrow().isActive());
+		assertEquals(1, users.findById(therapist).orElseThrow().getFailedLogins());
 	}
 
 	// DELETING
@@ -149,7 +163,7 @@ public class CoupleServiceTest
 		// The couple has rows in every table of couple data, so the check below leaves none out.
 		before.forEach((table, count) -> assertTrue(filled.get(table) > count, "no rows of the couple in " + table));
 
-		coupleService.end(full.therapist(), full.couple());
+		coupleService.end(full.therapist(), full.couple(), TestCouples.PASSWORD);
 		Instant endedAt = couples.findById(full.couple()).orElseThrow().getEndedAt().orElseThrow();
 		coupleService.deleteData(full.therapist(), full.couple(), TestCouples.PASSWORD);
 
@@ -184,7 +198,7 @@ public class CoupleServiceTest
 		UserId therapist = UserId.random();
 		UserId a = UserId.random();
 		CoupleId couple = TestCouples.create(users, couples, therapist, a, UserId.random());
-		coupleService.end(therapist, couple);
+		coupleService.end(therapist, couple, TestCouples.PASSWORD);
 		UserId otherTherapist = UserId.random();
 		TestCouples.activeAccount(users, otherTherapist, Role.THERAPIST);
 		UserId administrator = UserId.random();
@@ -203,7 +217,7 @@ public class CoupleServiceTest
 	{
 		UserId therapist = UserId.random();
 		CoupleId couple = TestCouples.create(users, couples, therapist, UserId.random(), UserId.random());
-		coupleService.end(therapist, couple);
+		coupleService.end(therapist, couple, TestCouples.PASSWORD);
 
 		assertEquals(RequestErrorCode.INCORRECT_PASSWORD,
 				assertThrows(IncorrectPasswordException.class, () -> coupleService.deleteData(therapist, couple, "not the password")).getCode());
@@ -225,7 +239,7 @@ public class CoupleServiceTest
 	{
 		UserId therapist = UserId.random();
 		CoupleId couple = TestCouples.create(users, couples, therapist, UserId.random(), UserId.random());
-		coupleService.end(therapist, couple);
+		coupleService.end(therapist, couple, TestCouples.PASSWORD);
 
 		assertThrows(IncorrectPasswordException.class, () -> coupleService.deleteData(therapist, couple, "x".repeat(100)));
 		coupleService.deleteData(therapist, couple, TestCouples.PASSWORD);
@@ -242,9 +256,18 @@ public class CoupleServiceTest
 		UserId administrator = UserId.random();
 		TestCouples.activeAccount(users, administrator, Role.ADMINISTRATOR);
 
-		// Disabling the therapist ends the couple.
-		userService.disableTherapist(administrator, therapist);
+		// While the therapist is active, the administrator sees nothing of their couples.
+		assertThrows(NotFoundException.class, () -> coupleService.endedCouplesOfDisabledTherapist(administrator, therapist));
+
+		// Disabling the therapist ends the couple: the administrator finds it, by id and end date only.
+		userService.disableTherapist(administrator, therapist, TestCouples.PASSWORD);
+		List<EndedCoupleView> ended = coupleService.endedCouplesOfDisabledTherapist(administrator, therapist);
+		assertEquals(List.of(couple), ended.stream().map(EndedCoupleView::id).toList());
+		assertEquals(couples.findById(couple).orElseThrow().getEndedAt().orElseThrow(), ended.getFirst().endedAt());
+		assertThrows(NotFoundException.class, () -> coupleService.endedCouplesOfDisabledTherapist(therapist, therapist));
+
 		coupleService.deleteData(administrator, couple, TestCouples.PASSWORD);
+		assertEquals(List.of(), coupleService.endedCouplesOfDisabledTherapist(administrator, therapist));
 
 		CoupleDeletion trace = erasure.findDeletion(couple).orElseThrow();
 		assertEquals(Cause.ADMINISTRATOR, trace.cause());

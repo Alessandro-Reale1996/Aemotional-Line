@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.aemotionalline.application.view.AccountView;
+import com.aemotionalline.application.view.TherapistView;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.couple.CoupleInvitation;
@@ -43,10 +44,11 @@ public class UserService
 	private final Mailer mailer;
 	private final AccountSessions sessions;
 	private final CoupleService coupleService;
+	private final Reauthentication reauthentication;
 	private final Clock clock;
 
 	UserService(UserRepository users, OneTimeLinkRepository links, CoupleRepository couples, CoupleInvitationRepository invitations,
-			PasswordHasher hasher, Mailer mailer, AccountSessions sessions, CoupleService coupleService, Clock clock)
+			PasswordHasher hasher, Mailer mailer, AccountSessions sessions, CoupleService coupleService, Reauthentication reauthentication, Clock clock)
 	{
 		this.users = users;
 		this.links = links;
@@ -56,6 +58,7 @@ public class UserService
 		this.mailer = mailer;
 		this.sessions = sessions;
 		this.coupleService = coupleService;
+		this.reauthentication = reauthentication;
 		this.clock = clock;
 	}
 
@@ -122,6 +125,17 @@ public class UserService
 		return issueLink(administrator.getId(), OneTimeLink.Purpose.ACTIVATION, ACTIVATION_VALIDITY);
 	}
 
+	/** The therapists' accounts, for the administrator who creates and disables them. */
+	@ReadOnlyTransaction
+	public List<TherapistView> therapists(UserId administrator)
+	{
+		ensureActiveWithRole(administrator, Role.ADMINISTRATOR);
+
+		return users.findByRole(Role.THERAPIST).stream()
+				.map(therapist -> new TherapistView(therapist.getId(), therapist.getEmail().value(), therapist.getDisplayName(), therapist.getStatus()))
+				.toList();
+	}
+
 	/** The user's own account, for the app's "who am I". */
 	@ReadOnlyTransaction
 	public AccountView account(UserId user)
@@ -172,13 +186,19 @@ public class UserService
 	 * The administrator disables a therapist's account: its open sessions end at once, its pending invitations are
 	 * withdrawn and its active couples end (frozen like any end; an administrator can then delete their data).
 	 */
-	public void disableTherapist(UserId administrator, UserId therapist)
+	@Transactional(noRollbackFor = IncorrectPasswordException.class)
+	public void disableTherapist(UserId administrator, UserId therapist, String password)
 	{
-		// The account is locked before anything is read: an invitation the therapist is sending (which locks the same
-		// account) is either already visible here, or refused once this commits.
-		Optional<User> locked = users.findByIdForUpdate(therapist);
-		ensureActiveWithRole(administrator, Role.ADMINISTRATOR);
-		User user = locked.filter(found -> found.getRole() == Role.THERAPIST).orElseThrow(() -> new NotFoundException("Therapist not found."));
+		// The administrator confirms with their password (irreversible: REST point 5); then the therapist's account is
+		// locked, so an invitation the therapist is sending (which locks the same account) is either already visible
+		// here, or refused once this commits.
+		if (reauthentication.confirm(administrator, password).getRole() != Role.ADMINISTRATOR)
+		{
+			throw new NotFoundException("Not found.");
+		}
+
+		User user = users.findByIdForUpdate(therapist).filter(found -> found.getRole() == Role.THERAPIST)
+				.orElseThrow(() -> new NotFoundException("Therapist not found."));
 
 		user.disable();
 		users.save(user);
@@ -191,11 +211,17 @@ public class UserService
 	 * A patient deletes their own account, only when not in an active couple (the messages of an ended couple belong to
 	 * both partners and follow the couple's fate). Their pending invitations are declined and their links removed.
 	 */
-	public void deleteOwnPatientAccount(UserId patient)
+	@Transactional(noRollbackFor = IncorrectPasswordException.class)
+	public void deleteOwnPatientAccount(UserId patient, String password)
 	{
-		// Locked first: an acceptance of an invitation by this patient (which locks the account) can't overlap.
-		users.findByIdForUpdate(patient);
-		User user = ensureActiveWithRole(patient, Role.PATIENT);
+		// The password confirms (irreversible: REST point 5) and locks the account: an acceptance of an invitation by
+		// this patient (which locks the account too) can't overlap.
+		User user = reauthentication.confirm(patient, password);
+
+		if (user.getRole() != Role.PATIENT)
+		{
+			throw new NotFoundException("Not found.");
+		}
 
 		if (couples.findActiveCoupleOf(patient).isPresent())
 		{

@@ -110,7 +110,7 @@ public class CoupleEndConcurrencyTest
 			assertTrue(sending.await(10, TimeUnit.SECONDS));
 
 			// ...when the therapist ends the couple: the end waits.
-			Future<Throwable> end = executor.submit(failureOf(() -> coupleService.end(therapist, couple)));
+			Future<Throwable> end = executor.submit(failureOf(() -> coupleService.end(therapist, couple, TestCouples.PASSWORD)));
 			Thread.sleep(500);
 			assertFalse(end.isDone());
 
@@ -141,7 +141,7 @@ public class CoupleEndConcurrencyTest
 			// The therapist is ending the couple (its locks are held, not yet committed)...
 			Future<?> end = executor.submit(() -> transactions.executeWithoutResult(status ->
 			{
-				coupleService.end(therapist, couple);
+				coupleService.end(therapist, couple, TestCouples.PASSWORD);
 				ending.countDown();
 				await(release);
 			}));

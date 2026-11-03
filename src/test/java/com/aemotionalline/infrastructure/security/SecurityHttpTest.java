@@ -267,7 +267,7 @@ public class SecurityHttpTest
 		ApiClient client = new ApiClient(port);
 		client.logIn(therapist.getEmail().value(), PASSWORD);
 
-		userService.disableTherapist(administrator.getId(), therapist.getId());
+		userService.disableTherapist(administrator.getId(), therapist.getId(), PASSWORD);
 
 		assertEquals(401, client.get("/api/auth/me").status());
 	}

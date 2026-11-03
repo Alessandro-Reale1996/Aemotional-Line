@@ -144,7 +144,7 @@ public class InvitationServiceTest
 		TestCouples.activeAccount(users, disabledTherapist, Role.THERAPIST);
 		UserId administrator = UserId.random();
 		TestCouples.activeAccount(users, administrator, Role.ADMINISTRATOR);
-		userService.disableTherapist(administrator, disabledTherapist);
+		userService.disableTherapist(administrator, disabledTherapist, TestCouples.PASSWORD);
 
 		for (UserId person : List.of(otherTherapist, inACouple, disabledTherapist))
 		{

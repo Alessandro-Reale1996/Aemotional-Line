@@ -1,13 +1,14 @@
 package com.aemotionalline.application;
 
 import java.time.Clock;
-import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.aemotionalline.application.CoupleDeletion.Cause;
+import com.aemotionalline.application.view.EndedCoupleView;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.conversation.ConversationRepository;
@@ -36,24 +37,29 @@ public class CoupleService
 	private final NegotiationRepository negotiations;
 	private final UserRepository users;
 	private final CoupleErasure erasure;
-	private final PasswordHasher hasher;
+	private final Reauthentication reauthentication;
 	private final Clock clock;
 
 	CoupleService(CoupleRepository couples, ConversationRepository conversations, NegotiationRepository negotiations, UserRepository users,
-			CoupleErasure erasure, PasswordHasher hasher, Clock clock)
+			CoupleErasure erasure, Reauthentication reauthentication, Clock clock)
 	{
 		this.couples = couples;
 		this.conversations = conversations;
 		this.negotiations = negotiations;
 		this.users = users;
 		this.erasure = erasure;
-		this.hasher = hasher;
+		this.reauthentication = reauthentication;
 		this.clock = clock;
 	}
 
-	/** The therapist ends the couple; a partner is refused by the domain, an outsider is told the couple doesn't exist. */
-	public void end(UserId therapist, CoupleId id)
+	/**
+	 * The therapist ends the couple, confirming with their password (irreversible: REST point 5); a partner is refused by
+	 * the domain, an outsider is told the couple doesn't exist.
+	 */
+	@Transactional(noRollbackFor = IncorrectPasswordException.class)
+	public void end(UserId therapist, CoupleId id, String password)
 	{
+		reauthentication.confirm(therapist, password);
 		Couple couple = couples.findByIdForUpdate(id).orElseThrow(() -> new NotFoundException("Couple not found."));
 		Access.ensureMember(couple, therapist, "Couple");
 		CoupleLocks.lockContentOf(conversations, negotiations, id);
@@ -80,7 +86,7 @@ public class CoupleService
 	@Transactional(noRollbackFor = IncorrectPasswordException.class)
 	public void deleteData(UserId actor, CoupleId id, String password)
 	{
-		User user = reauthenticated(actor, password);
+		User user = reauthentication.confirm(actor, password);
 		Couple couple = couples.findByIdForUpdate(id).orElseThrow(() -> new NotFoundException("Couple not found."));
 		Cause cause = deletionCause(user, couple);
 
@@ -91,6 +97,29 @@ public class CoupleService
 
 		CoupleLocks.lockContentOf(conversations, negotiations, id);
 		erasure.erase(new CoupleDeletion(id, couple.getTherapistId(), couple.getEndedAt().orElseThrow(), clock.instant(), cause, Optional.of(actor)));
+	}
+
+	/**
+	 * The ended couples of a disabled therapist, for the administrator who may delete their data (CLAUDE.md, R4): only
+	 * their ids and end dates. For an active therapist there is nothing for the administrator to see: "not found".
+	 */
+	@ReadOnlyTransaction
+	public List<EndedCoupleView> endedCouplesOfDisabledTherapist(UserId administrator, UserId therapist)
+	{
+		boolean isAdministrator = users.findById(administrator)
+				.filter(user -> user.getRole() == Role.ADMINISTRATOR && user.getStatus() == AccountStatus.ACTIVE).isPresent();
+		boolean isDisabledTherapist = users.findById(therapist)
+				.filter(user -> user.getRole() == Role.THERAPIST && user.getStatus() == AccountStatus.DISABLED).isPresent();
+
+		if (!isAdministrator || !isDisabledTherapist)
+		{
+			throw new NotFoundException("Not found.");
+		}
+
+		return couples.findCouplesOf(therapist).stream()
+				.filter(couple -> couple.isTherapist(therapist) && !couple.isActive())
+				.map(couple -> new EndedCoupleView(couple.getId(), couple.getEndedAt().orElseThrow()))
+				.toList();
 	}
 
 	// The couple's therapist, or an administrator once the therapist's account is disabled; anyone else is told the couple
@@ -109,33 +138,5 @@ public class CoupleService
 		}
 
 		throw new NotFoundException("Couple not found.");
-	}
-
-	// The account's own password confirms the operation; the account is locked for this, like a login.
-	private User reauthenticated(UserId actor, String password)
-	{
-		User user = users.findByIdForUpdate(actor).filter(found -> found.getStatus() == AccountStatus.ACTIVE)
-				.orElseThrow(() -> new NotFoundException("Not found."));
-		Instant now = clock.instant();
-
-		if (!user.canLogInAt(now))
-		{
-			throw new IncorrectPasswordException();
-		}
-
-		if (!hasher.matches(password, user.getPasswordHash().orElseThrow()))
-		{
-			user.recordFailedLogin(now);
-			users.save(user);
-			throw new IncorrectPasswordException();
-		}
-
-		if (user.getFailedLogins() > 0)
-		{
-			user.recordSuccessfulLogin();
-			users.save(user);
-		}
-
-		return user;
 	}
 }
