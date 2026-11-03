@@ -82,8 +82,8 @@ public class UserService
 	/** The owner opens the activation link and chooses the password. */
 	public void activate(String code, String password)
 	{
-		OneTimeLink link = usableLink(code, OneTimeLink.Purpose.ACTIVATION);
-		User user = users.findByIdForUpdate(link.user()).orElseThrow(() -> invalidLink());
+		OneTimeLink link = usableLinkOfLockedAccount(code, OneTimeLink.Purpose.ACTIVATION);
+		User user = users.findById(link.user()).orElseThrow(UserService::invalidLink);
 
 		PasswordPolicy.check(password, user.getEmail());
 		user.activate(hasher.hash(password));
@@ -107,8 +107,8 @@ public class UserService
 	/** The owner opens the reset link and chooses a new password; every open session of the account ends. */
 	public void resetPassword(String code, String password)
 	{
-		OneTimeLink link = usableLink(code, OneTimeLink.Purpose.PASSWORD_RESET);
-		User user = users.findByIdForUpdate(link.user()).orElseThrow(() -> invalidLink());
+		OneTimeLink link = usableLinkOfLockedAccount(code, OneTimeLink.Purpose.PASSWORD_RESET);
+		User user = users.findById(link.user()).orElseThrow(UserService::invalidLink);
 
 		PasswordPolicy.check(password, user.getEmail());
 		user.changePassword(hasher.hash(password));
@@ -142,6 +142,8 @@ public class UserService
 	 */
 	public void deleteOwnPatientAccount(UserId patient)
 	{
+		// Locked first: an acceptance of an invitation by this patient (which locks the account) can't overlap.
+		users.findByIdForUpdate(patient);
 		User user = ensureActiveWithRole(patient, Role.PATIENT);
 
 		if (couples.findActiveCoupleOf(patient).isPresent())
@@ -193,6 +195,15 @@ public class UserService
 		links.save(new OneTimeLink(OneTimeCodes.hash(code), user, purpose, now, now.plus(validity), Optional.empty()));
 
 		return code;
+	}
+
+	// The link names the account; once the account is locked the link is read again: of two uses of the same link at the
+	// same moment, the second finds it used.
+	private OneTimeLink usableLinkOfLockedAccount(String code, OneTimeLink.Purpose purpose)
+	{
+		users.findByIdForUpdate(usableLink(code, purpose).user()).orElseThrow(UserService::invalidLink);
+
+		return usableLink(code, purpose);
 	}
 
 	private OneTimeLink usableLink(String code, OneTimeLink.Purpose purpose)

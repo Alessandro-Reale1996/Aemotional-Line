@@ -71,7 +71,7 @@ public class ClosingService
 	}
 
 	/** The closing of a discussion as the viewer sees it (see ClosingView for what each one may see). */
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public ClosingView view(UserId viewer, ConversationId id, int discussionNumber)
 	{
 		Conversation conversation = ConversationAccess.readable(conversations, viewer, id);

@@ -62,6 +62,12 @@ public class JdbcNegotiationRepository implements NegotiationRepository
 	}
 
 	@Override
+	public Optional<CoupleId> findCoupleIdOf(NegotiationId id)
+	{
+		return negotiations.findById(id.value()).map(row -> new CoupleId(row.coupleId()));
+	}
+
+	@Override
 	public List<Negotiation> findFailedStartsOf(CoupleId coupleId)
 	{
 		return negotiations.findByCoupleIdAndStatusInOrderByStartedAt(coupleId.value(), FAILED).stream()

@@ -39,7 +39,7 @@ public class RetentionService
 		this.clock = clock;
 	}
 
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public List<CoupleId> couplesEndedBefore(Instant cutoff)
 	{
 		return couples.findIdsEndedBefore(cutoff);

@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.aemotionalline.application.view.ArchiveEntry;
 import com.aemotionalline.application.view.ArchiveSearchResult;
@@ -35,7 +34,7 @@ import com.aemotionalline.domain.user.UserId;
  * of the other partner's messages they haven't opened, and a keyword search doesn't even reveal that they match.
  */
 @Service
-@Transactional(readOnly = true)
+@ReadOnlyTransaction
 public class ArchiveService
 {
 	private final ConversationRepository conversations;

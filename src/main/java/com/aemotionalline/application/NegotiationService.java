@@ -93,10 +93,11 @@ public class NegotiationService
 	public NegotiationId startDiscussionNegotiation(UserId requester, ConversationId conversationId, String title, String subtitle,
 			Optional<ParagraphId> origin)
 	{
-		Conversation conversation = conversations.findById(conversationId).orElseThrow(() -> new NotFoundException("Conversation not found."));
-		Access.ensureMember(conversation.getCouple(), requester, "Conversation");
-
-		Couple couple = couples.findByIdForUpdate(conversation.getCouple().getId()).orElseThrow();
+		CoupleId coupleId = conversations.findCoupleIdOf(conversationId).orElseThrow(() -> new NotFoundException("Conversation not found."));
+		Couple couple = couples.findByIdForUpdate(coupleId).orElseThrow(() -> new NotFoundException("Conversation not found."));
+		Access.ensureMember(couple, requester, "Conversation");
+		// Locked too, so that the origin is checked against the conversation as it is now (couple, then conversation).
+		Conversation conversation = conversations.findByIdForUpdate(conversationId).orElseThrow();
 
 		if (origin.isPresent())
 		{
@@ -164,8 +165,7 @@ public class NegotiationService
 
 		if (purpose.purpose() == Purpose.STARTED_CONVERSATION)
 		{
-			Negotiation peek = negotiations.findById(id).orElseThrow();
-			Couple couple = couples.findByIdForUpdate(peek.getCouple().getId()).orElseThrow();
+			Couple couple = couples.findByIdForUpdate(negotiations.findCoupleIdOf(id).orElseThrow()).orElseThrow();
 			Negotiation negotiation = negotiations.findByIdForUpdate(id).orElseThrow();
 			negotiation.acceptProposal(user);
 
@@ -241,7 +241,7 @@ public class NegotiationService
 
 	// READING
 
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public NegotiationView view(UserId viewer, NegotiationId id)
 	{
 		Negotiation negotiation = negotiations.findById(id).orElseThrow(() -> new NotFoundException("Negotiation not found."));
@@ -252,7 +252,7 @@ public class NegotiationService
 	}
 
 	/** The couple's negotiations in progress, oldest first. */
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public List<NegotiationView> inProgress(UserId viewer, CoupleId coupleId)
 	{
 		Couple couple = couples.findById(coupleId).orElseThrow(() -> new NotFoundException("Couple not found."));
@@ -264,7 +264,7 @@ public class NegotiationService
 	}
 
 	/** The couple's failed attempts to start its conversation, kept at couple level until the conversation starts. */
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public List<NegotiationView> failedStarts(UserId viewer, CoupleId coupleId)
 	{
 		Couple couple = couples.findById(coupleId).orElseThrow(() -> new NotFoundException("Couple not found."));
@@ -285,17 +285,18 @@ public class NegotiationService
 		return negotiation;
 	}
 
+	// Before any lock: only lookups of things that never change (the couple's members, the negotiation's purpose).
 	private NegotiationPurpose purposeOf(UserId user, NegotiationId id)
 	{
-		Negotiation negotiation = negotiations.findById(id).orElseThrow(() -> new NotFoundException("Negotiation not found."));
-		Access.ensureMember(negotiation.getCouple(), user, "Negotiation");
+		Couple couple = negotiations.findCoupleIdOf(id).flatMap(couples::findById).orElseThrow(() -> new NotFoundException("Negotiation not found."));
+		Access.ensureMember(couple, user, "Negotiation");
 
 		return purposes.findByNegotiation(id).orElseThrow(() -> new NotFoundException("Negotiation not found."));
 	}
 
 	private Conversation lockedConversationOf(NegotiationId id)
 	{
-		CoupleId couple = negotiations.findById(id).orElseThrow().getCouple().getId();
+		CoupleId couple = negotiations.findCoupleIdOf(id).orElseThrow();
 		ConversationId conversation = conversations.findIdByCouple(couple).orElseThrow(() -> new NotFoundException("Conversation not found."));
 
 		return conversations.findByIdForUpdate(conversation).orElseThrow();

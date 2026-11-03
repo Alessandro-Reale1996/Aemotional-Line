@@ -69,7 +69,7 @@ public class ConstraintService
 		change(therapist, id, conversation -> conversation.withdrawConstraints(request, therapist));
 	}
 
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public ConstraintsView view(UserId viewer, ConversationId id)
 	{
 		return Views.constraints(ConversationAccess.readable(conversations, viewer, id));

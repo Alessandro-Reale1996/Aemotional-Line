@@ -3,6 +3,7 @@ package com.aemotionalline.application;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -83,9 +84,12 @@ public class InvitationService
 	/** A partner accepts; the second acceptance creates the couple. Neither partner may already be in an active couple. */
 	public void accept(UserId patient, CoupleInvitationId id)
 	{
+		CoupleInvitation found = invitations.findById(id).filter(invitation -> involves(invitation, patient))
+				.orElseThrow(() -> new NotFoundException("Invitation not found."));
+		// Both partners' accounts are locked first, always in the same order: any acceptance involving either of them (in
+		// this invitation or another) waits, so neither can end up in two active couples.
+		lockAccounts(found.getPartnerOneId(), found.getPartnerTwoId());
 		userService.ensureActiveWithRole(patient, Role.PATIENT);
-		// Serialises this patient's acceptances, so two invitations can't both make them a partner.
-		users.findByIdForUpdate(patient).orElseThrow();
 
 		CoupleInvitation invitation = lockedFor(patient, id);
 		ensureNotInAnActiveCouple(patient);
@@ -117,7 +121,7 @@ public class InvitationService
 	}
 
 	/** The user's invitations still waiting for an answer (an expired one is no longer listed). */
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public List<InvitationView> pending(UserId user)
 	{
 		Instant now = clock.instant();
@@ -128,7 +132,7 @@ public class InvitationService
 				.toList();
 	}
 
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public InvitationView view(UserId user, CoupleInvitationId id)
 	{
 		return invitations.findById(id).filter(invitation -> involves(invitation, user)).map(InvitationService::view)
@@ -154,6 +158,11 @@ public class InvitationService
 		}
 
 		return user.getId();
+	}
+
+	private void lockAccounts(UserId one, UserId two)
+	{
+		List.of(one, two).stream().sorted(Comparator.comparing(UserId::value)).forEach(users::findByIdForUpdate);
 	}
 
 	private void ensureNotInAnActiveCouple(UserId patient)

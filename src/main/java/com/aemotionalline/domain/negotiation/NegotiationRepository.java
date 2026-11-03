@@ -21,6 +21,9 @@ public interface NegotiationRepository
 	 */
 	Optional<Negotiation> findByIdForUpdate(NegotiationId id);
 
+	/** The couple a negotiation belongs to, without loading the negotiation (a lookup made before taking the locks). */
+	Optional<CoupleId> findCoupleIdOf(NegotiationId id);
+
 	/**
 	 * The couple's failed negotiations still kept at couple level: the attempts to start its conversation, which have no
 	 * conversation to be recorded in until it starts (then they are recorded there and deleted).

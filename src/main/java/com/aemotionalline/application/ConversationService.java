@@ -43,7 +43,7 @@ public class ConversationService
 	}
 
 	/** The conversation as the viewer sees it: the other partner's messages not opened yet are closed envelopes. */
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public ConversationView view(UserId viewer, ConversationId id)
 	{
 		return Views.conversation(readable(viewer, id), viewer);
@@ -82,7 +82,7 @@ public class ConversationService
 	}
 
 	/** For the "you are leaving questions unanswered" pop-up: the questions of the message being answered the draft skips. */
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public List<ParagraphId> previewQuestionsLeftUnanswered(UserId sender, ConversationId id, int discussionNumber, MessageDraft draft)
 	{
 		Conversation conversation = readable(sender, id);
@@ -93,7 +93,7 @@ public class ConversationService
 	}
 
 	/** For the "this paragraph has a specific discussion" pop-up: the discussions that keep the draft from being sent here. */
-	@Transactional(readOnly = true)
+	@ReadOnlyTransaction
 	public List<DiscussionId> previewBlockingDiscussions(UserId sender, ConversationId id, int discussionNumber, MessageDraft draft)
 	{
 		Conversation conversation = readable(sender, id);
