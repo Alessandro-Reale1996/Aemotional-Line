@@ -23,7 +23,7 @@ public class SmtpMailer implements Mailer
 	SmtpMailer(ObjectProvider<JavaMailSender> sender, @Value("${aemotional.base-url}") String baseUrl, @Value("${aemotional.mail.from}") String from)
 	{
 		this.sender = sender;
-		this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+		this.baseUrl = baseUrl;
 		this.from = from;
 	}
 
@@ -32,7 +32,7 @@ public class SmtpMailer implements Mailer
 	{
 		send(to, "Attiva il tuo account Aemotional-Line", "Ciao " + displayName + ",\n\n"
 				+ "per attivare il tuo account e scegliere la password apri questo link (vale una sola volta e scade tra 7 giorni):\n"
-				+ baseUrl + "/attiva?codice=" + code + "\n\nSe non ti aspettavi questa email, ignorala.");
+				+ AccountLinks.activation(baseUrl, code) + "\n\nSe non ti aspettavi questa email, ignorala.");
 	}
 
 	@Override
@@ -40,7 +40,7 @@ public class SmtpMailer implements Mailer
 	{
 		send(to, "Reimposta la password di Aemotional-Line", "Ciao " + displayName + ",\n\n"
 				+ "per scegliere una nuova password apri questo link (vale una sola volta e scade tra un'ora):\n"
-				+ baseUrl + "/reimposta-password?codice=" + code + "\n\nSe non l'hai chiesto tu, ignora questa email: la password non cambia.");
+				+ AccountLinks.passwordReset(baseUrl, code) + "\n\nSe non l'hai chiesto tu, ignora questa email: la password non cambia.");
 	}
 
 	@Override
@@ -48,7 +48,7 @@ public class SmtpMailer implements Mailer
 	{
 		send(to, "Invito a formare una coppia su Aemotional-Line", "Ciao " + displayName + ",\n\n"
 				+ therapistName + " ti ha invitato a formare una coppia su Aemotional-Line.\n"
-				+ "Accedi per accettare o rifiutare l'invito: " + baseUrl + "\n");
+				+ "Accedi per accettare o rifiutare l'invito: " + AccountLinks.home(baseUrl) + "\n");
 	}
 
 	private void send(EmailAddress to, String subject, String text)

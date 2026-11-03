@@ -52,8 +52,9 @@ public class CoupleServiceTest
 {
 	private static final LocalTime NOON = LocalTime.NOON;
 
-	// Tables that hold accounts or the deletion's trace, not a couple's data.
-	private static final Set<String> NOT_COUPLE_DATA = Set.of("flyway_schema_history", "user_account", "one_time_link", "deleted_couple");
+	// Tables that hold accounts, login sessions or the deletion's trace, not a couple's data.
+	private static final Set<String> NOT_COUPLE_DATA = Set.of("flyway_schema_history", "user_account", "one_time_link", "deleted_couple",
+			"SPRING_SESSION", "SPRING_SESSION_ATTRIBUTES");
 
 	@Autowired
 	private CoupleService coupleService;

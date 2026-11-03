@@ -5,6 +5,7 @@ import static com.aemotionalline.infrastructure.persistence.Rows.uuid;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -50,6 +51,12 @@ public class JdbcUserRepository implements UserRepository
 	public Optional<User> findByEmail(EmailAddress email)
 	{
 		return jdbc.sql("SELECT * FROM user_account WHERE email = ?").param(email.value()).query((rs, row) -> user(rs)).optional();
+	}
+
+	@Override
+	public List<User> findByRole(Role role)
+	{
+		return jdbc.sql("SELECT * FROM user_account WHERE role = ? ORDER BY id").param(role.name()).query((rs, row) -> user(rs)).list();
 	}
 
 	/**

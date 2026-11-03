@@ -27,7 +27,7 @@ public class SchemaMigrationTest
 			"paragraph", "paragraph_reference", "paragraph_self_citation", "negotiation_record", "failed_negotiation_record",
 			"constraint_request", "constraint_request_approval", "constraint_assignment", "closing_request", "therapist_closing_request",
 			"outcome_declaration", "negotiation_purpose", "user_account", "couple_invitation", "couple_invitation_acceptance", "one_time_link",
-			"deleted_couple");
+			"deleted_couple", "SPRING_SESSION", "SPRING_SESSION_ATTRIBUTES");
 
 	@Autowired
 	private JdbcClient jdbc;

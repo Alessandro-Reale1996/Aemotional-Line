@@ -3,11 +3,13 @@ package com.aemotionalline.application;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.aemotionalline.application.view.AccountView;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.couple.CoupleInvitation;
 import com.aemotionalline.domain.couple.CoupleInvitationRepository;
@@ -77,6 +79,54 @@ public class UserService
 		mailer.sendActivationLink(email, user.getDisplayName(), issueLink(user.getId(), OneTimeLink.Purpose.ACTIVATION, ACTIVATION_VALIDITY));
 
 		return user.getId();
+	}
+
+	/**
+	 * The first administrator, created by a command on the server (CLAUDE.md, security point 6a and S4 decision 3): only
+	 * while no active administrator exists. The code of the activation link is returned for the command to print on the
+	 * terminal, never emailed. If the first administrator is still pending (its link lost or expired), running the
+	 * command again with the same email gives a new link; any other email is refused.
+	 */
+	public String createFirstAdministrator(EmailAddress email, String displayName)
+	{
+		List<User> administrators = users.findByRole(Role.ADMINISTRATOR);
+
+		if (administrators.stream().anyMatch(administrator -> administrator.getStatus() == AccountStatus.ACTIVE))
+		{
+			throw new DomainException("An administrator already exists.");
+		}
+
+		Optional<User> pending = administrators.stream().filter(administrator -> administrator.getStatus() == AccountStatus.PENDING).findFirst();
+
+		if (pending.isPresent())
+		{
+			if (!pending.get().getEmail().equals(email))
+			{
+				throw new DomainException("Another administrator account is waiting for activation.");
+			}
+
+			links.invalidateUnused(pending.get().getId(), OneTimeLink.Purpose.ACTIVATION, clock.instant());
+
+			return issueLink(pending.get().getId(), OneTimeLink.Purpose.ACTIVATION, ACTIVATION_VALIDITY);
+		}
+
+		if (users.findByEmail(email).isPresent())
+		{
+			throw new DomainException("An account with this email already exists.");
+		}
+
+		User administrator = User.pending(UserId.random(), email, displayName, Role.ADMINISTRATOR);
+		users.save(administrator);
+
+		return issueLink(administrator.getId(), OneTimeLink.Purpose.ACTIVATION, ACTIVATION_VALIDITY);
+	}
+
+	/** The user's own account, for the app's "who am I". */
+	@ReadOnlyTransaction
+	public AccountView account(UserId user)
+	{
+		return users.findById(user).map(found -> new AccountView(found.getId(), found.getEmail().value(), found.getDisplayName(), found.getRole()))
+				.orElseThrow(() -> new NotFoundException("Not found."));
 	}
 
 	/** The owner opens the activation link and chooses the password. */
