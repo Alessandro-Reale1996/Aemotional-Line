@@ -18,7 +18,7 @@ public class User
 {
 	public static final int MAX_FAILED_LOGINS = 5;
 	public static final Duration LOCK_DURATION = Duration.ofMinutes(15);
-	private static final int MAX_DISPLAY_NAME_LENGTH = 100;
+	public static final int MAX_DISPLAY_NAME_LENGTH = 100;
 
 	private final UserId id;
 	private final EmailAddress email;

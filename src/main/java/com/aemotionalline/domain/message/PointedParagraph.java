@@ -12,7 +12,7 @@ import com.aemotionalline.domain.common.ErrorCode;
  */
 public class PointedParagraph extends Paragraph
 {
-	private static final int MAX_BODY_LENGTH = 500;
+	public static final int MAX_BODY_LENGTH = 500;
 	
 	public PointedParagraph
 	(ParagraphId id, QuestionParagraph question, String body)

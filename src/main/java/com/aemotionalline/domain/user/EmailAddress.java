@@ -8,7 +8,7 @@ import com.aemotionalline.domain.common.ErrorCode;
 /** An account's email, which is also its login name: trimmed and lower-cased, so the same address can't be registered twice. */
 public record EmailAddress(String value)
 {
-	private static final int MAX_LENGTH = 254;
+	public static final int MAX_LENGTH = 254;
 
 	public EmailAddress
 	{

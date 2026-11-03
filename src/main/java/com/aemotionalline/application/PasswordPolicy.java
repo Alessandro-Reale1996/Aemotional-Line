@@ -20,7 +20,7 @@ final class PasswordPolicy
 {
 	static final int MIN_LENGTH = 12;
 	static final int MAX_LENGTH = 64;
-	private static final int MAX_BYTES = 72;
+	static final int MAX_BYTES = 72;
 
 	private static final Set<String> COMMON = load();
 

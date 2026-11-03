@@ -11,8 +11,8 @@ import com.aemotionalline.domain.common.ErrorCode;
 public class QuestionParagraph extends Paragraph
 {
 	
-	private static final int MAX_TITLE_LENGTH = 250;
-	private static final int MAX_BODY_LENGTH = 350;
+	public static final int MAX_TITLE_LENGTH = 250;
+	public static final int MAX_BODY_LENGTH = 350;
 	
 	public QuestionParagraph
 	(ParagraphId id, String title, String body)

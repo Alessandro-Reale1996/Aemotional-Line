@@ -73,7 +73,7 @@ public class SecurityConfiguration
 		http.authorizeHttpRequests(paths -> paths
 				// The OpenAPI spec and Swagger UI exist only in development (REST point 7).
 				.requestMatchers(apiDocs ? new String[] { "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**" } : new String[0]).permitAll()
-				.requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/api/limits").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout", "/api/auth/activate", "/api/auth/password-reset",
 						"/api/auth/password-reset/confirm").permitAll()
 				.requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")

@@ -11,9 +11,9 @@ import com.aemotionalline.domain.common.ErrorCode;
 public class SimpleParagraph extends Paragraph
 {
 	
-	private static final int MAX_TITLE_LENGTH = 100;
-	private static final int MAX_SUBTITLE_LENGTH = 200;
-	private static final int MAX_BODY_LENGTH = 800;
+	public static final int MAX_TITLE_LENGTH = 100;
+	public static final int MAX_SUBTITLE_LENGTH = 200;
+	public static final int MAX_BODY_LENGTH = 800;
 	
 	public SimpleParagraph
 	(ParagraphId id, String title, String subtitle, String body)

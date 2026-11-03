@@ -26,6 +26,9 @@ public interface CoupleRepository
 	 */
 	List<Couple> findActiveCouplesOfTherapistForUpdate(UserId therapist);
 
+	/** The user's couples, as a partner or as the therapist: the active ones first, then the ended ones, latest end first. */
+	List<Couple> findCouplesOf(UserId user);
+
 	/** The couples ended before the instant, oldest end first (the retention period deletes their data). */
 	List<CoupleId> findIdsEndedBefore(Instant instant);
 

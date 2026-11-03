@@ -88,11 +88,13 @@ public final class ApiClient
 		return send(HttpRequest.newBuilder(URI.create(base + path)).DELETE(), true);
 	}
 
-	/** A request with any method and body, for the error tests (e.g. a method the endpoint doesn't take). */
+	/** A request with any method, and a JSON body unless it is null (e.g. a method the endpoint doesn't take). */
 	public Response send(String method, String path, String json)
 	{
-		return send(HttpRequest.newBuilder(URI.create(base + path)).header("Content-Type", "application/json")
-				.method(method, HttpRequest.BodyPublishers.ofString(json)), true);
+		HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(base + path));
+
+		return send(json == null ? request.method(method, HttpRequest.BodyPublishers.noBody())
+				: request.header("Content-Type", "application/json").method(method, HttpRequest.BodyPublishers.ofString(json)), true);
 	}
 
 	/** A POST without the CSRF header, as a forged request from another site would be. */

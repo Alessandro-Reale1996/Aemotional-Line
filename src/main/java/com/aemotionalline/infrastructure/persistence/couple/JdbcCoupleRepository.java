@@ -57,6 +57,12 @@ public class JdbcCoupleRepository implements CoupleRepository
 	}
 
 	@Override
+	public List<Couple> findCouplesOf(UserId user)
+	{
+		return rows.findOf(user.value()).stream().map(JdbcCoupleRepository::toDomain).toList();
+	}
+
+	@Override
 	public List<CoupleId> findIdsEndedBefore(Instant instant)
 	{
 		return rows.findEndedBefore(Utc.toColumn(instant)).stream().map(row -> new CoupleId(row.id())).toList();
