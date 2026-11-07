@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.user.UserId;
 
 /**
@@ -12,8 +13,10 @@ import com.aemotionalline.domain.user.UserId;
  * Content, justification, status and sentAt change only through {@link Negotiation} (the setters are package-private),
  * so a proposal in the archive can't be rewritten from outside. sentAt is set when the proposal is sent.
  */
-public abstract class Proposal 
+public abstract class Proposal
 {
+	public static final int MAX_JUSTIFICATION_LENGTH = 800;
+
 	private final ProposalId id;
 	private final UserId author;
 	
@@ -123,6 +126,20 @@ public abstract class Proposal
 		}
 	}
 	
+	// Every proposal sent says why, the first one too: a draft has no justification until then.
+	static void ensureValidJustification(String justification)
+	{
+		if (justification == null || justification.isBlank())
+		{
+			throw new DomainException(ErrorCode.TEXT_REQUIRED, "A proposal needs a justification to be sent.");
+		}
+
+		if (justification.length() > MAX_JUSTIFICATION_LENGTH)
+		{
+			throw new DomainException(ErrorCode.TEXT_TOO_LONG, "The justification can't be longer than " + MAX_JUSTIFICATION_LENGTH + " characters.");
+		}
+	}
+
 	void setProposalStatus(ProposalStatus proposalStatus)
 	{
 		this.proposalStatus = Objects.requireNonNull(proposalStatus);

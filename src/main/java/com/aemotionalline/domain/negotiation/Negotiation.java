@@ -285,7 +285,9 @@ public class Negotiation
     	{
     		throw new DomainException(ErrorCode.NEGOTIATION_WRONG_PHASE, "There is not a proposal to send.");
     	}
-    	
+
+    	Proposal.ensureValidJustification(justification);
+
     	currentProposal.setProposalStatus(ProposalStatus.WAITING_FOR_RESPONSE);
     	
     	currentProposal.setJustification(justification);

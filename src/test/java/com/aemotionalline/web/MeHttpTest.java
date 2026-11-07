@@ -18,6 +18,8 @@ import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.couple.CoupleId;
 import com.aemotionalline.domain.couple.CoupleRepository;
 import com.aemotionalline.domain.message.SimpleParagraph;
+import com.aemotionalline.domain.negotiation.AgreementText;
+import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.EmailAddress;
 import com.aemotionalline.domain.user.Role;
 import com.aemotionalline.domain.user.User;
@@ -77,6 +79,8 @@ public class MeHttpTest
 
 		assertEquals(200, limits.status());
 		assertEquals(SimpleParagraph.MAX_BODY_LENGTH, limits.json().path("simpleParagraphBody").asInt());
+		assertEquals(AgreementText.MAX_LENGTH, limits.json().path("agreementText").asInt());
+		assertEquals(Proposal.MAX_JUSTIFICATION_LENGTH, limits.json().path("proposalJustification").asInt());
 		assertEquals(12, limits.json().path("passwordMinLength").asInt());
 		assertEquals("UTF_16_CODE_UNITS", limits.json().path("textUnit").asString());
 	}

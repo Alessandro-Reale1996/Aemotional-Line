@@ -15,6 +15,8 @@ public record LimitsView(
 		int pointedAnswerBody,
 		int discussionTitle,
 		int discussionSubtitle,
+		int agreementText,
+		int proposalJustification,
 		int outcomeReason,
 		int therapistRequestJustification,
 		int displayName,

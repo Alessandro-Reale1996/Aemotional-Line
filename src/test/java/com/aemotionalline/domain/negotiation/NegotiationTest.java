@@ -11,6 +11,7 @@ import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.Ids;
 
@@ -477,5 +478,54 @@ public class NegotiationTest
 		// None of the rejected starts took the draft: it can still start a negotiation.
 		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), OWNERSHIP_COUPLE, draft, Clock.systemUTC());
 		assertEquals(draft, negotiation.getCurrentProposal());
+	}
+
+	@Test
+	void shouldNotSendAProposalWithoutAJustification()
+	{
+		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT"), Clock.systemUTC());
+		negotiation.acceptNegotiation(couple.getPartnerTwoId());
+
+		for (String missing : new String[] { null, "", "   " })
+		{
+			DomainException refused = assertThrows(DomainException.class, () -> negotiation.sendProposal(couple.getPartnerOneId(), missing));
+			assertEquals(ErrorCode.TEXT_REQUIRED, refused.getCode());
+		}
+
+		// The turn is checked first, and the refusals changed nothing: the draft can still be sent.
+		assertEquals(ErrorCode.NOT_YOUR_TURN, assertThrows(DomainException.class, () -> negotiation.sendProposal(couple.getPartnerTwoId(), null)).getCode());
+		assertEquals(0, negotiation.getProposals().size());
+		assertEquals(ProposalStatus.DRAFT, negotiation.getCurrentProposal().getProposalStatus());
+		assertNull(negotiation.getCurrentProposal().getSentAt());
+		assertEquals(couple.getPartnerOneId(), negotiation.getCurrentResponder());
+
+		negotiation.sendProposal(couple.getPartnerOneId(), "WHY");
+
+		assertEquals("WHY", negotiation.getLastProposal().getJustification());
+	}
+
+	@Test
+	void shouldLimitTheJustificationOfAProposal()
+	{
+		Couple couple = new Couple(Ids.couple(1L), Ids.user(10L), Ids.user(20L), Ids.user(30L));
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(100L), couple, new AgreementProposal(Ids.proposal(0L), couple.getPartnerOneId(), "TEXT"), Clock.systemUTC());
+		negotiation.acceptNegotiation(couple.getPartnerTwoId());
+		String longest = "j".repeat(Proposal.MAX_JUSTIFICATION_LENGTH);
+
+		assertEquals(ErrorCode.TEXT_TOO_LONG, assertThrows(DomainException.class, () -> negotiation.sendProposal(couple.getPartnerOneId(), longest + "j")).getCode());
+
+		negotiation.sendProposal(couple.getPartnerOneId(), longest);
+
+		assertEquals(longest, negotiation.getLastProposal().getJustification());
+	}
+
+	@Test
+	void shouldLimitTheTextOfAnAgreement()
+	{
+		String longest = "t".repeat(AgreementText.MAX_LENGTH);
+
+		assertEquals(longest, new AgreementText(longest).text());
+		assertEquals(ErrorCode.TEXT_TOO_LONG, assertThrows(DomainException.class, () -> new AgreementText(longest + "t")).getCode());
 	}
 }

@@ -6,7 +6,9 @@ import com.aemotionalline.domain.conversation.TherapistClosingRequestRecord;
 import com.aemotionalline.domain.message.PointedParagraph;
 import com.aemotionalline.domain.message.QuestionParagraph;
 import com.aemotionalline.domain.message.SimpleParagraph;
+import com.aemotionalline.domain.negotiation.AgreementText;
 import com.aemotionalline.domain.negotiation.DiscussionTitle;
+import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.EmailAddress;
 import com.aemotionalline.domain.user.User;
 
@@ -23,6 +25,8 @@ public final class Limits
 			PointedParagraph.MAX_BODY_LENGTH,
 			DiscussionTitle.MAX_TITLE_LENGTH,
 			DiscussionTitle.MAX_SUBTITLE_LENGTH,
+			AgreementText.MAX_LENGTH,
+			Proposal.MAX_JUSTIFICATION_LENGTH,
 			OutcomeDeclaration.MAX_REASON_LENGTH,
 			TherapistClosingRequestRecord.MAX_JUSTIFICATION_LENGTH,
 			User.MAX_DISPLAY_NAME_LENGTH,
