@@ -20,6 +20,7 @@ public record LimitsView(
 		int proposalJustification,
 		int outcomeReason,
 		int therapistRequestJustification,
+		int replyDelayMaxDays,
 		int displayName,
 		int email,
 		String passwordUnit,

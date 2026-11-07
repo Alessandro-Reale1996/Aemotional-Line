@@ -168,6 +168,16 @@ public class LogContentTest
 		client.post(messages, "{\"paragraphs\":[{\"type\":\"SIMPLE\",\"references\":[\"" + marker + "\"]}]}");
 		client.post(messages, "{\"paragraphs\":[],\"localTime\":\"" + marker + "\"}");
 		client.post(messages, "{\"paragraphs\":[],\"position\":{\"latitude\":\"" + marker + "\"}}");
+
+		// Closings and constraints over HTTP, likewise.
+		String closing = "/api/conversations/" + conversation.value() + "/discussions/1/closing";
+		String constraints = "/api/conversations/" + conversation.value() + "/constraints/requests";
+		client.post(closing + "/therapist-request", "{\"justification\":\"Refused " + marker + "\"}");
+		client.post(closing + "/outcome", "{\"outcome\":\"RESOLVED\",\"reason\":\"Again " + marker + "\"}");
+		client.post(closing + "/outcome", "{\"outcome\":\"" + marker + "\",\"reason\":\"Reason\"}");
+		client.post(constraints, "{\"constraints\":[{\"assignee\":\"" + a.value() + "\",\"type\":\"" + marker + "\"}]}");
+		client.post(constraints, "{\"constraints\":[{\"assignee\":\"" + a.value() + "\",\"type\":\"TIME\",\"notBefore\":\"" + marker + "\"}]}");
+		client.post(constraints, "{\"constraints\":[{\"assignee\":\"" + a.value() + "\",\"type\":\"REPLY_DELAY\",\"delay\":\"" + marker + "\"}]}");
 		assertEquals(204, client.post("/api/auth/logout", "").status());
 
 		String logs = output.getAll();

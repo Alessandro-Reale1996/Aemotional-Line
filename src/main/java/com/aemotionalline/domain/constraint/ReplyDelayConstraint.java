@@ -12,6 +12,8 @@ import com.aemotionalline.domain.common.ErrorCode;
  */
 public class ReplyDelayConstraint implements Constraint
 {
+	public static final Duration MAX_DELAY = Duration.ofDays(30);
+
 	private final Duration delay;
 
 	public ReplyDelayConstraint(Duration delay)
@@ -19,6 +21,11 @@ public class ReplyDelayConstraint implements Constraint
 		if (delay == null || delay.isNegative())
 		{
 			throw new DomainException(ErrorCode.INVALID_CONSTRAINT, "The delay can't be null or negative.");
+		}
+
+		if (delay.compareTo(MAX_DELAY) > 0)
+		{
+			throw new DomainException(ErrorCode.INVALID_CONSTRAINT, "The delay can't be longer than " + MAX_DELAY.toDays() + " days.");
 		}
 
 		this.delay = delay;

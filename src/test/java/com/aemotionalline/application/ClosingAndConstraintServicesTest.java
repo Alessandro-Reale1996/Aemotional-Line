@@ -118,7 +118,7 @@ public class ClosingAndConstraintServicesTest
 		ClosingView.TherapistRequestView seenByB = closing.view(b, conversation, BRANCH).therapistRequests().getFirst();
 		assertEquals(a, seenByB.requester());
 		assertTrue(seenByB.justification().isEmpty());
-		assertEquals(List.of(ClosingRequestRecord.Status.REFUSED), seenByB.previousRequests().stream().map(ClosingRequestRecord::status).toList());
+		assertEquals(List.of(ClosingRequestRecord.Status.REFUSED), seenByB.previousRequests().stream().map(ClosingView.ClosingRequestView::status).toList());
 
 		assertEquals(Optional.of("B never wants to close."), closing.view(a, conversation, BRANCH).therapistRequests().getFirst().justification());
 		assertEquals(Optional.of("B never wants to close."), closing.view(therapist, conversation, BRANCH).therapistRequests().getFirst().justification());
@@ -210,6 +210,19 @@ public class ClosingAndConstraintServicesTest
 		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation,
 				List.of(new ConstraintSpec(a, "REPLY_DELAY", ConstraintScope.READ, null, Duration.ofHours(1), null, null, null, null))));
 		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation, List.of(notBefore(null, 9))));
+
+		// A parameter the type doesn't have would be lost.
+		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation,
+				List.of(new ConstraintSpec(a, "TIME", null, LocalTime.of(9, 0), Duration.ofHours(1), null, null, null, null))));
+		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation,
+				List.of(new ConstraintSpec(a, "REPLY_DELAY", null, LocalTime.of(9, 0), Duration.ofHours(1), null, null, null, null))));
+		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation,
+				List.of(new ConstraintSpec(a, "LOCATION", null, null, Duration.ofHours(1), 45.4642, 9.19, 200.0, LocationConstraint.Direction.WITHIN))));
+		assertTrue(constraints.view(therapist, conversation).requests().isEmpty());
+
+		// Membership comes first: an outsider gets "not found" whatever they send.
+		assertThrows(NotFoundException.class, () -> constraints.proposeConstraints(UserId.random(), conversation,
+				List.of(new ConstraintSpec(a, "MOOD", null, null, null, null, null, null, null))));
 
 		assertThrows(DomainException.class, () -> constraints.proposeConstraints(a, conversation, List.of(notBefore(b, 9))));
 		assertThrows(NotFoundException.class, () -> constraints.proposeConstraints(UserId.random(), conversation, List.of(notBefore(b, 9))));

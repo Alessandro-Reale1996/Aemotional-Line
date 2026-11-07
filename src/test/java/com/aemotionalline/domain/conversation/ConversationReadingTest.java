@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import com.aemotionalline.domain.Ids;
 import com.aemotionalline.domain.MutableClock;
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.constraint.Constraint;
 import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.ConstraintContext;
@@ -290,6 +291,16 @@ public class ConversationReadingTest
 	{
 		assertThrows(DomainException.class, () -> new ReplyDelayConstraint(null));
 		assertThrows(DomainException.class, () -> new ReplyDelayConstraint(Duration.ofSeconds(-1)));
+	}
+
+	@Test
+	void shouldLimitTheDelay()
+	{
+		assertEquals(ReplyDelayConstraint.MAX_DELAY, new ReplyDelayConstraint(ReplyDelayConstraint.MAX_DELAY).getDelay());
+		assertEquals(ErrorCode.INVALID_CONSTRAINT,
+				assertThrows(DomainException.class, () -> new ReplyDelayConstraint(ReplyDelayConstraint.MAX_DELAY.plusSeconds(1))).getCode());
+		// Enormous, but a valid Duration: it must be refused here, before anything has to store it.
+		assertEquals(ErrorCode.INVALID_CONSTRAINT, assertThrows(DomainException.class, () -> new ReplyDelayConstraint(Duration.ofSeconds(Long.MAX_VALUE))).getCode());
 	}
 
 	// LOCATION:

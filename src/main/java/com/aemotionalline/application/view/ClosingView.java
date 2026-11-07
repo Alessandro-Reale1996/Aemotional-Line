@@ -17,7 +17,7 @@ import com.aemotionalline.domain.user.UserId;
  * partner sees the other's only once both have declared).
  */
 public record ClosingView(DiscussionId discussionId, boolean closed, Optional<DiscussionClosure.Way> way, Optional<Instant> closedAt,
-		List<ClosingRequestRecord> requests, List<TherapistRequestView> therapistRequests, List<DeclarationView> declarations)
+		List<ClosingRequestView> requests, List<TherapistRequestView> therapistRequests, List<DeclarationView> declarations)
 {
 	public ClosingView
 	{
@@ -26,8 +26,13 @@ public record ClosingView(DiscussionId discussionId, boolean closed, Optional<Di
 		declarations = List.copyOf(declarations);
 	}
 
+	/** A partner's request to the other: {@code endedAt} is when it was accepted, refused or withdrawn. */
+	public record ClosingRequestView(UserId requester, Instant sentAt, ClosingRequestRecord.Status status, Optional<Instant> endedAt)
+	{
+	}
+
 	/** A special request: {@code justification} is empty for whoever may not read it. */
-	public record TherapistRequestView(UserId requester, Optional<String> justification, Instant sentAt, List<ClosingRequestRecord> previousRequests,
+	public record TherapistRequestView(UserId requester, Optional<String> justification, Instant sentAt, List<ClosingRequestView> previousRequests,
 			TherapistClosingRequestRecord.Status status, Optional<Instant> decidedAt)
 	{
 		public TherapistRequestView

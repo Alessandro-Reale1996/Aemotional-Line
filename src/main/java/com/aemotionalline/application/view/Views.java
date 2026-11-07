@@ -8,6 +8,7 @@ import com.aemotionalline.domain.constraint.ConstraintAssignment;
 import com.aemotionalline.domain.constraint.LocationConstraint;
 import com.aemotionalline.domain.constraint.ReplyDelayConstraint;
 import com.aemotionalline.domain.constraint.TimeConstraint;
+import com.aemotionalline.domain.conversation.ClosingRequestRecord;
 import com.aemotionalline.domain.conversation.Conversation;
 import com.aemotionalline.domain.conversation.DiscussionClosure;
 import com.aemotionalline.domain.conversation.OutcomeDeclaration;
@@ -106,7 +107,7 @@ public final class Views
 		List<ClosingView.TherapistRequestView> therapistRequests = discussion.getTherapistClosingRequests().stream()
 				.map(request -> new ClosingView.TherapistRequestView(request.requester(),
 						therapist || request.requester().equals(viewer) ? Optional.of(request.justification()) : Optional.empty(),
-						request.sentAt(), request.previousRequests(), request.status(), request.decidedAt()))
+						request.sentAt(), closingRequests(request.previousRequests()), request.status(), request.decidedAt()))
 				.toList();
 
 		Optional<DiscussionClosure> closure = discussion.getClosure();
@@ -124,7 +125,14 @@ public final class Views
 				.toList();
 
 		return new ClosingView(discussion.getId(), discussion.isClosed(), closure.map(DiscussionClosure::way), closure.map(DiscussionClosure::closedAt),
-				discussion.getClosingRequests(), therapistRequests, declarationViews);
+				closingRequests(discussion.getClosingRequests()), therapistRequests, declarationViews);
+	}
+
+	private static List<ClosingView.ClosingRequestView> closingRequests(List<ClosingRequestRecord> requests)
+	{
+		return requests.stream()
+				.map(request -> new ClosingView.ClosingRequestView(request.requester(), request.sentAt(), request.status(), request.endedAt()))
+				.toList();
 	}
 
 	// CONSTRAINTS

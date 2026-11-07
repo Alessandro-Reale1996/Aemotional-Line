@@ -1,6 +1,7 @@
 package com.aemotionalline.application;
 
 import com.aemotionalline.application.view.LimitsView;
+import com.aemotionalline.domain.constraint.ReplyDelayConstraint;
 import com.aemotionalline.domain.conversation.OutcomeDeclaration;
 import com.aemotionalline.domain.conversation.TherapistClosingRequestRecord;
 import com.aemotionalline.domain.message.Message;
@@ -31,6 +32,7 @@ public final class Limits
 			Proposal.MAX_JUSTIFICATION_LENGTH,
 			OutcomeDeclaration.MAX_REASON_LENGTH,
 			TherapistClosingRequestRecord.MAX_JUSTIFICATION_LENGTH,
+			(int) ReplyDelayConstraint.MAX_DELAY.toDays(),
 			User.MAX_DISPLAY_NAME_LENGTH,
 			EmailAddress.MAX_LENGTH,
 			"CODE_POINTS",

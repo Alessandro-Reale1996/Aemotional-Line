@@ -81,6 +81,7 @@ public class MeHttpTest
 		assertEquals(200, limits.status());
 		assertEquals(SimpleParagraph.MAX_BODY_LENGTH, limits.json().path("simpleParagraphBody").asInt());
 		assertEquals(Message.MAX_PARAGRAPHS, limits.json().path("messageParagraphs").asInt());
+		assertEquals(30, limits.json().path("replyDelayMaxDays").asInt());
 		assertEquals(AgreementText.MAX_LENGTH, limits.json().path("agreementText").asInt());
 		assertEquals(Proposal.MAX_JUSTIFICATION_LENGTH, limits.json().path("proposalJustification").asInt());
 		assertEquals(12, limits.json().path("passwordMinLength").asInt());

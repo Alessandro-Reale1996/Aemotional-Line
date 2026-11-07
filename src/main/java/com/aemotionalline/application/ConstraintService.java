@@ -45,9 +45,8 @@ public class ConstraintService
 			throw new InvalidRequestException("The constraints to propose are required (an empty list lifts them all).");
 		}
 
-		List<ConstraintAssignment> assignments = specs.stream().map(ConstraintService::assignment).toList();
-
 		Conversation conversation = ConversationAccess.locked(conversations, therapist, id);
+		List<ConstraintAssignment> assignments = specs.stream().map(ConstraintService::assignment).toList();
 		ConstraintChangeRequestId request = conversation.proposeConstraints(therapist, assignments);
 		conversations.save(conversation);
 
@@ -89,6 +88,8 @@ public class ConstraintService
 			throw new InvalidRequestException("Every constraint needs a type and a partner it is assigned to.");
 		}
 
+		ensureOnlyParametersOfItsType(spec);
+
 		Constraint constraint = switch (spec.type())
 		{
 			case "TIME" -> new TimeConstraint(required(spec.notBefore(), "notBefore"), spec.scope() == null ? ConstraintScope.WRITE : spec.scope());
@@ -104,10 +105,31 @@ public class ConstraintService
 			case "LOCATION" -> new LocationConstraint(new GeoPosition(required(spec.latitude(), "latitude"), required(spec.longitude(), "longitude")),
 					required(spec.radiusMetres(), "radiusMetres"), required(spec.direction(), "direction"),
 					spec.scope() == null ? ConstraintScope.READ : spec.scope());
-			default -> throw new InvalidRequestException("Unknown constraint type: " + spec.type());
+			default -> throw new InvalidRequestException("Unknown constraint type.");
 		};
 
 		return new ConstraintAssignment(spec.assignee(), constraint);
+	}
+
+	// A parameter the type doesn't have would be lost, and the therapist would propose something other than what they sent.
+	private static void ensureOnlyParametersOfItsType(ConstraintSpec spec)
+	{
+		boolean time = spec.notBefore() != null;
+		boolean delay = spec.delay() != null;
+		boolean location = spec.latitude() != null || spec.longitude() != null || spec.radiusMetres() != null || spec.direction() != null;
+
+		boolean foreign = switch (spec.type())
+		{
+			case "TIME" -> delay || location;
+			case "REPLY_DELAY" -> time || location;
+			case "LOCATION" -> time || delay;
+			default -> false;
+		};
+
+		if (foreign)
+		{
+			throw new InvalidRequestException("A constraint takes only the parameters of its type.");
+		}
 	}
 
 	private static <T> T required(T value, String name)
