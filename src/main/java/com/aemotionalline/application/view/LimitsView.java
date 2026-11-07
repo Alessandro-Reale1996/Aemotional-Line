@@ -13,6 +13,7 @@ public record LimitsView(
 		int questionTitle,
 		int questionBody,
 		int pointedAnswerBody,
+		int messageParagraphs,
 		int discussionTitle,
 		int discussionSubtitle,
 		int agreementText,

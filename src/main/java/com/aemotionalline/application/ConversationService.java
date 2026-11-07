@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.aemotionalline.application.view.ConversationView;
+import com.aemotionalline.application.view.MessagePreviewView;
 import com.aemotionalline.application.view.MessageView;
 import com.aemotionalline.application.view.Views;
 import com.aemotionalline.domain.constraint.ConstraintContext;
@@ -81,24 +82,24 @@ public class ConversationService
 		return message.getId();
 	}
 
-	/** For the "you are leaving questions unanswered" pop-up: the questions of the message being answered the draft skips. */
+	/**
+	 * For the pop-ups before sending, from one read of the conversation: the questions of the message being answered the
+	 * draft skips, and the discussions that keep it from being sent here. Only questions the sender can see are listed, or
+	 * the preview would reveal how many a closed envelope holds.
+	 */
 	@ReadOnlyTransaction
-	public List<ParagraphId> previewQuestionsLeftUnanswered(UserId sender, ConversationId id, int discussionNumber, MessageDraft draft)
+	public MessagePreviewView preview(UserId sender, ConversationId id, int discussionNumber, MessageDraft draft)
 	{
 		Conversation conversation = readable(sender, id);
+		Message message = build(sender, conversation, draft);
+		DiscussionId discussionId = new DiscussionId(id, discussionNumber);
 
-		return conversation.questionsLeftUnansweredBy(build(sender, conversation, draft), new DiscussionId(id, discussionNumber)).stream()
+		List<ParagraphId> questions = conversation.questionsLeftUnansweredBy(message, discussionId).stream()
 				.map(Paragraph::getId)
+				.filter(question -> Paragraphs.isVisibleTo(sender, conversation, question))
 				.toList();
-	}
 
-	/** For the "this paragraph has a specific discussion" pop-up: the discussions that keep the draft from being sent here. */
-	@ReadOnlyTransaction
-	public List<DiscussionId> previewBlockingDiscussions(UserId sender, ConversationId id, int discussionNumber, MessageDraft draft)
-	{
-		Conversation conversation = readable(sender, id);
-
-		return conversation.discussionsBlockingReplyTo(build(sender, conversation, draft), new DiscussionId(id, discussionNumber));
+		return new MessagePreviewView(questions, conversation.discussionsBlockingReplyTo(message, discussionId));
 	}
 
 	private Conversation locked(UserId user, ConversationId id)
@@ -123,10 +124,12 @@ public class ConversationService
 
 		for (ParagraphDraft paragraphDraft : draft.paragraphs())
 		{
-			if (paragraphDraft == null || paragraphDraft.type() == null)
+			if (paragraphDraft.type() == null)
 			{
 				throw new InvalidRequestException("Every paragraph of the draft needs a type.");
 			}
+
+			ensureOnlyFieldsOfItsType(paragraphDraft);
 
 			Paragraph paragraph = switch (paragraphDraft.type())
 			{
@@ -135,14 +138,7 @@ public class ConversationService
 				case POINTED -> new PointedParagraph(ParagraphId.random(), question(sender, conversation, paragraphDraft), paragraphDraft.body());
 			};
 
-			if (paragraph instanceof PointedParagraph)
-			{
-				if (!paragraphDraft.references().isEmpty())
-				{
-					throw new InvalidRequestException("A pointed paragraph refers only to the question it answers.");
-				}
-			}
-			else
+			if (!(paragraph instanceof PointedParagraph))
 			{
 				paragraphDraft.references().forEach(reference -> paragraph.addReference(Paragraphs.visibleTo(sender, conversation, reference)));
 			}
@@ -153,6 +149,35 @@ public class ConversationService
 		}
 
 		return message;
+	}
+
+	// A field the paragraph's type doesn't have would be lost, and the server never alters what the user wrote.
+	private static void ensureOnlyFieldsOfItsType(ParagraphDraft draft)
+	{
+		switch (draft.type())
+		{
+			case SIMPLE ->
+			{
+				if (draft.question().isPresent())
+				{
+					throw new InvalidRequestException("A simple paragraph doesn't take a question.");
+				}
+			}
+			case QUESTION ->
+			{
+				if (draft.subtitle() != null || draft.question().isPresent())
+				{
+					throw new InvalidRequestException("A question doesn't take a subtitle or a question.");
+				}
+			}
+			case POINTED ->
+			{
+				if (draft.title() != null || draft.subtitle() != null || !draft.references().isEmpty())
+				{
+					throw new InvalidRequestException("A pointed paragraph takes only its question and body: its title is computed.");
+				}
+			}
+		}
 	}
 
 	private static QuestionParagraph question(UserId sender, Conversation conversation, ParagraphDraft draft)

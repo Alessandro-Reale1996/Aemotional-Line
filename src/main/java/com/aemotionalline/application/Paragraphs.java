@@ -46,11 +46,20 @@ final class Paragraphs
 
 	static Paragraph visibleTo(UserId user, Conversation conversation, ParagraphId id)
 	{
-		Couple couple = conversation.getCouple();
-
-		return locate(conversation, id)
-				.filter(located -> Views.canSeeContent(user, couple, located.discussion(), located.message()))
+		return locateVisible(user, conversation, id)
 				.map(Located::paragraph)
 				.orElseThrow(() -> new InvalidRequestException("Paragraph " + id.value() + " not found in the conversation."));
+	}
+
+	static boolean isVisibleTo(UserId user, Conversation conversation, ParagraphId id)
+	{
+		return locateVisible(user, conversation, id).isPresent();
+	}
+
+	private static Optional<Located> locateVisible(UserId user, Conversation conversation, ParagraphId id)
+	{
+		Couple couple = conversation.getCouple();
+
+		return locate(conversation, id).filter(located -> Views.canSeeContent(user, couple, located.discussion(), located.message()));
 	}
 }

@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.conversation.ConversationId;
 import com.aemotionalline.domain.conversation.DiscussionId;
 import com.aemotionalline.domain.couple.CoupleId;
@@ -61,6 +63,6 @@ public class IdentifiersTest
 	void shouldRejectAnInvalidDiscussionId()
 	{
 		assertThrows(NullPointerException.class, () -> new DiscussionId(null, 0));
-		assertThrows(IllegalArgumentException.class, () -> new DiscussionId(Ids.conversation(1L), -1));
+		assertEquals(ErrorCode.NOT_FOUND, assertThrows(DomainException.class, () -> new DiscussionId(Ids.conversation(1L), -1)).getCode());
 	}
 }

@@ -15,6 +15,8 @@ import com.aemotionalline.domain.user.UserId;
  */
 public class Message
 {
+	public static final int MAX_PARAGRAPHS = 20;
+	
 	private final MessageId id;
 	private final UserId senderId;
 	private final List<Paragraph> paragraphs;
@@ -68,6 +70,11 @@ public class Message
 		if (paragraph == null)
 		{
 			throw new DomainException("Paragraph can't be null.");
+		}
+		
+		if (paragraphs.size() == MAX_PARAGRAPHS)
+		{
+			throw new DomainException(ErrorCode.MESSAGE_TOO_LONG, "A message can't have more than " + MAX_PARAGRAPHS + " paragraphs.");
 		}
 		
 		this.paragraphs.add(paragraph);

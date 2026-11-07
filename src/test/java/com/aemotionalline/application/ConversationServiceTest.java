@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -213,17 +214,61 @@ public class ConversationServiceTest
 		service.readMessage(b, conversation, 0, first, NOON, null);
 
 		MessageDraft skipping = new MessageDraft(List.of(simple("Hi.", sent.get(1))));
-		assertEquals(List.of(sent.get(0)), service.previewQuestionsLeftUnanswered(b, conversation, 0, skipping));
-		assertTrue(service.previewBlockingDiscussions(b, conversation, 0, skipping).isEmpty());
+		assertEquals(List.of(sent.get(0)), service.preview(b, conversation, 0, skipping).questionsLeftUnanswered());
+		assertTrue(service.preview(b, conversation, 0, skipping).blockingDiscussions().isEmpty());
 
 		NegotiationId branch = negotiations.startDiscussionNegotiation(a, conversation, "Holidays", "Where", Optional.of(sent.get(1)));
 		negotiations.acceptRequest(b, branch);
 		negotiations.sendProposal(a, branch, "LET'S EXPAND");
 		negotiations.acceptProposal(b, branch);
 
-		assertEquals(List.of(new DiscussionId(conversation, 1)), service.previewBlockingDiscussions(b, conversation, 0, skipping));
+		assertEquals(List.of(new DiscussionId(conversation, 1)), service.preview(b, conversation, 0, skipping).blockingDiscussions());
 		// Previews change nothing.
 		assertEquals(1, service.view(therapist, conversation).discussions().getFirst().messages().size());
+	}
+
+	@Test
+	void shouldNotRevealInThePreviewTheQuestionsOfAClosedEnvelope()
+	{
+		MessageId first = send(a, 0, question("Why?"), question("When?"));
+		MessageDraft anything = new MessageDraft(List.of(simple("Hi.")));
+
+		assertTrue(service.preview(b, conversation, 0, anything).questionsLeftUnanswered().isEmpty());
+
+		service.readMessage(b, conversation, 0, first, NOON, null);
+
+		assertEquals(paragraphsOf(a, first), service.preview(b, conversation, 0, anything).questionsLeftUnanswered());
+	}
+
+	@Test
+	void shouldRefuseAFieldTheParagraphsTypeDoesNotHave()
+	{
+		MessageId first = send(a, 0, question("Why?"));
+		ParagraphId asked = paragraphsOf(a, first).getFirst();
+		service.readMessage(b, conversation, 0, first, NOON, null);
+
+		for (ParagraphDraft foreign : List.of(
+				new ParagraphDraft(ParagraphType.SIMPLE, "Title", null, "Body", List.of(), List.of(), Optional.of(asked)),
+				new ParagraphDraft(ParagraphType.QUESTION, "Title", "Subtitle", "Body", List.of(), List.of(), Optional.empty()),
+				new ParagraphDraft(ParagraphType.QUESTION, "Title", null, "Body", List.of(), List.of(), Optional.of(asked)),
+				new ParagraphDraft(ParagraphType.POINTED, "Title", null, "Body", List.of(), List.of(), Optional.of(asked)),
+				new ParagraphDraft(ParagraphType.POINTED, null, "Subtitle", "Body", List.of(), List.of(), Optional.of(asked))))
+		{
+			assertThrows(InvalidRequestException.class, () -> send(b, 0, foreign));
+		}
+
+		assertEquals(1, service.view(b, conversation).discussions().getFirst().messages().size());
+	}
+
+	@Test
+	void shouldRefuseAMissingElementInADraft()
+	{
+		List<ParagraphDraft> withAHole = Arrays.asList(simple("Hi."), null);
+		List<ParagraphId> idsWithAHole = Arrays.asList(ParagraphId.random(), null);
+
+		assertThrows(InvalidRequestException.class, () -> new MessageDraft(withAHole));
+		assertThrows(InvalidRequestException.class, () -> new ParagraphDraft(ParagraphType.SIMPLE, "Title", null, "Body", idsWithAHole, List.of(), Optional.empty()));
+		assertThrows(InvalidRequestException.class, () -> new ParagraphDraft(ParagraphType.SIMPLE, "Title", null, "Body", List.of(), idsWithAHole, Optional.empty()));
 	}
 
 	@Test
@@ -234,6 +279,6 @@ public class ConversationServiceTest
 
 		assertThrows(NotFoundException.class, () -> service.readMessage(stranger, conversation, 0, first, NOON, null));
 		assertThrows(NotFoundException.class, () -> service.sendMessage(stranger, conversation, 0, new MessageDraft(List.of(simple("Hi."))), NOON, null));
-		assertThrows(NotFoundException.class, () -> service.previewQuestionsLeftUnanswered(stranger, conversation, 0, new MessageDraft(List.of())));
+		assertThrows(NotFoundException.class, () -> service.preview(stranger, conversation, 0, new MessageDraft(List.of())));
 	}
 }

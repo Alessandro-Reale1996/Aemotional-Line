@@ -57,7 +57,7 @@ public final class Views
 	public static DiscussionView discussion(Discussion discussion, Couple couple, UserId viewer)
 	{
 		List<MessageView> messages = discussion.getMessages().stream()
-				.map(message -> message(message, canSeeContent(viewer, couple, discussion, message), discussion))
+				.map(message -> message(message, discussion, couple, viewer))
 				.toList();
 
 		return new DiscussionView(discussion.getId(), discussion.getTitle().map(title -> title.title()),
@@ -68,14 +68,11 @@ public final class Views
 	/** One message as the viewer sees it (a closed envelope if the viewer may not see its content yet). */
 	public static MessageView message(Message message, Discussion discussion, Couple couple, UserId viewer)
 	{
-		return message(message, canSeeContent(viewer, couple, discussion, message), discussion);
-	}
-
-	private static MessageView message(Message message, boolean visible, Discussion discussion)
-	{
+		boolean visible = canSeeContent(viewer, couple, discussion, message);
 		List<ParagraphView> paragraphs = visible ? message.getParagraphs().stream().map(Views::paragraph).toList() : List.of();
 
-		return new MessageView(message.getId(), message.getSenderId(), message.getSentAt(), !visible, discussion.getReadAt(message.getId()),
+		return new MessageView(message.getId(), message.getSenderId(), message.getSentAt(), !visible,
+				message.getSenderId().equals(viewer) ? Optional.empty() : discussion.getReadAt(message.getId()),
 				paragraphs, visible ? message.getQuestionsLeftUnanswered() : List.of());
 	}
 

@@ -11,6 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.aemotionalline.domain.common.DomainException;
+import com.aemotionalline.domain.common.ErrorCode;
 import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.Ids;
 
@@ -26,6 +27,22 @@ public class MessageTest
 		Message message = new Message(Ids.message(100L), user);
 		
 		assertThrows(UnsupportedOperationException.class, () -> message.getParagraphs().clear());
+	}
+	
+	@Test
+	void shouldLimitTheNumberOfParagraphs()
+	{
+		Message message = new Message(Ids.message(100L), Ids.user(1L));
+		
+		for (int index = 0; index < Message.MAX_PARAGRAPHS; index++)
+		{
+			message.addParagraph(new SimpleParagraph(Ids.paragraph(index), "Title", "Subtitle", "Body"));
+		}
+		
+		DomainException refused = assertThrows(DomainException.class, () -> message.addParagraph(new SimpleParagraph(Ids.paragraph(99L), "Title", "Subtitle", "Body")));
+		
+		assertEquals(ErrorCode.MESSAGE_TOO_LONG, refused.getCode());
+		assertEquals(Message.MAX_PARAGRAPHS, message.getParagraphs().size());
 	}
 	
 	@Test

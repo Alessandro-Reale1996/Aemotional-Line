@@ -1,6 +1,7 @@
 package com.aemotionalline.application;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.aemotionalline.domain.message.ParagraphId;
@@ -16,8 +17,18 @@ public record ParagraphDraft(ParagraphType type, String title, String subtitle, 
 {
 	public ParagraphDraft
 	{
-		references = references == null ? List.of() : List.copyOf(references);
-		selfCitations = selfCitations == null ? List.of() : List.copyOf(selfCitations);
+		references = copyOf(references);
+		selfCitations = copyOf(selfCitations);
 		question = question == null ? Optional.empty() : question;
+	}
+
+	private static List<ParagraphId> copyOf(List<ParagraphId> ids)
+	{
+		if (ids != null && ids.stream().anyMatch(Objects::isNull))
+		{
+			throw new InvalidRequestException("A paragraph's list of ids has a missing element.");
+		}
+
+		return ids == null ? List.of() : List.copyOf(ids);
 	}
 }

@@ -3,6 +3,7 @@ package com.aemotionalline.application;
 import com.aemotionalline.application.view.LimitsView;
 import com.aemotionalline.domain.conversation.OutcomeDeclaration;
 import com.aemotionalline.domain.conversation.TherapistClosingRequestRecord;
+import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.PointedParagraph;
 import com.aemotionalline.domain.message.QuestionParagraph;
 import com.aemotionalline.domain.message.SimpleParagraph;
@@ -23,6 +24,7 @@ public final class Limits
 			QuestionParagraph.MAX_TITLE_LENGTH,
 			QuestionParagraph.MAX_BODY_LENGTH,
 			PointedParagraph.MAX_BODY_LENGTH,
+			Message.MAX_PARAGRAPHS,
 			DiscussionTitle.MAX_TITLE_LENGTH,
 			DiscussionTitle.MAX_SUBTITLE_LENGTH,
 			AgreementText.MAX_LENGTH,

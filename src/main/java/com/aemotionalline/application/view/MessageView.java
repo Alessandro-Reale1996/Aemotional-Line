@@ -11,7 +11,8 @@ import com.aemotionalline.domain.user.UserId;
 /**
  * A message as one viewer sees it. A closed envelope (a message of the other partner the viewer hasn't opened yet) shows
  * only who sent it and when: its paragraphs and skipped questions are empty, since a read constraint must not be bypassed.
- * {@code readAt} is when the recipient first opened it.
+ * {@code readAt} is when the recipient first opened it: shown to the recipient, who needs it for the reply delay, and to the
+ * therapist, never to the sender (no read receipts: CLAUDE.md, R6 decision 1).
  */
 public record MessageView(MessageId id, UserId sender, Instant sentAt, boolean closedEnvelope, Optional<Instant> readAt,
 		List<ParagraphView> paragraphs, List<ParagraphId> questionsLeftUnanswered)

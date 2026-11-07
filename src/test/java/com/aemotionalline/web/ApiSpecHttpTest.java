@@ -55,6 +55,8 @@ public class ApiSpecHttpTest
 		assertUuid(schemas.path("AccountView").path("properties").path("id"));
 		assertUuid(schemas.path("EchoView").path("properties").path("user"));
 		assertEquals("integer", schemas.path("EchoView").path("properties").path("discussion").path("type").asString());
+		assertEquals("string", schemas.path("NewMessage").path("properties").path("localTime").path("type").asString(), schemas.path("NewMessage").toString());
+		assertUuid(schemas.path("ParagraphDraft").path("properties").path("question"));
 
 		Set<String> codes = new HashSet<>();
 		schemas.path("Problem").path("properties").path("code").path("enum").forEach(code -> codes.add(code.asString()));

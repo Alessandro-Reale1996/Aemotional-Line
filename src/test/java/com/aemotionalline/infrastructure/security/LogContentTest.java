@@ -159,6 +159,15 @@ public class LogContentTest
 		closingService.confirmTherapistClosing(therapist, conversation, 1);
 		closingService.declareOutcome(a, conversation, 1, Outcome.RESOLVED, "Done " + marker);
 		closingService.declareOutcome(b, conversation, 1, Outcome.STALLED, "Not done " + marker);
+
+		// Messages over HTTP: one that goes through, and malformed ones whose bad values carry the marker.
+		String messages = "/api/conversations/" + conversation.value() + "/discussions/0/messages";
+		client.post(messages, "{\"paragraphs\":[{\"type\":\"SIMPLE\",\"title\":\"Title " + marker + "\",\"body\":\"Body " + marker + "\"}]}");
+		client.post(messages, "{\"paragraphs\":[{\"type\":\"" + marker + "\"}]}");
+		client.post(messages, "{\"paragraphs\":[{\"type\":\"SIMPLE\",\"body\":" + marker + "}]}");
+		client.post(messages, "{\"paragraphs\":[{\"type\":\"SIMPLE\",\"references\":[\"" + marker + "\"]}]}");
+		client.post(messages, "{\"paragraphs\":[],\"localTime\":\"" + marker + "\"}");
+		client.post(messages, "{\"paragraphs\":[],\"position\":{\"latitude\":\"" + marker + "\"}}");
 		assertEquals(204, client.post("/api/auth/logout", "").status());
 
 		String logs = output.getAll();

@@ -109,6 +109,19 @@ public class ConversationViewTest
 	}
 
 	@Test
+	void shouldShowWhenAMessageWasOpenedToEveryoneButItsSender()
+	{
+		// A's first message of the main discussion, which B opened.
+		assertTrue(discussion(service.view(full.a, full.conversation.getId()), 0).messages().getFirst().readAt().isEmpty(), "no read receipts");
+		assertTrue(discussion(service.view(full.b, full.conversation.getId()), 0).messages().getFirst().readAt().isPresent());
+		assertTrue(discussion(service.view(full.therapist, full.conversation.getId()), 0).messages().getFirst().readAt().isPresent());
+
+		// B's reply, which A opened: the same, the other way round.
+		assertTrue(discussion(service.view(full.b, full.conversation.getId()), 0).messages().get(1).readAt().isEmpty(), "no read receipts");
+		assertTrue(discussion(service.view(full.a, full.conversation.getId()), 0).messages().get(1).readAt().isPresent());
+	}
+
+	@Test
 	void shouldDescribeTheDiscussions()
 	{
 		ConversationView view = service.view(full.a, full.conversation.getId());

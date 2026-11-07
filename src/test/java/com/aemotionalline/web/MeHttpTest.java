@@ -17,6 +17,7 @@ import com.aemotionalline.application.PasswordHasher;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.couple.CoupleId;
 import com.aemotionalline.domain.couple.CoupleRepository;
+import com.aemotionalline.domain.message.Message;
 import com.aemotionalline.domain.message.SimpleParagraph;
 import com.aemotionalline.domain.negotiation.AgreementText;
 import com.aemotionalline.domain.negotiation.Proposal;
@@ -79,6 +80,7 @@ public class MeHttpTest
 
 		assertEquals(200, limits.status());
 		assertEquals(SimpleParagraph.MAX_BODY_LENGTH, limits.json().path("simpleParagraphBody").asInt());
+		assertEquals(Message.MAX_PARAGRAPHS, limits.json().path("messageParagraphs").asInt());
 		assertEquals(AgreementText.MAX_LENGTH, limits.json().path("agreementText").asInt());
 		assertEquals(Proposal.MAX_JUSTIFICATION_LENGTH, limits.json().path("proposalJustification").asInt());
 		assertEquals(12, limits.json().path("passwordMinLength").asInt());
