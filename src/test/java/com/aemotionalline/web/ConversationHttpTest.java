@@ -20,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 
+import com.aemotionalline.application.view.ConstraintType;
 import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.ConstraintService;
 import com.aemotionalline.application.ConstraintSpec;
@@ -139,8 +140,8 @@ public class ConversationHttpTest
 	{
 		ConversationId id = new ConversationId(UUID.fromString(conversation));
 		ConstraintChangeRequestId request = constraints.proposeConstraints(couple.therapistAccount.getId(), id, List.of(
-				new ConstraintSpec(couple.brunoAccount.getId(), "LOCATION", null, null, null, 45.4642, 9.19, 200.0, LocationConstraint.Direction.WITHIN),
-				new ConstraintSpec(couple.brunoAccount.getId(), "TIME", null, LocalTime.of(18, 0), null, null, null, null, null)));
+				new ConstraintSpec(couple.brunoAccount.getId(), ConstraintType.LOCATION, null, null, null, 45.4642, 9.19, 200.0, LocationConstraint.Direction.WITHIN),
+				new ConstraintSpec(couple.brunoAccount.getId(), ConstraintType.TIME, null, LocalTime.of(18, 0), null, null, null, null, null)));
 		constraints.approveConstraints(couple.annaAccount.getId(), id, request);
 		constraints.approveConstraints(couple.brunoAccount.getId(), id, request);
 		String first = created(anna.post(messages(0), draft(simple("Le vacanze", "Io direi al mare"))));

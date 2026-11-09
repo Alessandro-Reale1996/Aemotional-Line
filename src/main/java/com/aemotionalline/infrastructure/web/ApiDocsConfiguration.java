@@ -1,5 +1,7 @@
 package com.aemotionalline.infrastructure.web;
 
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +12,7 @@ import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.web.csrf.CsrfToken;
 
 import com.aemotionalline.application.RequestErrorCode;
 import com.aemotionalline.domain.common.ErrorCode;
@@ -58,6 +61,9 @@ public class ApiDocsConfiguration
 		}
 
 		config.replaceWithSchema(DiscussionId.class, new IntegerSchema().description("The discussion's number in its conversation (0 is the main one)."));
+		config.replaceWithSchema(LocalTime.class, new StringSchema().format("time").example("18:30"));
+		config.replaceWithSchema(Duration.class, new StringSchema().format("duration").example("PT1H"));
+		config.addRequestWrapperToIgnore(CsrfToken.class);
 	}
 
 	@Bean

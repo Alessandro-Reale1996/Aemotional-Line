@@ -10,7 +10,12 @@ import com.aemotionalline.domain.user.UserId;
  * A proposal as the client sees it, flattened: kind AGREEMENT (text) or DISCUSSION_TITLE (title and subtitle).
  * justification and sentAt are null until it is sent.
  */
-public record ProposalView(ProposalId id, UserId author, String kind, String text, String title, String subtitle, String justification,
+public record ProposalView(ProposalId id, UserId author, Kind kind, String text, String title, String subtitle, String justification,
 		Instant sentAt, ProposalStatus status)
 {
+	public enum Kind
+	{
+		AGREEMENT,
+		DISCUSSION_TITLE
+	}
 }

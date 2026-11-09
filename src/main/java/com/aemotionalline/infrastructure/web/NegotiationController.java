@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aemotionalline.application.InvalidRequestException;
@@ -97,23 +97,25 @@ class NegotiationController
 
 	/** Starts the couple's conversation if it has none yet, otherwise changes its agreement. */
 	@PostMapping("/couples/{id}/agreement-negotiations")
-	ResponseEntity<Created<NegotiationId>> startAgreementNegotiation(@AuthenticationPrincipal SessionUser requester, @PathVariable CoupleId id,
+	@ResponseStatus(HttpStatus.CREATED)
+	Created<NegotiationId> startAgreementNegotiation(@AuthenticationPrincipal SessionUser requester, @PathVariable CoupleId id,
 			@RequestBody NewAgreementNegotiation body)
 	{
 		NegotiationId negotiation = negotiations.startAgreementNegotiation(requester.userId(), id, body.text());
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(new Created<>(negotiation));
+		return new Created<>(negotiation);
 	}
 
 	/** Opens a specific discussion once agreed, optionally to expand a paragraph already sent. */
 	@PostMapping("/conversations/{id}/discussion-negotiations")
-	ResponseEntity<Created<NegotiationId>> startDiscussionNegotiation(@AuthenticationPrincipal SessionUser requester, @PathVariable ConversationId id,
+	@ResponseStatus(HttpStatus.CREATED)
+	Created<NegotiationId> startDiscussionNegotiation(@AuthenticationPrincipal SessionUser requester, @PathVariable ConversationId id,
 			@RequestBody NewDiscussionNegotiation body)
 	{
 		NegotiationId negotiation = negotiations.startDiscussionNegotiation(requester.userId(), id, body.title(), body.subtitle(),
 				Optional.ofNullable(body.originParagraphId()));
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(new Created<>(negotiation));
+		return new Created<>(negotiation);
 	}
 
 	// READING
@@ -142,36 +144,34 @@ class NegotiationController
 	// THE EXCHANGE
 
 	@PostMapping("/negotiations/{id}/accept-request")
-	ResponseEntity<Void> acceptRequest(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void acceptRequest(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id)
 	{
 		negotiations.acceptRequest(partner.userId(), id);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PutMapping("/negotiations/{id}/draft")
-	ResponseEntity<Void> editDraft(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id, @RequestBody DraftContent body)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void editDraft(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id, @RequestBody DraftContent body)
 	{
 		negotiations.editProposal(partner.userId(), id, body.content());
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/negotiations/{id}/send")
-	ResponseEntity<Void> send(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id, @RequestBody Sending body)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void send(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id, @RequestBody Sending body)
 	{
 		negotiations.sendProposal(partner.userId(), id, body.justification());
-
-		return ResponseEntity.noContent().build();
 	}
 
 	/** Refusing a proposal starts the refuser's counter-proposal: the answer is the id of the new draft. */
 	@PostMapping("/negotiations/{id}/refuse-proposal")
-	ResponseEntity<Created<ProposalId>> refuseProposal(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id)
+	@ResponseStatus(HttpStatus.CREATED)
+	Created<ProposalId> refuseProposal(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id)
 	{
 		ProposalId draft = negotiations.refuseProposal(partner.userId(), id);
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(new Created<>(draft));
+		return new Created<>(draft);
 	}
 
 	// THE END
@@ -184,18 +184,16 @@ class NegotiationController
 	}
 
 	@PostMapping("/negotiations/{id}/refuse-request")
-	ResponseEntity<Void> refuseRequest(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void refuseRequest(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id)
 	{
 		negotiations.refuseRequest(partner.userId(), id);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/negotiations/{id}/abandon")
-	ResponseEntity<Void> abandon(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void abandon(@AuthenticationPrincipal SessionUser partner, @PathVariable NegotiationId id)
 	{
 		negotiations.abandon(partner.userId(), id);
-
-		return ResponseEntity.noContent().build();
 	}
 }

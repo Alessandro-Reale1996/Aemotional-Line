@@ -20,6 +20,7 @@ import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.view.ArchiveEntry;
 import com.aemotionalline.application.view.ArchiveProposal;
 import com.aemotionalline.application.view.ArchiveSearchResult;
+import com.aemotionalline.application.view.ProposalView;
 import com.aemotionalline.domain.MutableClock;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.GeoPosition;
@@ -182,7 +183,7 @@ public class ArchiveQueriesTest
 		assertEquals(1, agreement.size());
 		assertEquals(ArchiveProposal.Section.TOOK_EFFECT, agreement.getFirst().section());
 		assertEquals(NegotiationRecord.Purpose.MODIFIED_AGREEMENT, agreement.getFirst().purpose());
-		assertEquals("AGREEMENT", agreement.getFirst().proposal().kind());
+		assertEquals(ProposalView.Kind.AGREEMENT, agreement.getFirst().proposal().kind());
 		assertEquals("B'S AGREEMENT", agreement.getFirst().proposal().text());
 
 		// The failed attempt to start the conversation, and an abandoned discussion request (only its request was kept).
@@ -192,7 +193,7 @@ public class ArchiveQueriesTest
 
 		ArchiveProposal never = archive.search(id, full.therapist, true, "never").proposals().getFirst();
 		assertEquals(ArchiveProposal.Section.FAILED, never.section());
-		assertEquals("DISCUSSION_TITLE", never.proposal().kind());
+		assertEquals(ProposalView.Kind.DISCUSSION_TITLE, never.proposal().kind());
 		assertEquals("NEVER", never.proposal().title());
 		assertEquals("MIND", never.proposal().subtitle());
 	}

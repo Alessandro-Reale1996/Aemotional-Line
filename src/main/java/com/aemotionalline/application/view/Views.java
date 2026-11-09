@@ -91,9 +91,9 @@ public final class Views
 	{
 		return switch (proposal.getContent())
 		{
-			case AgreementText text -> new ProposalView(proposal.getId(), proposal.getAuthor(), "AGREEMENT", text.text(), null, null,
+			case AgreementText text -> new ProposalView(proposal.getId(), proposal.getAuthor(), ProposalView.Kind.AGREEMENT, text.text(), null, null,
 					proposal.getJustification(), proposal.getSentAt(), proposal.getProposalStatus());
-			case DiscussionTitle title -> new ProposalView(proposal.getId(), proposal.getAuthor(), "DISCUSSION_TITLE", null, title.title(),
+			case DiscussionTitle title -> new ProposalView(proposal.getId(), proposal.getAuthor(), ProposalView.Kind.DISCUSSION_TITLE, null, title.title(),
 					title.subtitle(), proposal.getJustification(), proposal.getSentAt(), proposal.getProposalStatus());
 		};
 	}
@@ -176,15 +176,14 @@ public final class Views
 
 		return switch (constraint)
 		{
-			case TimeConstraint time -> new ConstraintView(assignment.getUserId(), "TIME", time.getScope(), time.getNotBefore(), null, null, null, null,
+			case TimeConstraint time -> new ConstraintView(assignment.getUserId(), ConstraintType.TIME, time.getScope(), time.getNotBefore(), null, null, null, null,
 					null, time.getDescription());
-			case ReplyDelayConstraint delay -> new ConstraintView(assignment.getUserId(), "REPLY_DELAY", delay.getScope(), null, delay.getDelay(), null,
+			case ReplyDelayConstraint delay -> new ConstraintView(assignment.getUserId(), ConstraintType.REPLY_DELAY, delay.getScope(), null, delay.getDelay(), null,
 					null, null, null, delay.getDescription());
-			case LocationConstraint location -> new ConstraintView(assignment.getUserId(), "LOCATION", location.getScope(), null, null,
+			case LocationConstraint location -> new ConstraintView(assignment.getUserId(), ConstraintType.LOCATION, location.getScope(), null, null,
 					location.getCenter().latitude(), location.getCenter().longitude(), location.getRadiusMetres(), location.getDirection(),
 					location.getDescription());
-			default -> new ConstraintView(assignment.getUserId(), constraint.getClass().getSimpleName(), constraint.getScope(), null, null, null, null,
-					null, null, constraint.getDescription());
+			default -> throw new IllegalStateException("No view for constraint type " + constraint.getClass().getName());
 		};
 	}
 

@@ -3,8 +3,7 @@
 This guide is for whoever installs and runs the application. It holds therapy conversations between couples and their
 therapist: treat every part of the installation as handling health data.
 
-The backend is complete up to the security layer; the REST endpoints beyond login and account management, and the React
-frontend, are not built yet. Sections that depend on them say so.
+The backend is complete, REST API included; the React frontend is not built yet. Sections that depend on it say so.
 
 ## 1. What you need
 
@@ -43,6 +42,7 @@ Everything that differs between installations comes from environment variables; 
 | `AEMOTIONAL_MAIL_USER` / `AEMOTIONAL_MAIL_PASSWORD` | *(empty)* | SMTP credentials |
 | `AEMOTIONAL_MAIL_FROM` | `no-reply@aemotional-line.local` | sender address of the emails |
 | `AEMOTIONAL_RETENTION_AFTER_END` | *(empty: disabled)* | retention period after a couple ends, as an ISO-8601 duration (`P365D`); see section 8 |
+| `AEMOTIONAL_API_DOCS` | `false` | serves the OpenAPI spec and Swagger UI. For development only: in production it would hand out the whole map of the API |
 
 Other Spring Boot properties can be overridden in a `config/application.properties` file in the directory the
 application is started from. Keep that file readable only by the account that runs the application.
@@ -112,7 +112,8 @@ The proxy:
   wrong passwords, but that doesn't stop one password tried on many accounts, and it lets anyone who knows an email lock
   that account: the per-IP limit is the answer to both;
 - must not log query strings. The activation and password-reset links (`/attiva?codice=...`,
-  `/reimposta-password?codice=...`) carry a one-time code in the address.
+  `/reimposta-password?codice=...`) carry a one-time code in the address. (The archive's keyword search is a POST, so the
+  words people search for never appear in an address.)
 
 The application itself sends `Strict-Transport-Security` (one year, `includeSubDomains`, no `preload`) on HTTPS
 requests, `Referrer-Policy: no-referrer` and Spring Security's other default headers. Don't add a second
@@ -137,7 +138,7 @@ server {
     ssl_certificate     /etc/ssl/app.example.org/fullchain.pem;
     ssl_certificate_key /etc/ssl/app.example.org/privkey.pem;
     access_log /var/log/nginx/aemotional.log no_query;
-    # The largest requests are messages, a few tens of kilobytes at most.
+    # The largest valid request is a message of 20 full paragraphs: about 130 KB in the worst case.
     client_max_body_size 256k;
 
     location ~ ^/api/auth/(login|password-reset) {
@@ -177,7 +178,7 @@ terminal, open it, choose the password. The command refuses (exit code 1) once a
 administrator is still waiting for activation, running it again with the same email gives a new link.
 
 The administrator creates and disables therapist accounts; therapists invite their patients; nobody can sign up alone.
-(The administration screens come with the REST and frontend phases.)
+(The administration endpoints are under `/api/admin`; the screens come with the frontend.)
 
 ## 7. Accounts, sessions and logs
 
@@ -188,6 +189,7 @@ The administrator creates and disables therapist accounts; therapists invite the
 - The application logs no personal content: no message texts, justifications, names, emails, passwords or one-time
   codes; at most ids and event types. A test checks it. Keep the log level at INFO in production: DEBUG or TRACE on
   Spring's web or security packages would log request details.
+- The position a client reports for a location constraint is used for that check and never stored.
 
 ## 8. Ending couples, deleting data, retention
 
@@ -221,5 +223,6 @@ These are legal and organisational decisions, not technical ones; the applicatio
 
 - A password-reset request for an existing account takes a little longer (it sends an email), so its timing could
   reveal that the account exists; sending emails in the background will remove it.
-- No per-IP limit inside the application: it belongs to the proxy (section 5).
+- No per-IP limit inside the application: it belongs to the proxy (section 5). The same goes for the size of a request
+  (`client_max_body_size`): the application has no limit of its own.
 - Two-factor authentication and a log of who consulted which conversation are planned, not built.

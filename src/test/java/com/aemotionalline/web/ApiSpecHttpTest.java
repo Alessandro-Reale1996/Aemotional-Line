@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,7 +75,40 @@ public class ApiSpecHttpTest
 		assertEquals("#/components/schemas/Problem", spec.path("paths").path("/api/auth/login").path("post").path("responses").path("409")
 				.path("content").path("application/problem+json").path("schema").path("$ref").asString());
 
+		// Only the API, with what each endpoint really answers.
+		assertFalse(spec.path("paths").has("/error"), "internal routes are not part of the contract");
+		assertFalse(schemas.has("CsrfToken"), "not a request parameter");
+		assertEquals(Set.of("201"), successes(spec, "/api/invitations", "post"));
+		assertEquals(Set.of("201"), successes(spec, "/api/conversations/{id}/discussions/{number}/messages", "post"));
+		assertEquals(Set.of("204"), successes(spec, "/api/negotiations/{id}/abandon", "post"));
+		assertEquals(Set.of("204"), successes(spec, "/api/me/account-deletion", "post"));
+		assertEquals(Set.of("202"), successes(spec, "/api/auth/password-reset", "post"));
+		assertEquals(Set.of("204"), successes(spec, "/api/auth/csrf", "get"));
+		assertEquals(Set.of("200"), successes(spec, "/api/conversations/{id}", "get"));
+		assertEquals("#/components/schemas/AccountView", spec.path("paths").path("/api/auth/login").path("post").path("responses").path("200")
+				.path("content").path("*/*").path("schema").path("$ref").asString(), spec.path("paths").path("/api/auth/login").toString());
+
+		// Fixed sets of values are listed, and times and durations say their format.
+		assertEquals(List.of("TIME", "REPLY_DELAY", "LOCATION"), strings(schemas.path("ConstraintSpec").path("properties").path("type").path("enum")));
+		assertEquals(List.of("TIME", "REPLY_DELAY", "LOCATION"), strings(schemas.path("ConstraintView").path("properties").path("type").path("enum")));
+		assertEquals(List.of("AGREEMENT", "DISCUSSION_TITLE"), strings(schemas.path("ProposalView").path("properties").path("kind").path("enum")));
+		assertEquals("time", schemas.path("NewMessage").path("properties").path("localTime").path("format").asString());
+		assertEquals("duration", schemas.path("ConstraintSpec").path("properties").path("delay").path("format").asString());
+
 		assertEquals(200, anonymous.get("/swagger-ui/index.html").status());
+	}
+
+	private static Set<String> successes(JsonNode spec, String path, String method)
+	{
+		return spec.path("paths").path(path).path(method).path("responses").propertyNames().stream().filter(status -> status.startsWith("2")).collect(Collectors.toSet());
+	}
+
+	private static List<String> strings(JsonNode array)
+	{
+		List<String> values = new ArrayList<>();
+		array.forEach(value -> values.add(value.asString()));
+
+		return values;
 	}
 
 	private static void assertUuid(JsonNode property)

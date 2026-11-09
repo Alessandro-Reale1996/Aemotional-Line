@@ -92,8 +92,8 @@ public class ConstraintService
 
 		Constraint constraint = switch (spec.type())
 		{
-			case "TIME" -> new TimeConstraint(required(spec.notBefore(), "notBefore"), spec.scope() == null ? ConstraintScope.WRITE : spec.scope());
-			case "REPLY_DELAY" ->
+			case TIME -> new TimeConstraint(required(spec.notBefore(), "notBefore"), spec.scope() == null ? ConstraintScope.WRITE : spec.scope());
+			case REPLY_DELAY ->
 			{
 				if (spec.scope() != null && spec.scope() != ConstraintScope.WRITE)
 				{
@@ -102,10 +102,9 @@ public class ConstraintService
 
 				yield new ReplyDelayConstraint(required(spec.delay(), "delay"));
 			}
-			case "LOCATION" -> new LocationConstraint(new GeoPosition(required(spec.latitude(), "latitude"), required(spec.longitude(), "longitude")),
+			case LOCATION -> new LocationConstraint(new GeoPosition(required(spec.latitude(), "latitude"), required(spec.longitude(), "longitude")),
 					required(spec.radiusMetres(), "radiusMetres"), required(spec.direction(), "direction"),
 					spec.scope() == null ? ConstraintScope.READ : spec.scope());
-			default -> throw new InvalidRequestException("Unknown constraint type.");
 		};
 
 		return new ConstraintAssignment(spec.assignee(), constraint);
@@ -120,10 +119,9 @@ public class ConstraintService
 
 		boolean foreign = switch (spec.type())
 		{
-			case "TIME" -> delay || location;
-			case "REPLY_DELAY" -> time || location;
-			case "LOCATION" -> time || delay;
-			default -> false;
+			case TIME -> delay || location;
+			case REPLY_DELAY -> time || location;
+			case LOCATION -> time || delay;
 		};
 
 		if (foreign)

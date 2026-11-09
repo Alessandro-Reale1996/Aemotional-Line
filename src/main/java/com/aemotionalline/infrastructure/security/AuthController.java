@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aemotionalline.application.LoggedInUser;
@@ -32,6 +33,9 @@ import com.aemotionalline.domain.user.EmailAddress;
 import com.aemotionalline.infrastructure.web.HttpErrorCode;
 import com.aemotionalline.infrastructure.web.Problems;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -74,14 +78,14 @@ class AuthController
 
 	/** Renders the __Host-XSRF-TOKEN cookie, whose value the client sends back in the X-XSRF-TOKEN header. */
 	@GetMapping("/csrf")
-	ResponseEntity<Void> csrf(CsrfToken token)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void csrf(CsrfToken token)
 	{
 		token.getToken();
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/login")
+	@ApiResponse(responseCode = "200", description = "The account logged in", content = @Content(schema = @Schema(implementation = AccountView.class)))
 	ResponseEntity<?> logIn(@RequestBody Credentials credentials, HttpServletRequest request, HttpServletResponse response)
 	{
 		Optional<LoggedInUser> user = logins.logIn(credentials.email(), credentials.password());
@@ -113,11 +117,10 @@ class AuthController
 	}
 
 	@PostMapping("/activate")
-	ResponseEntity<Void> activate(@RequestBody NewPassword body)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void activate(@RequestBody NewPassword body)
 	{
 		users.activate(body.code(), body.password());
-
-		return ResponseEntity.noContent().build();
 	}
 
 	/**
@@ -125,7 +128,8 @@ class AuthController
 	 * tell who has an account. A sending failure is logged without the address.
 	 */
 	@PostMapping("/password-reset")
-	ResponseEntity<Void> requestPasswordReset(@RequestBody ResetRequest body)
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	void requestPasswordReset(@RequestBody ResetRequest body)
 	{
 		try
 		{
@@ -139,15 +143,12 @@ class AuthController
 		{
 			log.warn("A password reset email could not be sent ({}).", failure.getClass().getSimpleName());
 		}
-
-		return ResponseEntity.accepted().build();
 	}
 
 	@PostMapping("/password-reset/confirm")
-	ResponseEntity<Void> resetPassword(@RequestBody NewPassword body)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void resetPassword(@RequestBody NewPassword body)
 	{
 		users.resetPassword(body.code(), body.password());
-
-		return ResponseEntity.noContent().build();
 	}
 }

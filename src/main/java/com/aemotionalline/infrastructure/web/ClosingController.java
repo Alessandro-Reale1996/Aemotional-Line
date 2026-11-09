@@ -1,13 +1,14 @@
 package com.aemotionalline.infrastructure.web;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aemotionalline.application.ClosingService;
@@ -59,74 +60,66 @@ class ClosingController
 	// BETWEEN THE PARTNERS
 
 	@PostMapping("/request")
-	ResponseEntity<Void> request(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void request(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number)
 	{
 		closings.requestClosing(partner.userId(), id, number);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	/** The other partner accepts: the discussion closes at once, the declarations follow. */
 	@PostMapping("/accept")
-	ResponseEntity<Void> accept(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void accept(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number)
 	{
 		closings.acceptClosing(partner.userId(), id, number);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/refuse")
-	ResponseEntity<Void> refuse(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void refuse(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number)
 	{
 		closings.refuseClosing(partner.userId(), id, number);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/withdraw")
-	ResponseEntity<Void> withdraw(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void withdraw(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number)
 	{
 		closings.withdrawClosing(partner.userId(), id, number);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	// THROUGH THE THERAPIST
 
 	/** Allowed only after a failed attempt with the other partner; the therapist sees the earlier requests with their instants. */
 	@PostMapping("/therapist-request")
-	ResponseEntity<Void> requestTherapist(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number,
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void requestTherapist(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number,
 			@RequestBody TherapistRequest body)
 	{
 		closings.requestTherapistClosing(partner.userId(), id, number, body.justification());
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/therapist-request/confirm")
-	ResponseEntity<Void> confirmTherapistRequest(@AuthenticationPrincipal SessionUser therapist, @PathVariable ConversationId id, @PathVariable int number)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void confirmTherapistRequest(@AuthenticationPrincipal SessionUser therapist, @PathVariable ConversationId id, @PathVariable int number)
 	{
 		closings.confirmTherapistClosing(therapist.userId(), id, number);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/therapist-request/refuse")
-	ResponseEntity<Void> refuseTherapistRequest(@AuthenticationPrincipal SessionUser therapist, @PathVariable ConversationId id, @PathVariable int number)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void refuseTherapistRequest(@AuthenticationPrincipal SessionUser therapist, @PathVariable ConversationId id, @PathVariable int number)
 	{
 		closings.refuseTherapistClosing(therapist.userId(), id, number);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	// THE OUTCOME
 
 	@PostMapping("/outcome")
-	ResponseEntity<Void> declareOutcome(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number,
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void declareOutcome(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable int number,
 			@RequestBody Declaration body)
 	{
 		closings.declareOutcome(partner.userId(), id, number, body.outcome(), body.reason());
-
-		return ResponseEntity.noContent().build();
 	}
 }

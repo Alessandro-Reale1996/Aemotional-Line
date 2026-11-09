@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
+import com.aemotionalline.application.view.ConstraintType;
 import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.view.CoupleView;
 import com.aemotionalline.application.view.SummaryView;
@@ -118,7 +119,7 @@ public class HomeServiceTest
 		NegotiationId request = negotiationService.startDiscussionNegotiation(a, conversation, "Holidays", "Where", Optional.empty());
 		// The therapist proposes constraints: both partners have to decide; A approves.
 		ConstraintChangeRequestId constraints = constraintService.proposeConstraints(therapist, conversation,
-				List.of(new ConstraintSpec(a, "TIME", null, LocalTime.of(9, 0), null, null, null, null, null)));
+				List.of(new ConstraintSpec(a, ConstraintType.TIME, null, LocalTime.of(9, 0), null, null, null, null, null)));
 		constraintService.approveConstraints(a, conversation, constraints);
 
 		CoupleSummary ofB = only(home.summary(b));

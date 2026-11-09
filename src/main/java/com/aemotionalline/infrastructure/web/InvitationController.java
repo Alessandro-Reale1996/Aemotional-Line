@@ -4,13 +4,13 @@ import java.util.List;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aemotionalline.application.InvitationService;
@@ -44,12 +44,13 @@ class InvitationController
 	}
 
 	@PostMapping
-	ResponseEntity<Created<CoupleInvitationId>> invite(@AuthenticationPrincipal SessionUser therapist, @RequestBody NewInvitation body)
+	@ResponseStatus(HttpStatus.CREATED)
+	Created<CoupleInvitationId> invite(@AuthenticationPrincipal SessionUser therapist, @RequestBody NewInvitation body)
 	{
 		CoupleInvitationId invitation = invitations.invite(therapist.userId(), new EmailAddress(body.emailOne()), body.nameOne(),
 				new EmailAddress(body.emailTwo()), body.nameTwo());
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(new Created<>(invitation));
+		return new Created<>(invitation);
 	}
 
 	/** The user's invitations still waiting for an answer. */
@@ -66,26 +67,23 @@ class InvitationController
 	}
 
 	@PostMapping("/{id}/accept")
-	ResponseEntity<Void> accept(@AuthenticationPrincipal SessionUser patient, @PathVariable CoupleInvitationId id)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void accept(@AuthenticationPrincipal SessionUser patient, @PathVariable CoupleInvitationId id)
 	{
 		invitations.accept(patient.userId(), id);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/{id}/decline")
-	ResponseEntity<Void> decline(@AuthenticationPrincipal SessionUser patient, @PathVariable CoupleInvitationId id)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void decline(@AuthenticationPrincipal SessionUser patient, @PathVariable CoupleInvitationId id)
 	{
 		invitations.decline(patient.userId(), id);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/{id}/withdraw")
-	ResponseEntity<Void> withdraw(@AuthenticationPrincipal SessionUser therapist, @PathVariable CoupleInvitationId id)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void withdraw(@AuthenticationPrincipal SessionUser therapist, @PathVariable CoupleInvitationId id)
 	{
 		invitations.withdraw(therapist.userId(), id);
-
-		return ResponseEntity.noContent().build();
 	}
 }

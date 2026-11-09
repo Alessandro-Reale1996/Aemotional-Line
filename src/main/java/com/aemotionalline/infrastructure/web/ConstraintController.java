@@ -4,13 +4,13 @@ import java.util.List;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aemotionalline.application.ConstraintService;
@@ -52,36 +52,34 @@ class ConstraintController
 
 	/** An empty list lifts every constraint. */
 	@PostMapping("/requests")
-	ResponseEntity<Created<ConstraintChangeRequestId>> propose(@AuthenticationPrincipal SessionUser therapist, @PathVariable ConversationId id,
+	@ResponseStatus(HttpStatus.CREATED)
+	Created<ConstraintChangeRequestId> propose(@AuthenticationPrincipal SessionUser therapist, @PathVariable ConversationId id,
 			@RequestBody ProposedConstraints body)
 	{
 		ConstraintChangeRequestId request = constraints.proposeConstraints(therapist.userId(), id, body.constraints());
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(new Created<>(request));
+		return new Created<>(request);
 	}
 
 	/** The second approval applies the constraints at once. */
 	@PostMapping("/requests/{requestId}/approve")
-	ResponseEntity<Void> approve(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable ConstraintChangeRequestId requestId)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void approve(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable ConstraintChangeRequestId requestId)
 	{
 		constraints.approveConstraints(partner.userId(), id, requestId);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/requests/{requestId}/reject")
-	ResponseEntity<Void> reject(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable ConstraintChangeRequestId requestId)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void reject(@AuthenticationPrincipal SessionUser partner, @PathVariable ConversationId id, @PathVariable ConstraintChangeRequestId requestId)
 	{
 		constraints.rejectConstraints(partner.userId(), id, requestId);
-
-		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/requests/{requestId}/withdraw")
-	ResponseEntity<Void> withdraw(@AuthenticationPrincipal SessionUser therapist, @PathVariable ConversationId id, @PathVariable ConstraintChangeRequestId requestId)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void withdraw(@AuthenticationPrincipal SessionUser therapist, @PathVariable ConversationId id, @PathVariable ConstraintChangeRequestId requestId)
 	{
 		constraints.withdrawConstraints(therapist.userId(), id, requestId);
-
-		return ResponseEntity.noContent().build();
 	}
 }

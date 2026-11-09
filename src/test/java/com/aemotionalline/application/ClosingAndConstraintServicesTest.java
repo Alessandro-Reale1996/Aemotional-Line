@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
+import com.aemotionalline.application.view.ConstraintType;
 import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.view.ClosingView;
 import com.aemotionalline.application.view.ConstraintsView;
@@ -157,7 +158,7 @@ public class ClosingAndConstraintServicesTest
 
 	private static ConstraintSpec notBefore(UserId user, int hour)
 	{
-		return new ConstraintSpec(user, "TIME", null, LocalTime.of(hour, 0), null, null, null, null, null);
+		return new ConstraintSpec(user, ConstraintType.TIME, null, LocalTime.of(hour, 0), null, null, null, null, null);
 	}
 
 	@Test
@@ -165,15 +166,15 @@ public class ClosingAndConstraintServicesTest
 	{
 		ConstraintChangeRequestId request = constraints.proposeConstraints(therapist, conversation, List.of(
 				notBefore(a, 18),
-				new ConstraintSpec(b, "REPLY_DELAY", null, null, Duration.ofHours(1), null, null, null, null),
-				new ConstraintSpec(b, "LOCATION", null, null, null, 45.4642, 9.19, 200.0, LocationConstraint.Direction.WITHIN)));
+				new ConstraintSpec(b, ConstraintType.REPLY_DELAY, null, null, Duration.ofHours(1), null, null, null, null),
+				new ConstraintSpec(b, ConstraintType.LOCATION, null, null, null, 45.4642, 9.19, 200.0, LocationConstraint.Direction.WITHIN)));
 
 		constraints.approveConstraints(a, conversation, request);
 		assertTrue(constraints.view(b, conversation).inForce().isEmpty());
 		constraints.approveConstraints(b, conversation, request);
 
 		ConstraintsView view = constraints.view(b, conversation);
-		assertEquals(List.of("TIME", "REPLY_DELAY", "LOCATION"), view.inForce().stream().map(constraint -> constraint.type()).toList());
+		assertEquals(List.of(ConstraintType.TIME, ConstraintType.REPLY_DELAY, ConstraintType.LOCATION), view.inForce().stream().map(constraint -> constraint.type()).toList());
 		assertEquals(ConstraintScope.READ, view.inForce().get(2).scope());
 		assertEquals(Duration.ofHours(1), view.inForce().get(1).delay());
 		assertEquals(ConstraintChangeRequestStatus.APPLIED, view.requests().getFirst().status());
@@ -204,25 +205,25 @@ public class ClosingAndConstraintServicesTest
 	void shouldRejectMalformedConstraintsAndUnauthorisedUsers()
 	{
 		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation,
-				List.of(new ConstraintSpec(a, "TIME", null, null, null, null, null, null, null))));
+				List.of(new ConstraintSpec(a, ConstraintType.TIME, null, null, null, null, null, null, null))));
 		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation,
-				List.of(new ConstraintSpec(a, "MOOD", null, null, null, null, null, null, null))));
+				List.of(new ConstraintSpec(a, null, null, null, null, null, null, null, null))));
 		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation,
-				List.of(new ConstraintSpec(a, "REPLY_DELAY", ConstraintScope.READ, null, Duration.ofHours(1), null, null, null, null))));
+				List.of(new ConstraintSpec(a, ConstraintType.REPLY_DELAY, ConstraintScope.READ, null, Duration.ofHours(1), null, null, null, null))));
 		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation, List.of(notBefore(null, 9))));
 
 		// A parameter the type doesn't have would be lost.
 		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation,
-				List.of(new ConstraintSpec(a, "TIME", null, LocalTime.of(9, 0), Duration.ofHours(1), null, null, null, null))));
+				List.of(new ConstraintSpec(a, ConstraintType.TIME, null, LocalTime.of(9, 0), Duration.ofHours(1), null, null, null, null))));
 		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation,
-				List.of(new ConstraintSpec(a, "REPLY_DELAY", null, LocalTime.of(9, 0), Duration.ofHours(1), null, null, null, null))));
+				List.of(new ConstraintSpec(a, ConstraintType.REPLY_DELAY, null, LocalTime.of(9, 0), Duration.ofHours(1), null, null, null, null))));
 		assertThrows(InvalidRequestException.class, () -> constraints.proposeConstraints(therapist, conversation,
-				List.of(new ConstraintSpec(a, "LOCATION", null, null, Duration.ofHours(1), 45.4642, 9.19, 200.0, LocationConstraint.Direction.WITHIN))));
+				List.of(new ConstraintSpec(a, ConstraintType.LOCATION, null, null, Duration.ofHours(1), 45.4642, 9.19, 200.0, LocationConstraint.Direction.WITHIN))));
 		assertTrue(constraints.view(therapist, conversation).requests().isEmpty());
 
 		// Membership comes first: an outsider gets "not found" whatever they send.
 		assertThrows(NotFoundException.class, () -> constraints.proposeConstraints(UserId.random(), conversation,
-				List.of(new ConstraintSpec(a, "MOOD", null, null, null, null, null, null, null))));
+				List.of(new ConstraintSpec(a, ConstraintType.TIME, null, null, null, null, null, null, null))));
 
 		assertThrows(DomainException.class, () -> constraints.proposeConstraints(a, conversation, List.of(notBefore(b, 9))));
 		assertThrows(NotFoundException.class, () -> constraints.proposeConstraints(UserId.random(), conversation, List.of(notBefore(b, 9))));

@@ -1,12 +1,13 @@
 package com.aemotionalline.infrastructure.web;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aemotionalline.application.CoupleService;
@@ -28,19 +29,17 @@ class CoupleController
 
 	/** The therapist ends the couple: its conversation becomes read-only, everything pending stays frozen. */
 	@PostMapping("/end")
-	ResponseEntity<Void> end(@AuthenticationPrincipal SessionUser therapist, @PathVariable CoupleId id, @RequestBody PasswordConfirmation body)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void end(@AuthenticationPrincipal SessionUser therapist, @PathVariable CoupleId id, @RequestBody PasswordConfirmation body)
 	{
 		couples.end(therapist.userId(), id, body.password());
-
-		return ResponseEntity.noContent().build();
 	}
 
 	/** The therapist (or an administrator, the therapist's account being disabled) deletes every piece of the ended couple's data. */
 	@PostMapping("/data-deletion")
-	ResponseEntity<Void> deleteData(@AuthenticationPrincipal SessionUser user, @PathVariable CoupleId id, @RequestBody PasswordConfirmation body)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void deleteData(@AuthenticationPrincipal SessionUser user, @PathVariable CoupleId id, @RequestBody PasswordConfirmation body)
 	{
 		couples.deleteData(user.userId(), id, body.password());
-
-		return ResponseEntity.noContent().build();
 	}
 }

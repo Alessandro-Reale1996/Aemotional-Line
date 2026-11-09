@@ -5,13 +5,13 @@ import java.util.List;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aemotionalline.application.ConversationService;
@@ -79,13 +79,14 @@ class ConversationController
 	}
 
 	@PostMapping("/discussions/{number}/messages")
-	ResponseEntity<Created<MessageId>> send(@AuthenticationPrincipal SessionUser sender, @PathVariable ConversationId id, @PathVariable int number,
+	@ResponseStatus(HttpStatus.CREATED)
+	Created<MessageId> send(@AuthenticationPrincipal SessionUser sender, @PathVariable ConversationId id, @PathVariable int number,
 			@RequestBody NewMessage body)
 	{
 		MessageId message = conversations.sendMessage(sender.userId(), id, number, new MessageDraft(body.paragraphs()), body.localTime(),
 				geoPosition(body.position()));
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(new Created<>(message));
+		return new Created<>(message);
 	}
 
 	/** Opens a message: the read constraints are checked and the first opening is recorded. The answer has its content. */

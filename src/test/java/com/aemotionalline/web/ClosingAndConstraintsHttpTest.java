@@ -307,7 +307,7 @@ public class ClosingAndConstraintsHttpTest
 		assertMalformed(therapist.post(requests, "{\"constraints\":[null]}"), "Every constraint needs a type and a partner it is assigned to.");
 		assertMalformed(therapist.post(requests, "{\"constraints\":[{\"type\":\"TIME\",\"notBefore\":\"09:00\"}]}"), "Every constraint needs a type and a partner it is assigned to.");
 		assertMalformed(therapist.post(requests, "{\"constraints\":[{" + assignee + "}]}"), "Every constraint needs a type and a partner it is assigned to.");
-		assertMalformed(therapist.post(requests, "{\"constraints\":[{" + assignee + ",\"type\":\"MOOD\"}]}"), "Unknown constraint type.");
+		assertMalformed(therapist.post(requests, "{\"constraints\":[{" + assignee + ",\"type\":\"MOOD\"}]}"), "Missing or malformed value of field 'constraints[0].type'.");
 		assertMalformed(therapist.post(requests, "{\"constraints\":[{" + assignee + ",\"type\":\"TIME\"}]}"), "The constraint's notBefore is required.");
 		assertMalformed(therapist.post(requests, "{\"constraints\":[{" + assignee + ",\"type\":\"REPLY_DELAY\"}]}"), "The constraint's delay is required.");
 		assertMalformed(therapist.post(requests, "{\"constraints\":[{" + assignee + ",\"type\":\"LOCATION\",\"latitude\":45.0}]}"), "The constraint's longitude is required.");
@@ -355,7 +355,7 @@ public class ClosingAndConstraintsHttpTest
 		ApiClient outsider = couple.outsider();
 		assertEquals(404, outsider.get(constraints).status());
 		assertEquals(404, outsider.post(requests, valid).status());
-		assertEquals(404, outsider.post(requests, "{\"constraints\":[{\"assignee\":\"" + id(couple.annaAccount) + "\",\"type\":\"MOOD\"}]}").status());
+		assertEquals(404, outsider.post(requests, "{\"constraints\":[{\"assignee\":\"" + id(couple.annaAccount) + "\",\"type\":\"TIME\"}]}").status());
 		assertEquals(404, outsider.post(requests + "/" + request + "/approve", "").status());
 	}
 

@@ -3,12 +3,13 @@ package com.aemotionalline.infrastructure.web;
 import java.util.List;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aemotionalline.application.HomeService;
@@ -52,7 +53,8 @@ class MeController
 	 * with the others, and the answer expires its cookie.
 	 */
 	@PostMapping("/account-deletion")
-	ResponseEntity<Void> deleteAccount(@AuthenticationPrincipal SessionUser user, @RequestBody PasswordConfirmation body, HttpServletRequest request)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void deleteAccount(@AuthenticationPrincipal SessionUser user, @RequestBody PasswordConfirmation body, HttpServletRequest request)
 	{
 		users.deleteOwnPatientAccount(user.userId(), body.password());
 		HttpSession session = request.getSession(false);
@@ -61,7 +63,5 @@ class MeController
 		{
 			session.invalidate();
 		}
-
-		return ResponseEntity.noContent().build();
 	}
 }
