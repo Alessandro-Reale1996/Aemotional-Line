@@ -178,6 +178,13 @@ public class LogContentTest
 		client.post(constraints, "{\"constraints\":[{\"assignee\":\"" + a.value() + "\",\"type\":\"" + marker + "\"}]}");
 		client.post(constraints, "{\"constraints\":[{\"assignee\":\"" + a.value() + "\",\"type\":\"TIME\",\"notBefore\":\"" + marker + "\"}]}");
 		client.post(constraints, "{\"constraints\":[{\"assignee\":\"" + a.value() + "\",\"type\":\"REPLY_DELAY\",\"delay\":\"" + marker + "\"}]}");
+
+		// The archive over HTTP: a search for a personal word, and malformed requests in the address.
+		String archive = "/api/conversations/" + conversation.value() + "/archive";
+		client.post(archive + "/search", "{\"text\":\"" + marker + "\"}");
+		client.post(archive + "/search", "{\"text\":" + marker + "}");
+		client.get(archive + "/messages?from=" + marker + "&to=2100-01-01T00:00:00Z");
+		client.get(archive + "/topics/" + marker);
 		assertEquals(204, client.post("/api/auth/logout", "").status());
 
 		String logs = output.getAll();

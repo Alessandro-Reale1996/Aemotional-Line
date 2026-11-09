@@ -16,12 +16,14 @@ import com.aemotionalline.application.ArchiveSearch;
 import com.aemotionalline.application.view.ArchiveEntry;
 import com.aemotionalline.application.view.ArchiveProposal;
 import com.aemotionalline.application.view.ArchiveSearchResult;
+import com.aemotionalline.application.view.Views;
 import com.aemotionalline.domain.conversation.ConversationId;
 import com.aemotionalline.domain.conversation.DiscussionId;
 import com.aemotionalline.domain.conversation.NegotiationRecord;
 import com.aemotionalline.domain.message.MessageId;
 import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.ParagraphType;
+import com.aemotionalline.domain.message.PointedParagraph;
 import com.aemotionalline.domain.negotiation.NegotiationId;
 import com.aemotionalline.domain.negotiation.Proposal;
 import com.aemotionalline.domain.user.UserId;
@@ -40,10 +42,18 @@ import com.aemotionalline.infrastructure.persistence.negotiation.ProposalRows;
 @Transactional(readOnly = true)
 public class ArchiveQueries implements ArchiveSearch
 {
+	// A pointed paragraph's title isn't stored: it comes from its question, the only paragraph it refers to.
 	private static final String PARAGRAPH_COLUMNS = """
-			SELECT p.id, p.type, p.title, p.subtitle, p.body, p.position, m.discussion_number, m.id AS message_id, m.sender_id, m.sent_at, m.sequence
+			SELECT p.id, p.type, p.title, p.subtitle, p.body, p.position, m.discussion_number, m.id AS message_id, m.sender_id, m.sent_at, m.sequence,
+				question.title AS question_title
 			FROM paragraph p JOIN message m ON m.id = p.message_id
+			LEFT JOIN paragraph_reference answered ON p.type = 'POINTED' AND answered.paragraph_id = p.id
+			LEFT JOIN paragraph question ON question.id = answered.referenced_id
 			""";
+
+	// What a DATETIME column can hold: a date beyond it can't be converted or compared.
+	private static final Instant EARLIEST = Instant.parse("0001-01-01T00:00:00Z");
+	private static final Instant LATEST = Instant.parse("9999-12-31T23:59:59Z");
 
 	// The closed-envelope rule, for the viewer: the therapist sees everything; otherwise their own messages and opened ones.
 	// Parameters: seesEverything, viewer.
@@ -66,6 +76,11 @@ public class ArchiveQueries implements ArchiveSearch
 		if (conversation == null || viewer == null || from == null || to == null || from.isAfter(to))
 		{
 			throw new IllegalArgumentException("A conversation, a viewer and an interval whose start isn't after its end are required.");
+		}
+
+		if (from.isBefore(EARLIEST) || to.isAfter(LATEST))
+		{
+			throw new IllegalArgumentException("The interval must lie between the years 1 and 9999.");
 		}
 
 		record Ordered(int sequence, int position, ArchiveEntry entry)
@@ -133,14 +148,17 @@ public class ArchiveQueries implements ArchiveSearch
 							rs.getString("justification"), rs.getObject("sent_at", LocalDateTime.class), rs.getString("status")));
 
 					return new ArchiveProposal(new NegotiationId(uuid(rs, "record_negotiation")), NegotiationRecord.Purpose.valueOf(rs.getString("purpose")),
-							section, proposal.getId(), proposal.getAuthor(), proposal.getContent(), proposal.getSentAt(), proposal.getProposalStatus());
+							section, Views.proposal(proposal));
 				})
 				.list();
 	}
 
 	private static ArchiveEntry paragraph(ResultSet rs, ConversationId conversation) throws SQLException
 	{
-		return new ArchiveEntry(Optional.of(new ParagraphId(uuid(rs, "id"))), ParagraphType.valueOf(rs.getString("type")), rs.getString("title"),
+		ParagraphType type = ParagraphType.valueOf(rs.getString("type"));
+		String title = type == ParagraphType.POINTED ? PointedParagraph.titleAnswering(rs.getString("question_title")) : rs.getString("title");
+
+		return new ArchiveEntry(Optional.of(new ParagraphId(uuid(rs, "id"))), type, title,
 				rs.getString("subtitle"), rs.getString("body"), new DiscussionId(conversation, rs.getInt("discussion_number")),
 				new MessageId(uuid(rs, "message_id")), new UserId(uuid(rs, "sender_id")), Utc.fromColumn(rs.getObject("sent_at", LocalDateTime.class)), false);
 	}

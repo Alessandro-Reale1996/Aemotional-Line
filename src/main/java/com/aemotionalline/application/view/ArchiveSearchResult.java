@@ -10,9 +10,4 @@ public record ArchiveSearchResult(List<ArchiveEntry> paragraphs, List<ArchivePro
 		paragraphs = List.copyOf(paragraphs);
 		proposals = List.copyOf(proposals);
 	}
-
-	public boolean isEmpty()
-	{
-		return paragraphs.isEmpty() && proposals.isEmpty();
-	}
 }

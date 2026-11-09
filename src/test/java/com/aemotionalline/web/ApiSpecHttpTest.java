@@ -60,6 +60,11 @@ public class ApiSpecHttpTest
 		assertEquals("string", schemas.path("ConstraintSpec").path("properties").path("delay").path("type").asString(), schemas.path("ConstraintSpec").toString());
 		assertEquals("string", schemas.path("ConstraintView").path("properties").path("delay").path("type").asString(), schemas.path("ConstraintView").toString());
 		assertEquals("string", schemas.path("ClosingRequestView").path("properties").path("status").path("type").asString(), schemas.path("ClosingRequestView").toString());
+		assertUuid(schemas.path("ArchiveEntry").path("properties").path("paragraphId"));
+		assertFalse(schemas.has("ProposalContent"), "a proposal is described by its view");
+		JsonNode from = spec.path("paths").path("/api/conversations/{id}/archive/messages").path("get").path("parameters").get(1);
+		assertEquals("from", from.path("name").asString(), from.toString());
+		assertEquals("date-time", from.path("schema").path("format").asString(), from.toString());
 
 		Set<String> codes = new HashSet<>();
 		schemas.path("Problem").path("properties").path("code").path("enum").forEach(code -> codes.add(code.asString()));

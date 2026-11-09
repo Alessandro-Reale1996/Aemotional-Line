@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.aemotionalline.application.view.ArchiveEntry;
 import com.aemotionalline.application.view.ArchiveSearchResult;
+import com.aemotionalline.application.view.NegotiationHistoryView;
 import com.aemotionalline.application.view.TopicHistoryView;
 import com.aemotionalline.application.view.UnansweredQuestionsView;
 import com.aemotionalline.application.view.Views;
@@ -52,7 +53,11 @@ public class ArchiveService
 	public TopicHistoryView topicHistory(UserId viewer, ConversationId id, ParagraphId paragraphId)
 	{
 		Conversation conversation = ConversationAccess.readable(conversations, viewer, id);
-		Paragraphs.visibleTo(viewer, conversation, paragraphId);
+
+		if (!Paragraphs.isVisibleTo(viewer, conversation, paragraphId))
+		{
+			throw new NotFoundException("Paragraph not found.");
+		}
 
 		TopicHistory history = TopicHistory.of(conversation, paragraphId);
 		List<ArchiveEntry> entries = new ArrayList<>();
@@ -99,6 +104,12 @@ public class ArchiveService
 
 		return new UnansweredQuestionsView(visibleEntries(viewer, conversation, Analyzer.conversationNotAnsweredQuestions(conversation)),
 				visibleEntries(viewer, conversation, Analyzer.questionsLeftUnanswered(conversation)));
+	}
+
+	/** The negotiations that are over, took effect or failed, each with the proposals that were sent. */
+	public NegotiationHistoryView negotiations(UserId viewer, ConversationId id)
+	{
+		return Views.negotiationHistory(ConversationAccess.readable(conversations, viewer, id));
 	}
 
 	private List<ArchiveEntry> visibleEntries(UserId viewer, Conversation conversation, List<QuestionParagraph> questions)

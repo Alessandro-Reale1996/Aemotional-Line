@@ -98,6 +98,23 @@ public final class Views
 		};
 	}
 
+	// THE NEGOTIATIONS THAT ARE OVER
+
+	public static NegotiationHistoryView negotiationHistory(Conversation conversation)
+	{
+		List<NegotiationHistoryView.TookEffect> tookEffect = conversation.getNegotiationHistory().stream()
+				.map(record -> new NegotiationHistoryView.TookEffect(record.negotiationId(), record.purpose(), record.discussionId(), record.archivedAt(),
+						record.proposals().stream().map(Views::proposal).toList()))
+				.toList();
+
+		List<NegotiationHistoryView.Failed> failed = conversation.getFailedNegotiations().stream()
+				.map(record -> new NegotiationHistoryView.Failed(record.negotiationId(), record.attemptedPurpose(), record.outcome(), record.closedBy(),
+						record.startedAt(), record.closedAt(), record.proposals().stream().map(Views::proposal).toList()))
+				.toList();
+
+		return new NegotiationHistoryView(tookEffect, failed);
+	}
+
 	// CLOSING
 
 	public static ClosingView closing(Discussion discussion, Couple couple, UserId viewer)

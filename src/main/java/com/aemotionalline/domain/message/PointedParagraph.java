@@ -39,7 +39,13 @@ public class PointedParagraph extends Paragraph
 			throw new DomainException("A pointed paragraph must answer a question.");
 		}
 		
-		return "In risposta a \u00ab" + question.getTitle() + "\u00bb";
+		return titleAnswering(question.getTitle());
+	}
+	
+	/** The standardized title of the answer to a question with this title. */
+	public static String titleAnswering(String questionTitle)
+	{
+		return "In risposta a \u00ab" + questionTitle + "\u00bb";
 	}
 	
 	public QuestionParagraph getQuestion()

@@ -18,10 +18,13 @@ import org.springframework.context.annotation.Import;
 
 import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.view.ArchiveEntry;
+import com.aemotionalline.application.view.NegotiationHistoryView;
 import com.aemotionalline.application.view.TopicHistoryView;
 import com.aemotionalline.domain.MutableClock;
 import com.aemotionalline.domain.conversation.ConversationId;
 import com.aemotionalline.domain.conversation.ConversationRepository;
+import com.aemotionalline.domain.conversation.FailedNegotiationRecord;
+import com.aemotionalline.domain.conversation.NegotiationRecord;
 import com.aemotionalline.domain.conversation.FullConversation;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.couple.CoupleId;
@@ -140,8 +143,25 @@ public class ArchiveServiceTest
 	@Test
 	void shouldNotStartATopicHistoryFromAParagraphTheViewerHasNotOpened()
 	{
-		assertThrows(InvalidRequestException.class, () -> archive.topicHistory(full.b, id, full.s.getId()));
+		// The same answer as for a paragraph that doesn't exist: it reveals nothing.
+		assertThrows(NotFoundException.class, () -> archive.topicHistory(full.b, id, full.s.getId()));
+		assertThrows(NotFoundException.class, () -> archive.topicHistory(full.b, id, ParagraphId.random()));
 		assertEquals(full.s.getId(), archive.topicHistory(full.a, id, full.s.getId()).paragraphId());
+	}
+
+	@Test
+	void shouldListTheNegotiationsThatAreOver()
+	{
+		var view = archive.negotiations(full.b, id);
+
+		assertEquals(full.conversation.getNegotiationHistory().stream().map(NegotiationRecord::negotiationId).toList(),
+				view.tookEffect().stream().map(NegotiationHistoryView.TookEffect::negotiationId).toList());
+		assertEquals(full.conversation.getFailedNegotiations().stream().map(FailedNegotiationRecord::negotiationId).toList(),
+				view.failed().stream().map(NegotiationHistoryView.Failed::negotiationId).toList());
+		assertFalse(view.tookEffect().isEmpty());
+		assertFalse(view.failed().isEmpty());
+		assertEquals(view, archive.negotiations(full.therapist, id));
+		assertEquals(view, archive.negotiations(full.a, id));
 	}
 
 	@Test
@@ -165,6 +185,7 @@ public class ArchiveServiceTest
 		assertThrows(NotFoundException.class, () -> archive.messagesBetween(stranger, id, EVER, NEVER));
 		assertThrows(NotFoundException.class, () -> archive.topicHistory(stranger, id, full.q.getId()));
 		assertThrows(NotFoundException.class, () -> archive.unansweredQuestions(stranger, id));
+		assertThrows(NotFoundException.class, () -> archive.negotiations(stranger, id));
 		assertThrows(NotFoundException.class, () -> archive.search(full.a, ConversationId.random(), "body"));
 
 		assertThrows(InvalidRequestException.class, () -> archive.search(full.a, id, "  "));

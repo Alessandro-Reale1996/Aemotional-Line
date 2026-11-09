@@ -22,7 +22,7 @@ final class HttpCouple
 {
 	static final String AGREEMENT = "Ci scriviamo con calma";
 
-	private static final String PASSWORD = "un cavallo sul tetto blu";
+	static final String PASSWORD = "un cavallo sul tetto blu";
 
 	final User annaAccount;
 	final User brunoAccount;

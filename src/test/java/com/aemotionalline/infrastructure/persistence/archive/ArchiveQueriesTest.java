@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Import;
 import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.view.ArchiveEntry;
 import com.aemotionalline.application.view.ArchiveProposal;
+import com.aemotionalline.application.view.ArchiveSearchResult;
 import com.aemotionalline.domain.MutableClock;
 import com.aemotionalline.domain.constraint.ConstraintContext;
 import com.aemotionalline.domain.constraint.GeoPosition;
@@ -36,8 +37,6 @@ import com.aemotionalline.domain.message.Paragraph;
 import com.aemotionalline.domain.message.ParagraphId;
 import com.aemotionalline.domain.message.ParagraphType;
 import com.aemotionalline.domain.message.SimpleParagraph;
-import com.aemotionalline.domain.negotiation.AgreementText;
-import com.aemotionalline.domain.negotiation.DiscussionTitle;
 import com.aemotionalline.domain.user.UserId;
 
 /**
@@ -100,6 +99,7 @@ public class ArchiveQueriesTest
 		assertEquals(second.getParagraphs().stream().map(Paragraph::getId).toList(), found.stream().map(entry -> entry.paragraphId().orElseThrow()).toList());
 		ArchiveEntry pointed = found.getFirst();
 		assertEquals(ParagraphType.POINTED, pointed.type());
+		assertEquals("In risposta a «Why?»", pointed.title());
 		assertEquals(full.main, pointed.discussionId());
 		assertEquals(second.getId(), pointed.messageId());
 		assertEquals(full.b, pointed.sender());
@@ -113,6 +113,18 @@ public class ArchiveQueriesTest
 
 		assertTrue(archive.messagesBetween(id, full.therapist, true, sent.plusNanos(1_000), sent.plusNanos(1_000)).isEmpty());
 		assertThrows(IllegalArgumentException.class, () -> archive.messagesBetween(id, full.therapist, true, sent, sent.minusSeconds(1)));
+	}
+
+	@Test
+	void shouldRejectAnIntervalBeyondWhatTheDatabaseCanHold()
+	{
+		Instant sent = mainMessages().getFirst().getSentAt();
+
+		assertEquals(1, archive.messagesBetween(id, full.therapist, true, Instant.parse("0001-01-01T00:00:00Z"), sent.plusNanos(1_000)).stream().map(ArchiveEntry::messageId).distinct().count());
+		assertTrue(archive.messagesBetween(id, full.therapist, true, sent.plusSeconds(3_600_000), Instant.parse("9999-12-31T23:59:59Z")).isEmpty());
+		assertThrows(IllegalArgumentException.class, () -> archive.messagesBetween(id, full.therapist, true, sent, Instant.parse("+20000-01-01T00:00:00Z")));
+		assertThrows(IllegalArgumentException.class, () -> archive.messagesBetween(id, full.therapist, true, sent, Instant.MAX));
+		assertThrows(IllegalArgumentException.class, () -> archive.messagesBetween(id, full.therapist, true, Instant.MIN, sent));
 	}
 
 	// BY KEYWORD:
@@ -160,7 +172,7 @@ public class ArchiveQueriesTest
 
 		assertEquals(Set.of(percent.getId()), ids(archive.search(id, full.therapist, true, "50%").paragraphs()));
 		assertTrue(archive.search(id, full.therapist, true, "%").paragraphs().stream().allMatch(paragraph -> paragraph.paragraphId().orElseThrow().equals(percent.getId())));
-		assertTrue(archive.search(id, full.therapist, true, "_").isEmpty());
+		assertNothingFound("_");
 	}
 
 	@Test
@@ -170,7 +182,8 @@ public class ArchiveQueriesTest
 		assertEquals(1, agreement.size());
 		assertEquals(ArchiveProposal.Section.TOOK_EFFECT, agreement.getFirst().section());
 		assertEquals(NegotiationRecord.Purpose.MODIFIED_AGREEMENT, agreement.getFirst().purpose());
-		assertEquals(new AgreementText("B'S AGREEMENT"), agreement.getFirst().content());
+		assertEquals("AGREEMENT", agreement.getFirst().proposal().kind());
+		assertEquals("B'S AGREEMENT", agreement.getFirst().proposal().text());
 
 		// The failed attempt to start the conversation, and an abandoned discussion request (only its request was kept).
 		ArchiveProposal tooEarly = archive.search(id, full.therapist, true, "too early").proposals().getFirst();
@@ -179,14 +192,23 @@ public class ArchiveQueriesTest
 
 		ArchiveProposal never = archive.search(id, full.therapist, true, "never").proposals().getFirst();
 		assertEquals(ArchiveProposal.Section.FAILED, never.section());
-		assertEquals(new DiscussionTitle("NEVER", "MIND"), never.content());
+		assertEquals("DISCUSSION_TITLE", never.proposal().kind());
+		assertEquals("NEVER", never.proposal().title());
+		assertEquals("MIND", never.proposal().subtitle());
 	}
 
 	@Test
 	void shouldFindNothingAndRejectABlankText()
 	{
-		assertTrue(archive.search(id, full.therapist, true, "zzzz").isEmpty());
+		assertNothingFound("zzzz");
 		assertThrows(IllegalArgumentException.class, () -> archive.search(id, full.therapist, true, "  "));
 		assertThrows(IllegalArgumentException.class, () -> archive.search(id, full.therapist, true, null));
+	}
+
+	private void assertNothingFound(String text)
+	{
+		ArchiveSearchResult found = archive.search(id, full.therapist, true, text);
+
+		assertTrue(found.paragraphs().isEmpty() && found.proposals().isEmpty());
 	}
 }
