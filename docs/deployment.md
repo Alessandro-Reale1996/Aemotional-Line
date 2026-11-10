@@ -3,7 +3,8 @@
 This guide is for whoever installs and runs the application. It holds therapy conversations between couples and their
 therapist: treat every part of the installation as handling health data.
 
-The backend is complete, REST API included; the React frontend is not built yet. Sections that depend on it say so.
+The backend is complete, REST API included; the React frontend is in progress (the jar serves it, for now a stand-in
+page). Sections that depend on it say so.
 
 ## 1. What you need
 
@@ -24,8 +25,10 @@ The backend is complete, REST API included; the React frontend is not built yet.
 ./mvnw -DskipTests package
 ```
 
-The jar is `target/aemotional-line-0.0.1-SNAPSHOT.jar`. To run the tests as well, Docker must be running: they start
-MariaDB in a container.
+The jar is `target/aemotional-line-0.0.1-SNAPSHOT.jar`, with the React app inside. The build compiles the frontend
+too: the first time it downloads Node 26 into `frontend/node` and the npm packages (network access needed), and it
+refuses to build the jar if the frontend's own checks (types, lint, unit tests) fail. To run the backend's tests as
+well, Docker must be running: they start MariaDB in a container.
 
 ## 3. Configuration
 

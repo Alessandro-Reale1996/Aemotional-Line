@@ -7,8 +7,8 @@ when and where they read and write, and keep a consultable archive of everything
 ## State
 
 Done: the domain model, persistence on MariaDB, the application services, the security layer (accounts, couple
-invitations, login with sessions in the database) and the REST API. Not built yet: the React frontend. `CLAUDE.md` records
-the detailed state and every design decision.
+invitations, login with sessions in the database) and the REST API. In progress: the React frontend (`frontend/`), which
+the jar already serves; for now a stand-in page. `CLAUDE.md` records the detailed state and every design decision.
 
 ## Build and test
 
@@ -18,8 +18,11 @@ Requirements: Java 25; Docker running (the tests start MariaDB in a container).
 ./mvnw test
 ```
 
+`./mvnw package` also builds the frontend into the jar, after its own checks; it needs no Node installed (it downloads
+its own into `frontend/node`). Working on the application day to day: [dev/README.md](dev/README.md).
+
 Spring Boot 4, Spring Data JDBC, Flyway, Spring Security with Spring Session JDBC, springdoc-openapi, JUnit 5 and
-Testcontainers.
+Testcontainers; React 19 with React Router, React-Bootstrap and Vite, TypeScript, Vitest and Playwright.
 
 ## Running
 

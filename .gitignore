@@ -1,1 +1,13 @@
 target/
+
+# Frontend (CLAUDE.md, frontend point 1): its dependencies, the Node the Maven build downloads, its build, the types
+# generated from openapi.json, Playwright's results and reports.
+frontend/node_modules/
+frontend/node/
+frontend/dist/
+frontend/src/api/schema.d.ts
+frontend/test-results/
+frontend/playwright-report/
+
+# Development (dev/README.md): the passwords chosen for the local database.
+dev/.env

@@ -25,9 +25,9 @@ The logout isn't in the spec, because a security filter handles it: `POST /api/a
   can't read. Any failure, whatever its reason, is the same 401 `INVALID_CREDENTIALS`.
 - A session ends after 30 minutes without requests. From then on the API answers 401 `AUTHENTICATION_REQUIRED`: go back to
   the login page.
-- Both cookies are `Secure` with the `__Host-` prefix, so a browser accepts them only in a secure context. Whether
-  `http://localhost` counts depends on the browser: check it when setting up the development server, and serve it over HTTPS
-  if it doesn't.
+- Both cookies are `Secure` with the `__Host-` prefix, so a browser accepts them only in a secure context.
+  `http://localhost` is one: Chromium and Firefox accept them there, through Vite's proxy too (checked on 2026-11-10; Safari
+  not checked). Use `localhost`, not `127.0.0.1`, in development. How to run everything: `dev/README.md`.
 
 ## Pages linked from the emails
 

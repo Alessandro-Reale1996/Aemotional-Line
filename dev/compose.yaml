@@ -1,0 +1,30 @@
+# The services the application needs in development (dev/README.md, CLAUDE.md frontend point 3): MariaDB and a mail
+# server that keeps every email for you to read. Reachable from this machine only. The passwords come from dev/.env.
+name: aemotional-dev
+
+services:
+  mariadb:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: aemotional_line
+      MARIADB_USER: aemotional
+      MARIADB_PASSWORD: ${AEMOTIONAL_DB_PASSWORD:?choose it in dev/.env}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?choose it in dev/.env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_uca1400_ai_ci"]
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - database:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  database:
