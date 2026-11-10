@@ -3,6 +3,8 @@ package com.aemotionalline.application;
 import java.time.Duration;
 import java.time.LocalTime;
 
+import org.jspecify.annotations.Nullable;
+
 import com.aemotionalline.application.view.ConstraintType;
 import com.aemotionalline.domain.constraint.ConstraintScope;
 import com.aemotionalline.domain.constraint.LocationConstraint;
@@ -13,7 +15,8 @@ import com.aemotionalline.domain.user.UserId;
  * (delay; it always restricts writing) or LOCATION (latitude, longitude, radiusMetres, direction). A null scope means the
  * type's default (TIME writing, LOCATION reading).
  */
-public record ConstraintSpec(UserId assignee, ConstraintType type, ConstraintScope scope, LocalTime notBefore, Duration delay, Double latitude,
-		Double longitude, Double radiusMetres, LocationConstraint.Direction direction)
+public record ConstraintSpec(UserId assignee, ConstraintType type, @Nullable ConstraintScope scope, @Nullable LocalTime notBefore,
+		@Nullable Duration delay, @Nullable Double latitude, @Nullable Double longitude, @Nullable Double radiusMetres,
+		LocationConstraint.@Nullable Direction direction)
 {
 }

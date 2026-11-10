@@ -3,6 +3,7 @@ package com.aemotionalline.infrastructure.web;
 import java.util.List;
 import java.util.Optional;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,7 +47,7 @@ class NegotiationController
 		}
 	}
 
-	record NewDiscussionNegotiation(String title, String subtitle, ParagraphId originParagraphId)
+	record NewDiscussionNegotiation(String title, String subtitle, @Nullable ParagraphId originParagraphId)
 	{
 		NewDiscussionNegotiation
 		{
@@ -56,7 +57,7 @@ class NegotiationController
 	}
 
 	/** The new content of a draft: the agreement's text, or the title and subtitle of a discussion. */
-	record DraftContent(String text, String title, String subtitle)
+	record DraftContent(@Nullable String text, @Nullable String title, @Nullable String subtitle)
 	{
 		DraftContent
 		{

@@ -3,6 +3,8 @@ package com.aemotionalline.application.view;
 import java.time.Instant;
 import java.util.Optional;
 
+import org.jspecify.annotations.Nullable;
+
 import com.aemotionalline.domain.conversation.DiscussionId;
 import com.aemotionalline.domain.message.MessageId;
 import com.aemotionalline.domain.message.ParagraphId;
@@ -17,10 +19,10 @@ import com.aemotionalline.domain.user.UserId;
  */
 public record ArchiveEntry(
 		Optional<ParagraphId> paragraphId,
-		ParagraphType type,
-		String title,
-		String subtitle,
-		String body,
+		@Nullable ParagraphType type,
+		@Nullable String title,
+		@Nullable String subtitle,
+		@Nullable String body,
 		DiscussionId discussionId,
 		MessageId messageId,
 		UserId sender,

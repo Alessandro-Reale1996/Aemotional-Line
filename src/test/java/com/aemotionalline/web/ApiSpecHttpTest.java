@@ -3,7 +3,11 @@ package com.aemotionalline.web;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -22,15 +26,26 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import com.aemotionalline.TestcontainersConfiguration;
 
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * The OpenAPI spec, as development sees it (CLAUDE.md, REST point 7): every endpoint of the controllers is in it, ids
- * are UUID strings, a DiscussionId an integer, and every error a Problem with the full list of codes.
+ * are UUID strings, a DiscussionId an integer, every error a Problem with the full list of codes, required and nullable
+ * fields marked (frontend point 2), and frontend/openapi.json, from which the frontend generates its types, is current.
+ * No test endpoints here, so the spec is the real one.
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "AEMOTIONAL_API_DOCS=true")
-@Import({ TestcontainersConfiguration.class, TestEndpoints.class })
+@Import(TestcontainersConfiguration.class)
 public class ApiSpecHttpTest
 {
+	/** The copy of the spec the frontend is built on, and where a newer one is left when it differs. */
+	static final Path COMMITTED = Path.of("frontend", "openapi.json");
+	static final Path FRESH = Path.of("target", "openapi.json");
+
+	private static final JsonMapper JSON = JsonMapper.builder().build();
+
 	@LocalServerPort
 	private int port;
 
@@ -55,14 +70,14 @@ public class ApiSpecHttpTest
 		JsonNode schemas = spec.path("components").path("schemas");
 		assertFalse(schemas.has("UserId"), "ids are described as strings, not as objects");
 		assertUuid(schemas.path("AccountView").path("properties").path("id"));
-		assertUuid(schemas.path("EchoView").path("properties").path("user"));
-		assertEquals("integer", schemas.path("EchoView").path("properties").path("discussion").path("type").asString());
-		assertEquals("string", schemas.path("NewMessage").path("properties").path("localTime").path("type").asString(), schemas.path("NewMessage").toString());
-		assertUuid(schemas.path("ParagraphDraft").path("properties").path("question"));
-		assertEquals("string", schemas.path("ConstraintSpec").path("properties").path("delay").path("type").asString(), schemas.path("ConstraintSpec").toString());
-		assertEquals("string", schemas.path("ConstraintView").path("properties").path("delay").path("type").asString(), schemas.path("ConstraintView").toString());
+		assertUuid(schemas.path("MessageView").path("properties").path("sender"));
+		assertEquals("integer", schemas.path("DiscussionView").path("properties").path("id").path("type").asString());
+		assertEquals("string", nonNull(schemas.path("NewMessage").path("properties").path("localTime")).path("type").asString(), schemas.path("NewMessage").toString());
+		assertUuid(nonNull(schemas.path("ParagraphDraft").path("properties").path("question")));
+		assertEquals("string", nonNull(schemas.path("ConstraintSpec").path("properties").path("delay")).path("type").asString(), schemas.path("ConstraintSpec").toString());
+		assertEquals("string", nonNull(schemas.path("ConstraintView").path("properties").path("delay")).path("type").asString(), schemas.path("ConstraintView").toString());
 		assertEquals("string", schemas.path("ClosingRequestView").path("properties").path("status").path("type").asString(), schemas.path("ClosingRequestView").toString());
-		assertUuid(schemas.path("ArchiveEntry").path("properties").path("paragraphId"));
+		assertUuid(nonNull(schemas.path("ArchiveEntry").path("properties").path("paragraphId")));
 		assertFalse(schemas.has("ProposalContent"), "a proposal is described by its view");
 		JsonNode from = spec.path("paths").path("/api/conversations/{id}/archive/messages").path("get").path("parameters").get(1);
 		assertEquals("from", from.path("name").asString(), from.toString());
@@ -92,10 +107,107 @@ public class ApiSpecHttpTest
 		assertEquals(List.of("TIME", "REPLY_DELAY", "LOCATION"), strings(schemas.path("ConstraintSpec").path("properties").path("type").path("enum")));
 		assertEquals(List.of("TIME", "REPLY_DELAY", "LOCATION"), strings(schemas.path("ConstraintView").path("properties").path("type").path("enum")));
 		assertEquals(List.of("AGREEMENT", "DISCUSSION_TITLE"), strings(schemas.path("ProposalView").path("properties").path("kind").path("enum")));
-		assertEquals("time", schemas.path("NewMessage").path("properties").path("localTime").path("format").asString());
-		assertEquals("duration", schemas.path("ConstraintSpec").path("properties").path("delay").path("format").asString());
+		assertEquals("time", nonNull(schemas.path("NewMessage").path("properties").path("localTime")).path("format").asString());
+		assertEquals("duration", nonNull(schemas.path("ConstraintSpec").path("properties").path("delay")).path("format").asString());
 
 		assertEquals(200, anonymous.get("/swagger-ui/index.html").status());
+	}
+
+	@Test
+	void shouldSayWhichFieldsAreRequiredAndWhichMayBeNull()
+	{
+		JsonNode schemas = spec().path("components").path("schemas");
+
+		// In an answer every field is present: one that may be empty is null, whether a plain value, an Optional or a view.
+		JsonNode proposal = schemas.path("ProposalView");
+		assertEquals(Set.copyOf(proposal.path("properties").propertyNames()), Set.copyOf(strings(proposal.path("required"))), proposal.toString());
+		assertTrue(isNullable(proposal.path("properties").path("text")), proposal.toString());
+		assertFalse(isNullable(proposal.path("properties").path("id")), proposal.toString());
+		assertTrue(isNullable(schemas.path("MessageView").path("properties").path("readAt")));
+		JsonNode draft = schemas.path("NegotiationView").path("properties").path("draft");
+		assertTrue(isNullable(draft), draft.toString());
+		assertEquals("#/components/schemas/ProposalView", nonNull(draft).path("$ref").asString(), draft.toString());
+		assertFalse(isNullable(schemas.path("ConversationView").path("properties").path("discussions")), "a list is never null");
+
+		// In a request a field that may be empty can be left out.
+		JsonNode paragraph = schemas.path("ParagraphDraft");
+		assertEquals(Set.of("type", "body", "references", "selfCitations"), Set.copyOf(strings(paragraph.path("required"))), paragraph.toString());
+		assertTrue(isNullable(paragraph.path("properties").path("subtitle")));
+		assertEquals(List.of("paragraphs"), strings(schemas.path("NewMessage").path("required")));
+
+		assertTrue(strings(schemas.path("Problem").path("required")).containsAll(List.of("status", "code")));
+	}
+
+	@Test
+	void shouldMatchTheSpecTheFrontendIsBuiltOn() throws IOException
+	{
+		ObjectNode spec = (ObjectNode) spec();
+		// The server's address depends on the port of the moment; the frontend doesn't need it.
+		spec.remove("servers");
+
+		if (Files.exists(COMMITTED) && JSON.readTree(Files.readString(COMMITTED)).equals(spec))
+		{
+			return;
+		}
+
+		Files.writeString(FRESH, JSON.writerWithDefaultPrettyPrinter().writeValueAsString(sorted(spec)) + "\n");
+		fail("The API's spec differs from " + COMMITTED + ". Check the new version, then copy it: cp " + FRESH + " " + COMMITTED);
+	}
+
+	private JsonNode spec()
+	{
+		ApiClient.Response answer = new ApiClient(port).get("/v3/api-docs");
+		assertEquals(200, answer.status(), answer.body());
+
+		return answer.json();
+	}
+
+	// The same JSON with the members of every object in alphabetical order, so the file's differences stay readable.
+	private static JsonNode sorted(JsonNode node)
+	{
+		if (node.isObject())
+		{
+			ObjectNode sorted = JsonNodeFactory.instance.objectNode();
+			node.propertyNames().stream().sorted().forEach(name -> sorted.set(name, sorted(node.get(name))));
+
+			return sorted;
+		}
+
+		if (node.isArray())
+		{
+			var array = JsonNodeFactory.instance.arrayNode();
+			node.forEach(element -> array.add(sorted(element)));
+
+			return array;
+		}
+
+		return node;
+	}
+
+	private static boolean isNullable(JsonNode property)
+	{
+		boolean nullable = false;
+
+		for (JsonNode alternative : property.path("oneOf"))
+		{
+			nullable |= alternative.path("type").asString().equals("null");
+		}
+
+		return nullable;
+	}
+
+	// A nullable property is "one of" its schema or null: its schema.
+	private static JsonNode nonNull(JsonNode property)
+	{
+		for (JsonNode alternative : property.path("oneOf"))
+		{
+			if (!alternative.path("type").asString().equals("null"))
+			{
+				return alternative;
+			}
+		}
+
+		return property;
 	}
 
 	private static Set<String> successes(JsonNode spec, String path, String method)

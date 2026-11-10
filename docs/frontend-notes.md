@@ -5,12 +5,14 @@ why each choice was made.
 
 ## The contract
 
-Start the backend with `AEMOTIONAL_API_DOCS=true`: the spec is at `/v3/api-docs`, Swagger UI at `/swagger-ui.html`. Both are
-off by default and stay off in production.
+`frontend/openapi.json` is the spec the app generates its types from. A backend test regenerates it from the code and
+fails when the copy is out of date, leaving the new version in `target/openapi.json`; every answer of the backend's HTTP
+tests is checked against it. With the backend started with `AEMOTIONAL_API_DOCS=true` the same spec is at `/v3/api-docs`,
+Swagger UI at `/swagger-ui.html`; both are off by default and stay off in production.
 
-The spec lists every `/api` route, what it answers on success, the error format and the full list of error codes. It does
-not say which fields are required or nullable, so generated types will mark every field as optional. The real rules are in
-"JSON" below.
+The spec lists every `/api` route, what it answers on success, the error format and the full list of error codes. It also
+says which fields are required: in an answer every field is present, and one that may be empty is declared as one of its
+type or `null`; in a request a field that may be empty can be left out.
 
 The logout isn't in the spec, because a security filter handles it: `POST /api/auth/logout` answers 204.
 

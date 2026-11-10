@@ -18,6 +18,8 @@ import org.springframework.context.annotation.Import;
 import com.aemotionalline.application.view.ConstraintType;
 import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.view.CoupleView;
+import com.aemotionalline.application.view.InvitationView;
+import com.aemotionalline.application.view.PersonView;
 import com.aemotionalline.application.view.SummaryView;
 import com.aemotionalline.application.view.SummaryView.CoupleSummary;
 import com.aemotionalline.application.view.SummaryView.UnopenedMessages;
@@ -25,6 +27,7 @@ import com.aemotionalline.domain.constraint.ConstraintChangeRequestId;
 import com.aemotionalline.domain.conversation.ConversationId;
 import com.aemotionalline.domain.conversation.DiscussionId;
 import com.aemotionalline.domain.conversation.NegotiationRecord.Purpose;
+import com.aemotionalline.domain.conversation.OutcomeDeclaration.Outcome;
 import com.aemotionalline.domain.couple.CoupleId;
 import com.aemotionalline.domain.couple.CoupleInvitationId;
 import com.aemotionalline.domain.couple.CoupleRepository;
@@ -147,6 +150,18 @@ public class HomeServiceTest
 		assertEquals(List.of(new DiscussionId(conversation, 1)), ofTherapist.therapistRequestsToDecide());
 		assertEquals(List.of(), ofTherapist.unopenedMessages());
 
+		// The therapist confirms: each partner has to declare the outcome, until they do; the therapist never declares.
+		DiscussionId closed = new DiscussionId(conversation, 1);
+		assertEquals(List.of(), only(home.summary(a)).outcomesToDeclare());
+		closingService.confirmTherapistClosing(therapist, conversation, 1);
+		assertEquals(List.of(), only(home.summary(therapist)).therapistRequestsToDecide());
+		assertEquals(List.of(closed), only(home.summary(a)).outcomesToDeclare());
+		assertEquals(List.of(closed), only(home.summary(b)).outcomesToDeclare());
+		assertEquals(List.of(), only(home.summary(therapist)).outcomesToDeclare());
+		closingService.declareOutcome(a, conversation, 1, Outcome.RESOLVED, "We found a way.");
+		assertEquals(List.of(), only(home.summary(a)).outcomesToDeclare());
+		assertEquals(List.of(closed), only(home.summary(b)).outcomesToDeclare());
+
 		// Once B opens the message, nothing is unopened any more.
 		conversationService.readMessage(b, conversation, 0,
 				conversationService.view(b, conversation).discussions().getFirst().messages().getFirst().id(), NOON, null);
@@ -170,6 +185,12 @@ public class HomeServiceTest
 
 		assertEquals(List.of(invitation), home.summary(c).pendingInvitations().stream().map(view -> view.id()).toList());
 		assertTrue(home.summary(therapist).pendingInvitations().stream().anyMatch(view -> view.id().equals(invitation)));
+
+		// C sees who invites them and with whom: an existing account keeps its own name, a new one the name entered.
+		InvitationView seenByC = home.summary(c).pendingInvitations().getFirst();
+		assertEquals(new PersonView(therapist, "therapist"), seenByC.therapist());
+		assertEquals(new PersonView(c, "patient"), seenByC.partnerOne());
+		assertEquals("D", seenByC.partnerTwo().displayName());
 	}
 
 	private CoupleId createCoupleWithExistingPatients(UserId therapist, UserId one, UserId two)

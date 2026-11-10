@@ -129,14 +129,14 @@ public class InvitationService
 
 		return invitations.findPendingInvolving(user).stream()
 				.filter(invitation -> now.isBefore(invitation.getExpiresAt()))
-				.map(InvitationService::view)
+				.map(this::view)
 				.toList();
 	}
 
 	@ReadOnlyTransaction
 	public InvitationView view(UserId user, CoupleInvitationId id)
 	{
-		return invitations.findById(id).filter(invitation -> involves(invitation, user)).map(InvitationService::view)
+		return invitations.findById(id).filter(invitation -> involves(invitation, user)).map(this::view)
 				.orElseThrow(() -> new NotFoundException("Invitation not found."));
 	}
 
@@ -185,9 +185,10 @@ public class InvitationService
 		return invitation.getTherapistId().equals(user) || invitation.isInvited(user);
 	}
 
-	private static InvitationView view(CoupleInvitation invitation)
+	private InvitationView view(CoupleInvitation invitation)
 	{
-		return new InvitationView(invitation.getId(), invitation.getTherapistId(), invitation.getPartnerOneId(), invitation.getPartnerTwoId(),
-				invitation.getStatus(), invitation.getAcceptedBy(), invitation.getCreatedAt(), invitation.getExpiresAt(), invitation.getCoupleId());
+		return new InvitationView(invitation.getId(), People.of(users, invitation.getTherapistId()), People.of(users, invitation.getPartnerOneId()),
+				People.of(users, invitation.getPartnerTwoId()), invitation.getStatus(), invitation.getAcceptedBy(), invitation.getCreatedAt(),
+				invitation.getExpiresAt(), invitation.getCoupleId());
 	}
 }

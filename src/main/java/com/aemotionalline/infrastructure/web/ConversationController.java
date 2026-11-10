@@ -3,6 +3,7 @@ package com.aemotionalline.infrastructure.web;
 import java.time.LocalTime;
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -44,7 +45,7 @@ class ConversationController
 		}
 	}
 
-	record NewMessage(List<ParagraphDraft> paragraphs, LocalTime localTime, Position position)
+	record NewMessage(List<ParagraphDraft> paragraphs, @Nullable LocalTime localTime, @Nullable Position position)
 	{
 		NewMessage
 		{
@@ -52,7 +53,7 @@ class ConversationController
 		}
 	}
 
-	record Opening(LocalTime localTime, Position position)
+	record Opening(@Nullable LocalTime localTime, @Nullable Position position)
 	{
 	}
 

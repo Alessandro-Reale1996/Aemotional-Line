@@ -22,7 +22,8 @@ import tools.jackson.databind.json.JsonMapper;
  * A minimal browser for the HTTP tests: it keeps the cookies the server sets (and drops the ones it expires), sends them
  * back, and, like the React app, copies the CSRF cookie into the X-XSRF-TOKEN header of every POST, PUT and DELETE. It
  * ignores the cookies' attributes (Secure, SameSite...): the tests check those on the Set-Cookie headers. The answers'
- * JSON can be read, to take ids from one answer and chain the next request.
+ * JSON can be read, to take ids from one answer and chain the next request. Every answer of the API is checked against
+ * frontend/openapi.json (ApiContract), so a test fails when the API answers something the spec doesn't describe.
  */
 public final class ApiClient
 {
@@ -136,9 +137,12 @@ public final class ApiClient
 
 		try
 		{
-			HttpResponse<String> response = http.send(request.build(), HttpResponse.BodyHandlers.ofString());
+			HttpRequest built = request.build();
+			HttpResponse<String> response = http.send(built, HttpResponse.BodyHandlers.ofString());
 			List<String> setCookies = response.headers().allValues("Set-Cookie");
 			setCookies.forEach(this::keep);
+			ApiContract.get().check(built.method(), built.uri().getPath(), response.statusCode(), response.headers().firstValue("Content-Type"),
+					response.body());
 
 			return new Response(response.statusCode(), response.body(), setCookies, response.headers());
 		}

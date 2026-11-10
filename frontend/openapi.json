@@ -1,0 +1,6651 @@
+{
+  "components" : {
+    "schemas" : {
+      "AccountView" : {
+        "properties" : {
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "THERAPIST", "PATIENT", "ADMINISTRATOR" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "displayName", "email", "id", "role" ],
+        "type" : "object"
+      },
+      "ArchiveEntry" : {
+        "properties" : {
+          "body" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "closedEnvelope" : {
+            "type" : "boolean"
+          },
+          "discussionId" : {
+            "description" : "The discussion's number in its conversation (0 is the main one).",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "messageId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "paragraphId" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "sender" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sentAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "subtitle" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "title" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "type" : {
+            "oneOf" : [ {
+              "enum" : [ "SIMPLE", "QUESTION", "POINTED" ],
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "body", "closedEnvelope", "discussionId", "messageId", "paragraphId", "sender", "sentAt", "subtitle", "title", "type" ],
+        "type" : "object"
+      },
+      "ArchiveProposal" : {
+        "properties" : {
+          "negotiationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "proposal" : {
+            "$ref" : "#/components/schemas/ProposalView"
+          },
+          "purpose" : {
+            "enum" : [ "STARTED_CONVERSATION", "MODIFIED_AGREEMENT", "OPENED_DISCUSSION" ],
+            "type" : "string"
+          },
+          "section" : {
+            "enum" : [ "TOOK_EFFECT", "FAILED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "negotiationId", "proposal", "purpose", "section" ],
+        "type" : "object"
+      },
+      "ArchiveSearchResult" : {
+        "properties" : {
+          "paragraphs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ArchiveEntry"
+            },
+            "type" : "array"
+          },
+          "proposals" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ArchiveProposal"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "paragraphs", "proposals" ],
+        "type" : "object"
+      },
+      "ClosingRequestView" : {
+        "properties" : {
+          "endedAt" : {
+            "oneOf" : [ {
+              "format" : "date-time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "requester" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sentAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "PENDING", "ACCEPTED", "REFUSED", "WITHDRAWN" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "endedAt", "requester", "sentAt", "status" ],
+        "type" : "object"
+      },
+      "ClosingView" : {
+        "properties" : {
+          "closed" : {
+            "type" : "boolean"
+          },
+          "closedAt" : {
+            "oneOf" : [ {
+              "format" : "date-time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "declarations" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DeclarationView"
+            },
+            "type" : "array"
+          },
+          "discussionId" : {
+            "description" : "The discussion's number in its conversation (0 is the main one).",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "requests" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ClosingRequestView"
+            },
+            "type" : "array"
+          },
+          "therapistRequests" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TherapistRequestView"
+            },
+            "type" : "array"
+          },
+          "way" : {
+            "oneOf" : [ {
+              "enum" : [ "AGREEMENT", "THERAPIST" ],
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "closed", "closedAt", "declarations", "discussionId", "requests", "therapistRequests", "way" ],
+        "type" : "object"
+      },
+      "ConstraintSpec" : {
+        "properties" : {
+          "assignee" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "delay" : {
+            "oneOf" : [ {
+              "example" : "PT1H",
+              "format" : "duration",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "direction" : {
+            "oneOf" : [ {
+              "enum" : [ "WITHIN", "BEYOND" ],
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "latitude" : {
+            "oneOf" : [ {
+              "format" : "double",
+              "type" : "number"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "longitude" : {
+            "oneOf" : [ {
+              "format" : "double",
+              "type" : "number"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "notBefore" : {
+            "oneOf" : [ {
+              "example" : "18:30",
+              "format" : "time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "radiusMetres" : {
+            "oneOf" : [ {
+              "format" : "double",
+              "type" : "number"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "scope" : {
+            "oneOf" : [ {
+              "enum" : [ "READ", "WRITE", "BOTH" ],
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "type" : {
+            "enum" : [ "TIME", "REPLY_DELAY", "LOCATION" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "assignee", "type" ],
+        "type" : "object"
+      },
+      "ConstraintView" : {
+        "properties" : {
+          "delay" : {
+            "oneOf" : [ {
+              "example" : "PT1H",
+              "format" : "duration",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "direction" : {
+            "oneOf" : [ {
+              "enum" : [ "WITHIN", "BEYOND" ],
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "latitude" : {
+            "oneOf" : [ {
+              "format" : "double",
+              "type" : "number"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "longitude" : {
+            "oneOf" : [ {
+              "format" : "double",
+              "type" : "number"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "notBefore" : {
+            "oneOf" : [ {
+              "example" : "18:30",
+              "format" : "time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "radiusMetres" : {
+            "oneOf" : [ {
+              "format" : "double",
+              "type" : "number"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "scope" : {
+            "enum" : [ "READ", "WRITE", "BOTH" ],
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "TIME", "REPLY_DELAY", "LOCATION" ],
+            "type" : "string"
+          },
+          "user" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "delay", "description", "direction", "latitude", "longitude", "notBefore", "radiusMetres", "scope", "type", "user" ],
+        "type" : "object"
+      },
+      "ConstraintsView" : {
+        "properties" : {
+          "inForce" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ConstraintView"
+            },
+            "type" : "array"
+          },
+          "requests" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RequestView"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "inForce", "requests" ],
+        "type" : "object"
+      },
+      "ConversationView" : {
+        "properties" : {
+          "agreement" : {
+            "type" : "string"
+          },
+          "coupleId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "discussions" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DiscussionView"
+            },
+            "type" : "array"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "agreement", "coupleId", "discussions", "id" ],
+        "type" : "object"
+      },
+      "CoupleSummary" : {
+        "properties" : {
+          "closingRequestsToAnswer" : {
+            "items" : {
+              "description" : "The discussion's number in its conversation (0 is the main one).",
+              "format" : "int32",
+              "type" : "integer"
+            },
+            "type" : "array"
+          },
+          "constraintRequestsToDecide" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "conversation" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "couple" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "negotiationsWaitingForYou" : {
+            "items" : {
+              "$ref" : "#/components/schemas/NegotiationWaiting"
+            },
+            "type" : "array"
+          },
+          "outcomesToDeclare" : {
+            "items" : {
+              "description" : "The discussion's number in its conversation (0 is the main one).",
+              "format" : "int32",
+              "type" : "integer"
+            },
+            "type" : "array"
+          },
+          "therapistRequestsToDecide" : {
+            "items" : {
+              "description" : "The discussion's number in its conversation (0 is the main one).",
+              "format" : "int32",
+              "type" : "integer"
+            },
+            "type" : "array"
+          },
+          "unopenedMessages" : {
+            "items" : {
+              "$ref" : "#/components/schemas/UnopenedMessages"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "closingRequestsToAnswer", "constraintRequestsToDecide", "conversation", "couple", "negotiationsWaitingForYou", "outcomesToDeclare", "therapistRequestsToDecide", "unopenedMessages" ],
+        "type" : "object"
+      },
+      "CoupleView" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "conversation" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "endedAt" : {
+            "oneOf" : [ {
+              "format" : "date-time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "partnerOne" : {
+            "$ref" : "#/components/schemas/PersonView"
+          },
+          "partnerTwo" : {
+            "$ref" : "#/components/schemas/PersonView"
+          },
+          "therapist" : {
+            "$ref" : "#/components/schemas/PersonView"
+          }
+        },
+        "required" : [ "active", "conversation", "endedAt", "id", "partnerOne", "partnerTwo", "therapist" ],
+        "type" : "object"
+      },
+      "CreatedConstraintChangeRequestId" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object"
+      },
+      "CreatedCoupleInvitationId" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object"
+      },
+      "CreatedMessageId" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object"
+      },
+      "CreatedNegotiationId" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object"
+      },
+      "CreatedProposalId" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object"
+      },
+      "CreatedUserId" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object"
+      },
+      "Credentials" : {
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "password" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "email", "password" ],
+        "type" : "object"
+      },
+      "Declaration" : {
+        "properties" : {
+          "outcome" : {
+            "enum" : [ "RESOLVED", "STALLED" ],
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "outcome", "reason" ],
+        "type" : "object"
+      },
+      "DeclarationView" : {
+        "properties" : {
+          "declaredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "outcome" : {
+            "oneOf" : [ {
+              "enum" : [ "RESOLVED", "STALLED" ],
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "partner" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "reason" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "declaredAt", "outcome", "partner", "reason" ],
+        "type" : "object"
+      },
+      "DiscussionView" : {
+        "properties" : {
+          "closed" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "description" : "The discussion's number in its conversation (0 is the main one).",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "lastSender" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "messages" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MessageView"
+            },
+            "type" : "array"
+          },
+          "originParagraphId" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "subtitle" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "title" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "closed", "id", "lastSender", "messages", "originParagraphId", "subtitle", "title" ],
+        "type" : "object"
+      },
+      "DraftContent" : {
+        "properties" : {
+          "subtitle" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "text" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "title" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "type" : "object"
+      },
+      "DraftToPreview" : {
+        "properties" : {
+          "paragraphs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ParagraphDraft"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "paragraphs" ],
+        "type" : "object"
+      },
+      "EndedCoupleView" : {
+        "properties" : {
+          "endedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "endedAt", "id" ],
+        "type" : "object"
+      },
+      "Failed" : {
+        "properties" : {
+          "attemptedPurpose" : {
+            "enum" : [ "STARTED_CONVERSATION", "MODIFIED_AGREEMENT", "OPENED_DISCUSSION" ],
+            "type" : "string"
+          },
+          "closedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "closedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "negotiationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "outcome" : {
+            "enum" : [ "REFUSED", "ABANDONED" ],
+            "type" : "string"
+          },
+          "proposals" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProposalView"
+            },
+            "type" : "array"
+          },
+          "startedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "attemptedPurpose", "closedAt", "closedBy", "negotiationId", "outcome", "proposals", "startedAt" ],
+        "type" : "object"
+      },
+      "InvitationView" : {
+        "properties" : {
+          "acceptedBy" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array",
+            "uniqueItems" : true
+          },
+          "coupleId" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "partnerOne" : {
+            "$ref" : "#/components/schemas/PersonView"
+          },
+          "partnerTwo" : {
+            "$ref" : "#/components/schemas/PersonView"
+          },
+          "status" : {
+            "enum" : [ "PENDING", "ACCEPTED", "DECLINED", "WITHDRAWN", "EXPIRED" ],
+            "type" : "string"
+          },
+          "therapist" : {
+            "$ref" : "#/components/schemas/PersonView"
+          }
+        },
+        "required" : [ "acceptedBy", "coupleId", "createdAt", "expiresAt", "id", "partnerOne", "partnerTwo", "status", "therapist" ],
+        "type" : "object"
+      },
+      "LimitsView" : {
+        "properties" : {
+          "agreementText" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "discussionSubtitle" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "discussionTitle" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "displayName" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "email" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "messageParagraphs" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "outcomeReason" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "passwordMaxBytes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "passwordMaxLength" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "passwordMinLength" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "passwordUnit" : {
+            "type" : "string"
+          },
+          "pointedAnswerBody" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "proposalJustification" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "questionBody" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "questionTitle" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "replyDelayMaxDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "simpleParagraphBody" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "simpleParagraphSubtitle" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "simpleParagraphTitle" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "textUnit" : {
+            "type" : "string"
+          },
+          "therapistRequestJustification" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "agreementText", "discussionSubtitle", "discussionTitle", "displayName", "email", "messageParagraphs", "outcomeReason", "passwordMaxBytes", "passwordMaxLength", "passwordMinLength", "passwordUnit", "pointedAnswerBody", "proposalJustification", "questionBody", "questionTitle", "replyDelayMaxDays", "simpleParagraphBody", "simpleParagraphSubtitle", "simpleParagraphTitle", "textUnit", "therapistRequestJustification" ],
+        "type" : "object"
+      },
+      "MessagePreviewView" : {
+        "properties" : {
+          "blockingDiscussions" : {
+            "items" : {
+              "description" : "The discussion's number in its conversation (0 is the main one).",
+              "format" : "int32",
+              "type" : "integer"
+            },
+            "type" : "array"
+          },
+          "questionsLeftUnanswered" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "blockingDiscussions", "questionsLeftUnanswered" ],
+        "type" : "object"
+      },
+      "MessageView" : {
+        "properties" : {
+          "closedEnvelope" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "paragraphs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ParagraphView"
+            },
+            "type" : "array"
+          },
+          "questionsLeftUnanswered" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "readAt" : {
+            "oneOf" : [ {
+              "format" : "date-time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "sender" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sentAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "closedEnvelope", "id", "paragraphs", "questionsLeftUnanswered", "readAt", "sender", "sentAt" ],
+        "type" : "object"
+      },
+      "NegotiationEffect" : {
+        "properties" : {
+          "conversationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "openedDiscussion" : {
+            "oneOf" : [ {
+              "description" : "The discussion's number in its conversation (0 is the main one).",
+              "format" : "int32",
+              "type" : "integer"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "conversationId", "openedDiscussion" ],
+        "type" : "object"
+      },
+      "NegotiationHistoryView" : {
+        "properties" : {
+          "failed" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Failed"
+            },
+            "type" : "array"
+          },
+          "tookEffect" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TookEffect"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "failed", "tookEffect" ],
+        "type" : "object"
+      },
+      "NegotiationView" : {
+        "properties" : {
+          "closedAt" : {
+            "oneOf" : [ {
+              "format" : "date-time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "closedBy" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "coupleId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "currentResponder" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "draft" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/ProposalView"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "originParagraphId" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "purpose" : {
+            "enum" : [ "STARTED_CONVERSATION", "MODIFIED_AGREEMENT", "OPENED_DISCUSSION" ],
+            "type" : "string"
+          },
+          "request" : {
+            "$ref" : "#/components/schemas/ProposalView"
+          },
+          "sentProposals" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProposalView"
+            },
+            "type" : "array"
+          },
+          "startedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "ACCEPTED", "REFUSED", "ABANDONED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "closedAt", "closedBy", "coupleId", "currentResponder", "draft", "id", "originParagraphId", "purpose", "request", "sentProposals", "startedAt", "status" ],
+        "type" : "object"
+      },
+      "NegotiationWaiting" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "purpose" : {
+            "enum" : [ "STARTED_CONVERSATION", "MODIFIED_AGREEMENT", "OPENED_DISCUSSION" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "purpose" ],
+        "type" : "object"
+      },
+      "NewAgreementNegotiation" : {
+        "properties" : {
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "text" ],
+        "type" : "object"
+      },
+      "NewDiscussionNegotiation" : {
+        "properties" : {
+          "originParagraphId" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "subtitle" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "subtitle", "title" ],
+        "type" : "object"
+      },
+      "NewInvitation" : {
+        "properties" : {
+          "emailOne" : {
+            "type" : "string"
+          },
+          "emailTwo" : {
+            "type" : "string"
+          },
+          "nameOne" : {
+            "type" : "string"
+          },
+          "nameTwo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "emailOne", "emailTwo", "nameOne", "nameTwo" ],
+        "type" : "object"
+      },
+      "NewMessage" : {
+        "properties" : {
+          "localTime" : {
+            "oneOf" : [ {
+              "example" : "18:30",
+              "format" : "time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "paragraphs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ParagraphDraft"
+            },
+            "type" : "array"
+          },
+          "position" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Position"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "paragraphs" ],
+        "type" : "object"
+      },
+      "NewPassword" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "password" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "password" ],
+        "type" : "object"
+      },
+      "NewTherapist" : {
+        "properties" : {
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "displayName", "email" ],
+        "type" : "object"
+      },
+      "Opening" : {
+        "properties" : {
+          "localTime" : {
+            "oneOf" : [ {
+              "example" : "18:30",
+              "format" : "time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "position" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Position"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "type" : "object"
+      },
+      "ParagraphDraft" : {
+        "properties" : {
+          "body" : {
+            "type" : "string"
+          },
+          "question" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "references" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "selfCitations" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "subtitle" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "title" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "type" : {
+            "enum" : [ "SIMPLE", "QUESTION", "POINTED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "body", "references", "selfCitations", "type" ],
+        "type" : "object"
+      },
+      "ParagraphView" : {
+        "properties" : {
+          "body" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "references" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "selfCitations" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "subtitle" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "SIMPLE", "QUESTION", "POINTED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "body", "id", "references", "selfCitations", "subtitle", "title", "type" ],
+        "type" : "object"
+      },
+      "PasswordConfirmation" : {
+        "properties" : {
+          "password" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "password" ],
+        "type" : "object"
+      },
+      "PersonView" : {
+        "properties" : {
+          "displayName" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "displayName", "id" ],
+        "type" : "object"
+      },
+      "Position" : {
+        "properties" : {
+          "latitude" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "longitude" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "required" : [ "latitude", "longitude" ],
+        "type" : "object"
+      },
+      "Problem" : {
+        "properties" : {
+          "code" : {
+            "description" : "Stable: the frontend picks its message by it.",
+            "enum" : [ "ACCESS_DENIED", "ACCOUNT_IN_ACTIVE_COUPLE", "ADMINISTRATOR_EXISTS", "ADMINISTRATOR_PENDING", "AGREEMENT_NEGOTIATION_IN_PROGRESS", "AUTHENTICATION_REQUIRED", "CANNOT_BE_INVITED", "CLOSING_REQUEST_PENDING", "CONSTRAINT_NOT_SATISFIED", "CONSTRAINT_REQUEST_CLOSED", "CONSTRAINT_REQUEST_PENDING", "COUPLE_ENDED", "COUPLE_NOT_ENDED", "DISCUSSION_CLOSED", "DISCUSSION_NOT_CLOSED", "EMAIL_ALREADY_USED", "EXPANSION_ALREADY_REQUESTED", "INCORRECT_PASSWORD", "INTERNAL_ERROR", "INVALID_CONSTRAINT", "INVALID_CREDENTIALS", "INVALID_EMAIL", "INVALID_LINK", "INVITATION_ALREADY_ACCEPTED", "INVITATION_CLOSED", "INVITATION_EXPIRED", "MALFORMED_REQUEST", "MESSAGE_EMPTY", "MESSAGE_NOT_OPENED", "MESSAGE_TOO_LONG", "NEGOTIATION_ENDED", "NEGOTIATION_WRONG_PHASE", "NOT_A_PARTNER", "NOT_FOUND", "NOT_THE_THERAPIST", "NOT_YOUR_TURN", "NO_PENDING_CLOSING_REQUEST", "ORIGIN_REFERENCE_REQUIRED", "OUTCOME_ALREADY_DECLARED", "PARAGRAPH_ALREADY_EXPANDED", "PARAGRAPH_EXPANDED_ELSEWHERE", "PARTNER_IN_ACTIVE_COUPLE", "PASSWORD_TOO_EASY", "PASSWORD_TOO_LONG", "PASSWORD_TOO_SHORT", "QUESTION_ALREADY_ANSWERED", "QUESTION_NEEDS_POINTED_ANSWER", "REFERENCE_NOT_ALLOWED", "RULE_VIOLATED", "SAME_EMAIL_TWICE", "SELF_CITATION_NOT_ALLOWED", "TEXT_REQUIRED", "TEXT_TOO_LONG", "THERAPIST_REQUEST_NOT_ALLOWED_YET" ],
+            "type" : "string"
+          },
+          "detail" : {
+            "description" : "In English, for developers.",
+            "type" : "string"
+          },
+          "errorId" : {
+            "description" : "Only with INTERNAL_ERROR: the id under which the error is logged.",
+            "type" : "string"
+          },
+          "instance" : {
+            "type" : "string"
+          },
+          "status" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "detail", "instance", "status", "title" ],
+        "type" : "object"
+      },
+      "ProposalView" : {
+        "properties" : {
+          "author" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "justification" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "kind" : {
+            "enum" : [ "AGREEMENT", "DISCUSSION_TITLE" ],
+            "type" : "string"
+          },
+          "sentAt" : {
+            "oneOf" : [ {
+              "format" : "date-time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "WAITING_FOR_RESPONSE", "REFUSED", "ACCEPTED" ],
+            "type" : "string"
+          },
+          "subtitle" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "text" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "title" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "author", "id", "justification", "kind", "sentAt", "status", "subtitle", "text", "title" ],
+        "type" : "object"
+      },
+      "ProposedConstraints" : {
+        "properties" : {
+          "constraints" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ConstraintSpec"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "constraints" ],
+        "type" : "object"
+      },
+      "RequestView" : {
+        "properties" : {
+          "approvals" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array",
+            "uniqueItems" : true
+          },
+          "assignments" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ConstraintView"
+            },
+            "type" : "array"
+          },
+          "closedAt" : {
+            "oneOf" : [ {
+              "format" : "date-time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "previousAssignments" : {
+            "oneOf" : [ {
+              "items" : {
+                "$ref" : "#/components/schemas/ConstraintView"
+              },
+              "type" : "array"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "proposedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "proposedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "rejectedBy" : {
+            "oneOf" : [ {
+              "format" : "uuid",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "status" : {
+            "enum" : [ "PENDING", "REJECTED", "WITHDRAWN", "APPLIED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "approvals", "assignments", "closedAt", "id", "previousAssignments", "proposedAt", "proposedBy", "rejectedBy", "status" ],
+        "type" : "object"
+      },
+      "ResetRequest" : {
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "email" ],
+        "type" : "object"
+      },
+      "Search" : {
+        "properties" : {
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "text" ],
+        "type" : "object"
+      },
+      "Sending" : {
+        "properties" : {
+          "justification" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "justification" ],
+        "type" : "object"
+      },
+      "SummaryView" : {
+        "properties" : {
+          "couples" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CoupleSummary"
+            },
+            "type" : "array"
+          },
+          "pendingInvitations" : {
+            "items" : {
+              "$ref" : "#/components/schemas/InvitationView"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "couples", "pendingInvitations" ],
+        "type" : "object"
+      },
+      "TherapistRequest" : {
+        "properties" : {
+          "justification" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "justification" ],
+        "type" : "object"
+      },
+      "TherapistRequestView" : {
+        "properties" : {
+          "decidedAt" : {
+            "oneOf" : [ {
+              "format" : "date-time",
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "justification" : {
+            "oneOf" : [ {
+              "type" : "string"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "previousRequests" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ClosingRequestView"
+            },
+            "type" : "array"
+          },
+          "requester" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sentAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "PENDING", "CONFIRMED", "REFUSED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "decidedAt", "justification", "previousRequests", "requester", "sentAt", "status" ],
+        "type" : "object"
+      },
+      "TherapistView" : {
+        "properties" : {
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "PENDING", "ACTIVE", "DISABLED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "displayName", "email", "id", "status" ],
+        "type" : "object"
+      },
+      "TookEffect" : {
+        "properties" : {
+          "archivedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "discussionId" : {
+            "oneOf" : [ {
+              "description" : "The discussion's number in its conversation (0 is the main one).",
+              "format" : "int32",
+              "type" : "integer"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "negotiationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "proposals" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProposalView"
+            },
+            "type" : "array"
+          },
+          "purpose" : {
+            "enum" : [ "STARTED_CONVERSATION", "MODIFIED_AGREEMENT", "OPENED_DISCUSSION" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "archivedAt", "discussionId", "negotiationId", "proposals", "purpose" ],
+        "type" : "object"
+      },
+      "TopicHistoryView" : {
+        "properties" : {
+          "entries" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ArchiveEntry"
+            },
+            "type" : "array"
+          },
+          "paragraphId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "rule" : {
+            "enum" : [ "MAIN_CONVERSATION", "SPECIFIC_DISCUSSION" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "entries", "paragraphId", "rule" ],
+        "type" : "object"
+      },
+      "UnansweredQuestionsView" : {
+        "properties" : {
+          "leftUnanswered" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ArchiveEntry"
+            },
+            "type" : "array"
+          },
+          "stillOpen" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ArchiveEntry"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "leftUnanswered", "stillOpen" ],
+        "type" : "object"
+      },
+      "UnopenedMessages" : {
+        "properties" : {
+          "count" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "discussion" : {
+            "description" : "The discussion's number in its conversation (0 is the main one).",
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "count", "discussion" ],
+        "type" : "object"
+      }
+    }
+  },
+  "info" : {
+    "title" : "OpenAPI definition",
+    "version" : "v0"
+  },
+  "openapi" : "3.1.0",
+  "paths" : {
+    "/api/admin/therapists" : {
+      "get" : {
+        "operationId" : "therapists",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TherapistView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "administration-controller" ]
+      },
+      "post" : {
+        "operationId" : "createTherapist",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewTherapist"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatedUserId"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "administration-controller" ]
+      }
+    },
+    "/api/admin/therapists/{id}/disable" : {
+      "post" : {
+        "operationId" : "disableTherapist",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PasswordConfirmation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "administration-controller" ]
+      }
+    },
+    "/api/admin/therapists/{id}/ended-couples" : {
+      "get" : {
+        "operationId" : "endedCouples",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/EndedCoupleView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "administration-controller" ]
+      }
+    },
+    "/api/auth/activate" : {
+      "post" : {
+        "operationId" : "activate",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewPassword"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "auth-controller" ]
+      }
+    },
+    "/api/auth/csrf" : {
+      "get" : {
+        "operationId" : "csrf",
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "auth-controller" ]
+      }
+    },
+    "/api/auth/login" : {
+      "post" : {
+        "operationId" : "logIn",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountView"
+                }
+              }
+            },
+            "description" : "The account logged in"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "auth-controller" ]
+      }
+    },
+    "/api/auth/me" : {
+      "get" : {
+        "operationId" : "me",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "auth-controller" ]
+      }
+    },
+    "/api/auth/password-reset" : {
+      "post" : {
+        "operationId" : "requestPasswordReset",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResetRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "202" : {
+            "description" : "Accepted"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "auth-controller" ]
+      }
+    },
+    "/api/auth/password-reset/confirm" : {
+      "post" : {
+        "operationId" : "resetPassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewPassword"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "auth-controller" ]
+      }
+    },
+    "/api/conversations/{id}" : {
+      "get" : {
+        "operationId" : "view_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "conversation-controller" ]
+      }
+    },
+    "/api/conversations/{id}/archive/messages" : {
+      "get" : {
+        "operationId" : "messages",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "from",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : true,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ArchiveEntry"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "archive-controller" ]
+      }
+    },
+    "/api/conversations/{id}/archive/negotiations" : {
+      "get" : {
+        "operationId" : "negotiations",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NegotiationHistoryView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "archive-controller" ]
+      }
+    },
+    "/api/conversations/{id}/archive/search" : {
+      "post" : {
+        "operationId" : "search",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Search"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ArchiveSearchResult"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "archive-controller" ]
+      }
+    },
+    "/api/conversations/{id}/archive/topics/{paragraphId}" : {
+      "get" : {
+        "operationId" : "topic",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "paragraphId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TopicHistoryView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "archive-controller" ]
+      }
+    },
+    "/api/conversations/{id}/archive/unanswered-questions" : {
+      "get" : {
+        "operationId" : "unansweredQuestions",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UnansweredQuestionsView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "archive-controller" ]
+      }
+    },
+    "/api/conversations/{id}/constraints" : {
+      "get" : {
+        "operationId" : "view_4",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConstraintsView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "constraint-controller" ]
+      }
+    },
+    "/api/conversations/{id}/constraints/requests" : {
+      "post" : {
+        "operationId" : "propose",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProposedConstraints"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatedConstraintChangeRequestId"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "constraint-controller" ]
+      }
+    },
+    "/api/conversations/{id}/constraints/requests/{requestId}/approve" : {
+      "post" : {
+        "operationId" : "approve",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "requestId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "constraint-controller" ]
+      }
+    },
+    "/api/conversations/{id}/constraints/requests/{requestId}/reject" : {
+      "post" : {
+        "operationId" : "reject",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "requestId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "constraint-controller" ]
+      }
+    },
+    "/api/conversations/{id}/constraints/requests/{requestId}/withdraw" : {
+      "post" : {
+        "operationId" : "withdraw_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "requestId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "constraint-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussion-negotiations" : {
+      "post" : {
+        "operationId" : "startDiscussionNegotiation",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewDiscussionNegotiation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatedNegotiationId"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/closing" : {
+      "get" : {
+        "operationId" : "view_3",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClosingView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "closing-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/closing/accept" : {
+      "post" : {
+        "operationId" : "accept_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "closing-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/closing/outcome" : {
+      "post" : {
+        "operationId" : "declareOutcome",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Declaration"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "closing-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/closing/refuse" : {
+      "post" : {
+        "operationId" : "refuse",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "closing-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/closing/request" : {
+      "post" : {
+        "operationId" : "request",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "closing-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/closing/therapist-request" : {
+      "post" : {
+        "operationId" : "requestTherapist",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TherapistRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "closing-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/closing/therapist-request/confirm" : {
+      "post" : {
+        "operationId" : "confirmTherapistRequest",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "closing-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/closing/therapist-request/refuse" : {
+      "post" : {
+        "operationId" : "refuseTherapistRequest",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "closing-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/closing/withdraw" : {
+      "post" : {
+        "operationId" : "withdraw_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "closing-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/messages" : {
+      "post" : {
+        "operationId" : "send_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewMessage"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatedMessageId"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "conversation-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/messages/{messageId}/open" : {
+      "post" : {
+        "operationId" : "open",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "messageId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Opening"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "conversation-controller" ]
+      }
+    },
+    "/api/conversations/{id}/discussions/{number}/previews" : {
+      "post" : {
+        "operationId" : "preview",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "number",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DraftToPreview"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessagePreviewView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "conversation-controller" ]
+      }
+    },
+    "/api/couples/{id}/agreement-negotiations" : {
+      "post" : {
+        "operationId" : "startAgreementNegotiation",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewAgreementNegotiation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatedNegotiationId"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/couples/{id}/data-deletion" : {
+      "post" : {
+        "operationId" : "deleteData",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PasswordConfirmation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "couple-controller" ]
+      }
+    },
+    "/api/couples/{id}/end" : {
+      "post" : {
+        "operationId" : "end",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PasswordConfirmation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "couple-controller" ]
+      }
+    },
+    "/api/couples/{id}/failed-starts" : {
+      "get" : {
+        "operationId" : "failedStarts",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/NegotiationView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/couples/{id}/negotiations" : {
+      "get" : {
+        "operationId" : "inProgress",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/NegotiationView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/invitations" : {
+      "get" : {
+        "operationId" : "pending",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/InvitationView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      },
+      "post" : {
+        "operationId" : "invite",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewInvitation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatedCoupleInvitationId"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/invitations/{id}" : {
+      "get" : {
+        "operationId" : "view_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InvitationView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/invitations/{id}/accept" : {
+      "post" : {
+        "operationId" : "accept",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/invitations/{id}/decline" : {
+      "post" : {
+        "operationId" : "decline",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/invitations/{id}/withdraw" : {
+      "post" : {
+        "operationId" : "withdraw",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/limits" : {
+      "get" : {
+        "operationId" : "limits",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LimitsView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "limits-controller" ]
+      }
+    },
+    "/api/me/account-deletion" : {
+      "post" : {
+        "operationId" : "deleteAccount",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PasswordConfirmation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "me-controller" ]
+      }
+    },
+    "/api/me/couples" : {
+      "get" : {
+        "operationId" : "couples",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/CoupleView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "me-controller" ]
+      }
+    },
+    "/api/me/summary" : {
+      "get" : {
+        "operationId" : "summary",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SummaryView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "me-controller" ]
+      }
+    },
+    "/api/negotiations/{id}" : {
+      "get" : {
+        "operationId" : "view",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NegotiationView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/negotiations/{id}/abandon" : {
+      "post" : {
+        "operationId" : "abandon",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/negotiations/{id}/accept-proposal" : {
+      "post" : {
+        "operationId" : "acceptProposal",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NegotiationEffect"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/negotiations/{id}/accept-request" : {
+      "post" : {
+        "operationId" : "acceptRequest",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/negotiations/{id}/draft" : {
+      "put" : {
+        "operationId" : "editDraft",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DraftContent"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/negotiations/{id}/refuse-proposal" : {
+      "post" : {
+        "operationId" : "refuseProposal",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatedProposalId"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/negotiations/{id}/refuse-request" : {
+      "post" : {
+        "operationId" : "refuseRequest",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    },
+    "/api/negotiations/{id}/send" : {
+      "post" : {
+        "operationId" : "send",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Sending"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Malformed request (MALFORMED_REQUEST, or a link or password code)"
+          },
+          "401" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Login required, or failed (AUTHENTICATION_REQUIRED, INVALID_CREDENTIALS)"
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Forbidden (ACCESS_DENIED)"
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Not found (NOT_FOUND)"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "A rule refused the request (its code)"
+          },
+          "500" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Unexpected error (INTERNAL_ERROR, with an errorId)"
+          }
+        },
+        "tags" : [ "negotiation-controller" ]
+      }
+    }
+  }
+}

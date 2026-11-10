@@ -24,18 +24,20 @@ public record SummaryView(List<InvitationView> pendingInvitations, List<CoupleSu
 
 	/**
 	 * One active couple: the negotiations where it is the user's turn, the other partner's messages not yet opened per
-	 * discussion, the closing requests to answer, the requests to the therapist to decide (therapist only), the constraint
-	 * requests still waiting for the user's approval.
+	 * discussion, the closing requests to answer, the closed discussions whose outcome the user hasn't declared yet (partners
+	 * only), the requests to the therapist to decide (therapist only), the constraint requests still waiting for the user's
+	 * approval.
 	 */
 	public record CoupleSummary(CoupleId couple, Optional<ConversationId> conversation, List<NegotiationWaiting> negotiationsWaitingForYou,
-			List<UnopenedMessages> unopenedMessages, List<DiscussionId> closingRequestsToAnswer, List<DiscussionId> therapistRequestsToDecide,
-			List<ConstraintChangeRequestId> constraintRequestsToDecide)
+			List<UnopenedMessages> unopenedMessages, List<DiscussionId> closingRequestsToAnswer, List<DiscussionId> outcomesToDeclare,
+			List<DiscussionId> therapistRequestsToDecide, List<ConstraintChangeRequestId> constraintRequestsToDecide)
 	{
 		public CoupleSummary
 		{
 			negotiationsWaitingForYou = List.copyOf(negotiationsWaitingForYou);
 			unopenedMessages = List.copyOf(unopenedMessages);
 			closingRequestsToAnswer = List.copyOf(closingRequestsToAnswer);
+			outcomesToDeclare = List.copyOf(outcomesToDeclare);
 			therapistRequestsToDecide = List.copyOf(therapistRequestsToDecide);
 			constraintRequestsToDecide = List.copyOf(constraintRequestsToDecide);
 		}

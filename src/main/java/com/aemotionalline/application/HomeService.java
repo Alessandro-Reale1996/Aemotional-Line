@@ -7,7 +7,6 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.aemotionalline.application.view.CoupleView;
-import com.aemotionalline.application.view.PersonView;
 import com.aemotionalline.application.view.SummaryView;
 import com.aemotionalline.application.view.SummaryView.CoupleSummary;
 import com.aemotionalline.application.view.SummaryView.NegotiationWaiting;
@@ -22,7 +21,6 @@ import com.aemotionalline.domain.conversation.DiscussionId;
 import com.aemotionalline.domain.couple.Couple;
 import com.aemotionalline.domain.couple.CoupleRepository;
 import com.aemotionalline.domain.negotiation.NegotiationRepository;
-import com.aemotionalline.domain.user.User;
 import com.aemotionalline.domain.user.UserId;
 import com.aemotionalline.domain.user.UserRepository;
 
@@ -56,7 +54,8 @@ public class HomeService
 	public List<CoupleView> couples(UserId user)
 	{
 		return couples.findCouplesOf(user).stream()
-				.map(couple -> new CoupleView(couple.getId(), person(couple.getPartnerOneId()), person(couple.getPartnerTwoId()), person(couple.getTherapistId()),
+				.map(couple -> new CoupleView(couple.getId(), People.of(users, couple.getPartnerOneId()), People.of(users, couple.getPartnerTwoId()),
+						People.of(users, couple.getTherapistId()),
 						couple.isActive(), couple.getEndedAt(), conversations.findIdByCouple(couple.getId())))
 				.toList();
 	}
@@ -79,6 +78,7 @@ public class HomeService
 		Optional<ConversationId> conversationId = conversations.findIdByCouple(couple.getId());
 		List<UnopenedMessages> unopened = new ArrayList<>();
 		List<DiscussionId> closingRequests = new ArrayList<>();
+		List<DiscussionId> outcomesToDeclare = new ArrayList<>();
 		List<DiscussionId> therapistRequests = new ArrayList<>();
 		List<ConstraintChangeRequestId> constraintRequests = new ArrayList<>();
 
@@ -103,6 +103,12 @@ public class HomeService
 					{
 						closingRequests.add(discussion.getId());
 					}
+
+					if (discussion.getClosure().filter(closure -> closure.declarations().stream().noneMatch(declared -> declared.partner().equals(user)))
+							.isPresent())
+					{
+						outcomesToDeclare.add(discussion.getId());
+					}
 				}
 				else if (discussion.getTherapistClosingRequests().stream().anyMatch(request -> request.isPending()))
 				{
@@ -118,11 +124,7 @@ public class HomeService
 			}
 		}
 
-		return new CoupleSummary(couple.getId(), conversationId, waiting, unopened, closingRequests, therapistRequests, constraintRequests);
-	}
-
-	private PersonView person(UserId id)
-	{
-		return new PersonView(id, users.findById(id).map(User::getDisplayName).orElse(null));
+		return new CoupleSummary(couple.getId(), conversationId, waiting, unopened, closingRequests, outcomesToDeclare, therapistRequests,
+				constraintRequests);
 	}
 }
