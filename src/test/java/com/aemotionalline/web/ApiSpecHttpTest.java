@@ -110,7 +110,10 @@ public class ApiSpecHttpTest
 		assertEquals("time", nonNull(schemas.path("NewMessage").path("properties").path("localTime")).path("format").asString());
 		assertEquals("duration", nonNull(schemas.path("ConstraintSpec").path("properties").path("delay")).path("format").asString());
 
-		assertEquals(200, anonymous.get("/swagger-ui/index.html").status());
+		// Swagger UI uses inline styles: it is the one page without the CSP (frontend point 8).
+		ApiClient.Response swagger = anonymous.get("/swagger-ui/index.html");
+		assertEquals(200, swagger.status());
+		assertTrue(swagger.headers().firstValue("Content-Security-Policy").isEmpty(), swagger.headers().toString());
 	}
 
 	@Test

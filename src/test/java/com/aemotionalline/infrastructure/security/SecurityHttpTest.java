@@ -302,8 +302,9 @@ public class SecurityHttpTest
 		assertEquals(401, anonymous.get("/api/auth/me").status());
 		assertEquals(403, patient.get("/api/admin/probe").status());
 		assertEquals(200, administrator.get("/api/admin/probe").status());
-		// Outside /api nothing is served yet, logged in or not.
-		assertEquals(403, administrator.get("/index.html").status());
+		// Outside /api the app is open to everyone, to GET only (FrontendHttpTest).
+		assertEquals(200, anonymous.get("/index.html").status());
+		assertEquals(403, administrator.send("POST", "/index.html", "{}").status());
 	}
 
 	// ACTIVATION AND PASSWORD RESET

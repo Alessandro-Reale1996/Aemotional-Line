@@ -116,8 +116,9 @@ The proxy:
   words people search for never appear in an address.)
 
 The application itself sends `Strict-Transport-Security` (one year, `includeSubDomains`, no `preload`) on HTTPS
-requests, `Referrer-Policy: no-referrer` and Spring Security's other default headers. Don't add a second
-`Strict-Transport-Security` in the proxy.
+requests, `Referrer-Policy: no-referrer`, a `Content-Security-Policy` and a `Permissions-Policy` (described in
+`docs/frontend-notes.md`) and Spring Security's other default headers. Don't add a second copy of any of them in the
+proxy: a browser applies every Content-Security-Policy it receives, so a second one could only break the app.
 
 A minimal nginx example (adapt names, certificates and limits):
 

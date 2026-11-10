@@ -125,6 +125,21 @@ body. A wrong one is a 400 `INCORRECT_PASSWORD` and counts as a failed login: fi
 The irreversible steps of the normal flow (closing a discussion, refusing, abandoning) ask for no password: confirm them
 with a dialog.
 
-## Still to decide
+## How the app is served
 
-A Content-Security-Policy, which depends on how the app is built and served.
+The compiled app is inside the jar, and Spring serves it on the API's own host: its files as they are, and `index.html`
+for every other address outside `/api` whose last part has no extension, so that the app's pages open from an email's
+link or on a reload, and the app shows its own "not found" page. A missing file is a 404. Outside `/api` only GET is
+accepted.
+
+Every answer carries this Content-Security-Policy:
+
+```
+default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+```
+
+So: no inline `<script>` or `<style>`, no `style` attributes in the HTML (styles set from JavaScript are allowed), no
+`eval`, nothing loaded from another host (fonts, scripts and images included), images only from the app or `data:`, and
+no native form submission: handle every form's submit in JavaScript. Show users' text as plain text, never as HTML.
+Vite's development server doesn't apply the policy, so check it on the compiled app. The `Permissions-Policy` allows only
+the position (`geolocation=(self)`), which a location constraint needs.

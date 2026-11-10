@@ -1,6 +1,7 @@
 package com.aemotionalline.infrastructure.security;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
@@ -19,7 +21,13 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
+import org.springframework.security.web.header.writers.ContentSecurityPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import com.aemotionalline.infrastructure.web.HttpErrorCode;
 import com.aemotionalline.infrastructure.web.Problems;
@@ -30,9 +38,11 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * The HTTP security of the API (CLAUDE.md, security points 2 and 4, S4): a session cookie after a JSON login (sessions in
  * MariaDB through Spring Session), CSRF protection with the token in a cookie the React app reads and sends back in the
- * X-XSRF-TOKEN header, no login page and no HTTP Basic, errors as Problem Details, hardened cookies and headers (S5). Paths: the login steps are open, /api/admin/** needs
- * the administrator role, the rest of /api/** a login; anything else is closed until the frontend is served. Only in the
- * web application: the first-administrator command runs without it.
+ * X-XSRF-TOKEN header, no login page and no HTTP Basic, errors as Problem Details, hardened cookies and headers (S5), a
+ * Content-Security-Policy and a Permissions-Policy (frontend point 8). Paths: the login steps are open, /api/admin/** needs
+ * the administrator role, the rest of /api/** a login; outside /api the React app's files and pages are open to GET only
+ * (frontend point 1), and every other method is refused. Only in the web application: the first-administrator command runs
+ * without it.
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -40,6 +50,20 @@ public class SecurityConfiguration
 {
 	/** The __Host- prefix: browsers accept the cookie only if Secure, for the whole host (Path=/) and with no Domain. */
 	public static final String CSRF_COOKIE = "__Host-XSRF-TOKEN";
+
+	/**
+	 * Only the app's own files (frontend point 8): no inline script or style, no eval, nothing from elsewhere; data: images
+	 * only for the SVG icons Bootstrap embeds in its CSS; no form may submit anywhere (a broken app can't put the password in
+	 * an address); no framing.
+	 */
+	public static final String CONTENT_SECURITY_POLICY = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+			+ "font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+
+	/** Of the browser's powerful features, only the position, which a location constraint needs. */
+	public static final String PERMISSIONS_POLICY = "geolocation=(self), camera=(), microphone=(), payment=(), usb=()";
+
+	/** The OpenAPI spec and Swagger UI: open only in development (REST point 7), and without the CSP (inline styles). */
+	private static final String[] API_DOCS = { "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**" };
 
 	/** Readable by the app (not HttpOnly), and otherwise as strict as the session cookie (S5). */
 	@Bean
@@ -70,16 +94,29 @@ public class SecurityConfiguration
 	SecurityFilterChain api(HttpSecurity http, CookieCsrfTokenRepository csrfTokens, SecurityContextRepository securityContexts, JsonMapper json,
 			@Value("${springdoc.api-docs.enabled:false}") boolean apiDocs) throws Exception
 	{
-		http.authorizeHttpRequests(paths -> paths
-				// The OpenAPI spec and Swagger UI exist only in development (REST point 7).
-				.requestMatchers(apiDocs ? new String[] { "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**" } : new String[0]).permitAll()
-				.requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/api/limits").permitAll()
-				.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout", "/api/auth/activate", "/api/auth/password-reset",
-						"/api/auth/password-reset/confirm").permitAll()
-				.requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
-				.requestMatchers("/api/**").authenticated()
-				.requestMatchers("/error").permitAll()
-				.anyRequest().denyAll())
+		http.authorizeHttpRequests(paths ->
+		{
+			AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizedUrl docs = paths.requestMatchers(API_DOCS);
+
+			if (apiDocs)
+			{
+				docs.permitAll();
+			}
+			else
+			{
+				docs.denyAll();
+			}
+
+			paths.requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/api/limits").permitAll()
+					.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/logout", "/api/auth/activate", "/api/auth/password-reset",
+							"/api/auth/password-reset/confirm").permitAll()
+					.requestMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
+					.requestMatchers("/api/**").authenticated()
+					.requestMatchers("/error").permitAll()
+					// The React app (frontend point 1): its files and pages, to anyone, to GET only.
+					.requestMatchers(HttpMethod.GET, "/**").permitAll()
+					.anyRequest().denyAll();
+		})
 				.csrf(csrf -> csrf.spa().csrfTokenRepository(csrfTokens))
 				.securityContext(context -> context.securityContextRepository(securityContexts))
 				// A refused request is never stored to be replayed after a login: no session for anonymous requests.
@@ -93,11 +130,16 @@ public class SecurityConfiguration
 								HttpErrorCode.ACCESS_DENIED, "Access denied.")))
 				.logout(logout -> logout.logoutUrl("/api/auth/logout").logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
 				// HSTS goes out on HTTPS requests only (TLS ends at the proxy, see server.forward-headers-strategy). No
-				// referrer: the activation and reset pages carry their one-time code in the address. Spring's other default
-				// headers stay (nosniff, no framing, no caching).
+				// referrer: the activation and reset pages carry their one-time code in the address. The CSP and the
+				// Permissions-Policy on every answer but Swagger UI's. Spring's other default headers stay (nosniff, no
+				// framing, no caching).
 				.headers(headers -> headers
 						.httpStrictTransportSecurity(hsts -> hsts.maxAgeInSeconds(Duration.ofDays(365).toSeconds()).includeSubDomains(true).preload(false))
-						.referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER)));
+						.referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER))
+						.addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(new NegatedRequestMatcher(new OrRequestMatcher(
+								Arrays.stream(API_DOCS).<RequestMatcher> map(PathPatternRequestMatcher::pathPattern).toList())),
+								new ContentSecurityPolicyHeaderWriter(CONTENT_SECURITY_POLICY)))
+						.permissionsPolicyHeader(permissions -> permissions.policy(PERMISSIONS_POLICY)));
 
 		return http.build();
 	}
