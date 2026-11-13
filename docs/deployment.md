@@ -3,8 +3,8 @@
 This guide is for whoever installs and runs the application. It holds therapy conversations between couples and their
 therapist: treat every part of the installation as handling health data.
 
-The backend is complete, REST API included; the React frontend is in progress (the jar serves it, for now a stand-in
-page). Sections that depend on it say so.
+The backend is complete, REST API included; the React frontend is in progress (the jar serves it: so far the login,
+the pages opened from the emails and the session handling). Sections that depend on it say so.
 
 ## 1. What you need
 

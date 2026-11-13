@@ -6,11 +6,24 @@ import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 
 import { createApi } from './api/client';
-import { Provisional } from './Provisional';
+import { AppContext } from './app/context';
+import { createRoutes } from './app/routes';
+import { reloadAt } from './session/navigation';
+import { Session } from './session/session';
+import { browserTabChannel } from './session/tabs';
 
-const api = createApi();
-// Every address shows the stand-in page for now; F4 brings the app's routes.
-const router = createBrowserRouter([{ path: '*', element: <Provisional api={api} /> }]);
+const session: Session = new Session({
+  whoIsLoggedIn: () => api.whoIsLoggedIn(),
+  logOut: () => api.logOut(),
+  keepAlive: () => api.GET('/api/auth/me'),
+  channel: browserTabChannel(),
+  reloadAt,
+  currentPath: () => window.location.pathname + window.location.search,
+  now: () => Date.now(),
+});
+const api = createApi({ onRequest: session.requestSent, onSessionLost: session.sessionLost });
+const app = { api, session };
+const router = createBrowserRouter(createRoutes(app));
 const root = document.getElementById('root');
 
 if (!root)
@@ -20,6 +33,8 @@ if (!root)
 
 createRoot(root).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <AppContext value={app}>
+      <RouterProvider router={router} />
+    </AppContext>
   </StrictMode>,
 );

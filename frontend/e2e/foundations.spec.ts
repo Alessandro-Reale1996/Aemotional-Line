@@ -1,30 +1,28 @@
 import { expect, test } from './fixtures';
+import { administrator } from './helpers';
 
 /**
- * The foundations (CLAUDE.md, F3), on the jar: the app opens at its pages with the CSP on, React-Bootstrap works under it,
- * and the session lives in __Host- cookies over http://localhost in a real browser (frontend point 3).
+ * The foundations (CLAUDE.md, F3), on the jar: the app opens at its pages with the CSP on, and the session lives in
+ * __Host- cookies over http://localhost in a real browser (frontend point 3).
  */
-test('opens the app at its pages, and React-Bootstrap works under the CSP', async ({ page }) =>
+test('opens the app at its pages under the CSP', async ({ page }) =>
 {
-  const answer = await page.goto('/');
+  const answer = await page.goto('/accedi');
   expect(answer?.headers()['content-security-policy']).toContain("default-src 'none'");
+  await expect(page.getByRole('heading', { name: 'Accedi' })).toBeVisible();
 
-  await expect(page.getByText('Un messaggio può avere fino a 20 paragrafi.')).toBeVisible();
-  await page.getByRole('button', { name: 'Menu di prova' }).click();
-  await page.getByRole('button', { name: 'Apri la finestra' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  // The close button draws Bootstrap's embedded icon (img-src data:).
-  await page.getByRole('button', { name: 'Close' }).click();
-  await expect(page.getByRole('dialog')).toBeHidden();
-
-  // A page of the app opened from an email's link.
+  // A page of the app opened from an email's link: the code leaves the address at once.
   await page.goto('/attiva?codice=abc');
-  await expect(page.getByRole('heading', { name: 'Aemotional-Line' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Attiva l’account' })).toBeVisible();
+  await expect(page).toHaveURL(/\/attiva$/);
+
+  await page.goto('/una/pagina/che/non/esiste');
+  await expect(page.getByRole('heading', { name: 'Pagina non trovata' })).toBeVisible();
 });
 
 test('keeps the session in cookies the page cannot read, and ends it at the logout', async ({ page }) =>
 {
-  await page.goto('/');
+  await page.goto('/accedi');
 
   const steps = await page.evaluate(async (credentials) =>
   {
@@ -45,7 +43,7 @@ test('keeps the session in cookies the page cannot read, and ends it at the logo
     const meAfterLogout = await fetch('/api/auth/me');
 
     return { login: login.status, cookiesAfterLogin, role, logout: logout.status, afterLogout: meAfterLogout.status };
-  }, { email: process.env.E2E_ADMIN_EMAIL ?? '', password: process.env.E2E_ADMIN_PASSWORD ?? '' });
+  }, administrator());
 
   expect(steps.login).toBe(200);
   expect(steps.cookiesAfterLogin).toContain('__Host-XSRF-TOKEN=');

@@ -13,6 +13,8 @@ export const BASE_URL = `http://localhost:${BACKEND_PORT}`;
 const DATABASE_PORT = 3307;
 const SMTP_PORT = 1026;
 const MAILPIT_PORT = 8026;
+/** Mailpit's web interface and API: the tests read the emails the backend sends there. */
+export const MAILPIT_URL = `http://localhost:${MAILPIT_PORT}`;
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const JAR = resolve(ROOT, 'target', 'aemotional-line-0.0.1-SNAPSHOT.jar');
 const RESULTS = resolve(import.meta.dirname, '..', 'test-results');

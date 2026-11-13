@@ -24,7 +24,8 @@ The logout isn't in the spec, because a security filter handles it: `POST /api/a
 - `POST /api/auth/login` with `email` and `password` answers 200 with the account and sets `__Host-SESSION`, which JavaScript
   can't read. Any failure, whatever its reason, is the same 401 `INVALID_CREDENTIALS`.
 - A session ends after 30 minutes without requests. From then on the API answers 401 `AUTHENTICATION_REQUIRED`: go back to
-  the login page.
+  the login page. The app does it in `src/session/`: a full reload, so nothing stays in memory, unless a form holds unsent
+  text, in which case the login appears over the hidden page.
 - Both cookies are `Secure` with the `__Host-` prefix, so a browser accepts them only in a secure context.
   `http://localhost` is one: Chromium and Firefox accept them there, through Vite's proxy too (checked on 2026-11-10; Safari
   not checked). Use `localhost`, not `127.0.0.1`, in development. How to run everything: `dev/README.md`.
