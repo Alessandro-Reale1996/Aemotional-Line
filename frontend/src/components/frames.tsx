@@ -1,13 +1,14 @@
 import { type ReactNode, useState } from 'react';
+import Alert from 'react-bootstrap/Alert';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import NavDropdown from 'react-bootstrap/NavDropdown';
 import Row from 'react-bootstrap/Row';
-import { Link, useBlocker } from 'react-router';
+import { Link, NavLink, useBlocker, useLocation, useNavigate } from 'react-router';
 
-import type { Account } from '../api/client';
+import type { Account, Role } from '../api/client';
 import { useApp, useLock } from '../app/context';
 import { LoginOverlay } from '../session/LoginOverlay';
 import { EXIT_WITH_TEXT, LEAVE_WITH_TEXT } from '../session/notices';
@@ -33,9 +34,19 @@ export function PublicFrame({ title, children }: { title: string; children: Reac
   );
 }
 
+/** The bar's links by role (frontend point 5): each step adds its own when its page exists. */
+const LINKS: Record<Role, { to: string; label: string }[]> = {
+  PATIENT: [{ to: '/', label: 'Da fare' }],
+  THERAPIST: [
+    { to: '/', label: 'Coppie' },
+    { to: '/inviti/nuovo', label: 'Invita' },
+  ],
+  ADMINISTRATOR: [{ to: '/amministrazione', label: 'Terapeuti' }],
+};
+
 /**
- * The frame of the pages of a logged-in user (frontend point 5, F4 decision 7): the bar, with the brand and the menu with
- * the name and "Esci"; the links by role come with their pages. While the session is lost and a form holds unsent text,
+ * The frame of the pages of a logged-in user (frontend point 5, F4 decision 7): the bar, with the brand, the links of the
+ * user's role and the menu with the name, "Il mio account" and "Esci". While the session is lost and a form holds unsent text,
  * everything is hidden, still mounted, under the login (frontend point 7). Leaving the page or the session with unsent text
  * asks for confirmation first.
  */
@@ -45,6 +56,7 @@ export function AppFrame({ account, children }: { account: Account; children: Re
   const locked = useLock();
   const [confirmingExit, setConfirmingExit] = useState(false);
   const exit = useCommand(() => session.logOut(), { reread: false });
+  const navigate = useNavigate();
   const blocker = useBlocker(({ currentLocation, nextLocation }) =>
     hasUnsentText() && currentLocation.pathname !== nextLocation.pathname);
 
@@ -70,9 +82,19 @@ export function AppFrame({ account, children }: { account: Account; children: Re
             </Link>
             <Navbar.Toggle aria-controls="main-menu" label="Menu" />
             <Navbar.Collapse id="main-menu">
-              <Nav className="ms-auto">
+              <Nav className="me-auto">
+                {LINKS[account.role].map((link) => (
+                  <NavLink key={link.to} to={link.to} end className="nav-link">
+                    {link.label}
+                  </NavLink>
+                ))}
+              </Nav>
+              <Nav>
                 <NavDropdown title={account.displayName} id="account-menu" align="end">
                   <NavDropdown.Header>{ROLE_LABELS[account.role]}</NavDropdown.Header>
+                  <NavDropdown.Item as="button" onClick={() => void navigate('/account')}>
+                    Il mio account
+                  </NavDropdown.Item>
                   <NavDropdown.Divider />
                   <NavDropdown.Item as="button" onClick={askToExit} disabled={exit.pending}>
                     Esci
@@ -110,6 +132,21 @@ export function AppFrame({ account, children }: { account: Account; children: Re
       />
     </>
   );
+}
+
+/** A notice left by the page before, after an action that made it go away (F5 decision 3). */
+export function useNotice(): string | undefined
+{
+  const state = useLocation().state as { notice?: unknown } | null;
+
+  return typeof state?.notice === 'string' ? state.notice : undefined;
+}
+
+export function Notice()
+{
+  const notice = useNotice();
+
+  return notice ? <Alert variant="success">{notice}</Alert> : null;
 }
 
 export function Loading()

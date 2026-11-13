@@ -66,17 +66,26 @@ public class InvitationService
 			throw new DomainException(ErrorCode.SAME_EMAIL_TWICE, "The two partners need two different emails.");
 		}
 
-		UserId one = patientFor(emailOne, nameOne);
-		UserId two = patientFor(emailTwo, nameTwo);
+		Optional<User> knownOne = invitableAccount(emailOne);
+		Optional<User> knownTwo = invitableAccount(emailTwo);
+		User one = knownOne.orElseGet(() -> userService.createPendingAccount(emailOne, nameOne, Role.PATIENT));
+		User two = knownTwo.orElseGet(() -> userService.createPendingAccount(emailTwo, nameTwo, Role.PATIENT));
 		Instant now = clock.instant();
 
-		CoupleInvitation invitation = CoupleInvitation.create(CoupleInvitationId.random(), therapist, one, two, now, now.plus(VALIDITY));
+		CoupleInvitation invitation = CoupleInvitation.create(CoupleInvitationId.random(), therapist, one.getId(), two.getId(), now, now.plus(VALIDITY));
 		invitations.save(invitation);
 
-		for (UserId partner : List.of(one, two))
+		// The emails last, once everything else has succeeded: an email can't be taken back if the invitation is refused
+		// (CLAUDE.md, F5). Whoever's account is waiting for activation, a new one or one whose first link was lost or
+		// expired, gets a new link, and the earlier ones stop working.
+		for (User partner : List.of(one, two))
 		{
-			User user = users.findById(partner).orElseThrow();
-			mailer.sendCoupleInvitation(user.getEmail(), user.getDisplayName(), inviter.getDisplayName());
+			if (partner.getStatus() == AccountStatus.PENDING)
+			{
+				userService.renewActivationLink(partner);
+			}
+
+			mailer.sendCoupleInvitation(partner.getEmail(), partner.getDisplayName(), inviter.getDisplayName());
 		}
 
 		return invitation.getId();
@@ -141,24 +150,19 @@ public class InvitationService
 	}
 
 	// An existing patient (not disabled, not in an active couple) or a new pending patient account with its activation email.
-	private UserId patientFor(EmailAddress email, String displayName)
+	/** The account of an invited person, if there is one, once it is known to be invitable; empty for a new person. */
+	private Optional<User> invitableAccount(EmailAddress email)
 	{
 		Optional<User> existing = users.findByEmail(email);
 
-		if (existing.isEmpty())
-		{
-			return userService.createPending(email, displayName, Role.PATIENT);
-		}
-
-		User user = existing.get();
-
 		// One message whatever the reason, so the therapist learns nothing about other people's accounts or couples.
-		if (user.getRole() != Role.PATIENT || user.getStatus() == AccountStatus.DISABLED || couples.findActiveCoupleOf(user.getId()).isPresent())
+		if (existing.isPresent() && (existing.get().getRole() != Role.PATIENT || existing.get().getStatus() == AccountStatus.DISABLED
+				|| couples.findActiveCoupleOf(existing.get().getId()).isPresent()))
 		{
 			throw new DomainException(ErrorCode.CANNOT_BE_INVITED, "This person can't be invited now.");
 		}
 
-		return user.getId();
+		return existing;
 	}
 
 	private void lockAccounts(UserId one, UserId two)

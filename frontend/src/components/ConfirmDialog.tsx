@@ -4,6 +4,7 @@ import Modal from 'react-bootstrap/Modal';
 interface Props
 {
   show: boolean;
+  title?: string;
   text: string;
   confirm: string;
   cancel: string;
@@ -11,14 +12,14 @@ interface Props
   onCancel: () => void;
 }
 
-/** Asks before something that loses what the user wrote (frontend point 7). Cancelling is the default. */
-export function ConfirmDialog({ show, text, confirm, cancel, onConfirm, onCancel }: Props)
+/** Asks before a step that can't be undone, or that loses what the user wrote (frontend point 7). Cancelling is the default. */
+export function ConfirmDialog({ show, title = 'Testo non inviato', text, confirm, cancel, onConfirm, onCancel }: Props)
 {
   return (
     <Modal show={show} onHide={onCancel} centered aria-labelledby="confirm-title">
       <Modal.Header closeButton closeLabel="Chiudi">
         <Modal.Title id="confirm-title" className="h5">
-          Testo non inviato
+          {title}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>{text}</Modal.Body>

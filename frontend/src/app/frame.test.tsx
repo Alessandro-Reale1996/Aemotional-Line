@@ -62,7 +62,7 @@ describe('the frame of a logged-in user', () =>
   {
     const { user, fake } = renderApp({ account: therapist });
 
-    expect(await screen.findByRole('heading', { name: 'Ciao, Dott. Rossi' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Coppie' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Menu' }), 'the toggle of the bar on a phone').toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Dott. Rossi' }));
     expect(await screen.findByText('Terapeuta')).toBeTruthy();

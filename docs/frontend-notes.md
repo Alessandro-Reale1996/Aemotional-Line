@@ -72,7 +72,8 @@ JavaScript's `length`; the password is counted in code points.
 
 ## Where to start
 
-`GET /api/me/couples` lists the user's couples, each with its conversation id if it has one. `GET /api/me/summary` lists what
+`GET /api/me/couples` lists the user's couples, each with its conversation id if it has one; a couple has no `GET` of
+its own, so its page finds it there. `GET /api/me/summary` lists what
 is waiting for the user: invitations, negotiations on their turn, unopened messages, requests to answer. The therapist has
 no unopened counts, since they read freely and nothing is recorded.
 

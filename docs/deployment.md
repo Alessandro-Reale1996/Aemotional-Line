@@ -4,7 +4,7 @@ This guide is for whoever installs and runs the application. It holds therapy co
 therapist: treat every part of the installation as handling health data.
 
 The backend is complete, REST API included; the React frontend is in progress (the jar serves it: so far the login,
-the pages opened from the emails and the session handling). Sections that depend on it say so.
+the pages opened from the emails, the session handling, the accounts, the administration and the couples). Sections that depend on it say so.
 
 ## 1. What you need
 
@@ -181,8 +181,9 @@ terminal and exits with code 0; the link is valid for 7 days and once. It is nev
 terminal, open it, choose the password. The command refuses (exit code 1) once an administrator is active. If the first
 administrator is still waiting for activation, running it again with the same email gives a new link.
 
-The administrator creates and disables therapist accounts; therapists invite their patients; nobody can sign up alone.
-(The administration endpoints are under `/api/admin`; the screens come with the frontend.)
+The administrator creates and disables therapist accounts, at `/amministrazione`; therapists invite their patients;
+nobody can sign up alone. A therapist whose activation link was lost or expired gets a new one from the same page; a
+patient still waiting for activation gets a new link with the next invitation.
 
 ## 7. Accounts, sessions and logs
 

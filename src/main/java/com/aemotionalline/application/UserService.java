@@ -70,8 +70,42 @@ public class UserService
 		return createPending(email, displayName, Role.THERAPIST);
 	}
 
-	/** A new pending account and its activation email. Used for therapists here and for patients by the invitations. */
+	/**
+	 * The administrator sends a new activation link to a therapist whose account is still pending, the first one lost or
+	 * expired (CLAUDE.md, F5): the earlier links stop working. Any other account is "not found".
+	 */
+	public void sendNewActivationLink(UserId administrator, UserId therapist)
+	{
+		ensureActiveWithRole(administrator, Role.ADMINISTRATOR);
+		User pending = users.findByIdForUpdate(therapist)
+				.filter(found -> found.getRole() == Role.THERAPIST && found.getStatus() == AccountStatus.PENDING)
+				.orElseThrow(() -> new NotFoundException("Not found."));
+
+		renewActivationLink(pending);
+	}
+
+	/** A new activation link, emailed, for an account still pending; the earlier ones stop working. */
+	void renewActivationLink(User pending)
+	{
+		links.invalidateUnused(pending.getId(), OneTimeLink.Purpose.ACTIVATION, clock.instant());
+		mailer.sendActivationLink(pending.getEmail(), pending.getDisplayName(),
+				issueLink(pending.getId(), OneTimeLink.Purpose.ACTIVATION, ACTIVATION_VALIDITY));
+	}
+
+	/** A new pending account and its activation email (a therapist's). */
 	UserId createPending(EmailAddress email, String displayName, Role role)
+	{
+		User user = createPendingAccount(email, displayName, role);
+		mailer.sendActivationLink(email, user.getDisplayName(), issueLink(user.getId(), OneTimeLink.Purpose.ACTIVATION, ACTIVATION_VALIDITY));
+
+		return user.getId();
+	}
+
+	/**
+	 * A new pending account, without its activation email: the invitations send it last, once the whole invitation has
+	 * succeeded, since an email can't be taken back.
+	 */
+	User createPendingAccount(EmailAddress email, String displayName, Role role)
 	{
 		if (users.findByEmail(email).isPresent())
 		{
@@ -80,9 +114,8 @@ public class UserService
 
 		User user = User.pending(UserId.random(), email, displayName, role);
 		users.save(user);
-		mailer.sendActivationLink(email, user.getDisplayName(), issueLink(user.getId(), OneTimeLink.Purpose.ACTIVATION, ACTIVATION_VALIDITY));
 
-		return user.getId();
+		return user;
 	}
 
 	/**

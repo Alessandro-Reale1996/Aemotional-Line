@@ -2,6 +2,7 @@ package com.aemotionalline.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -66,7 +67,13 @@ public class AccountsHttpTest
 		assertEquals(201, created.status());
 		String therapistId = created.json().path("id").asString();
 		assertTrue(statusOf(administrator, therapistId).equals("PENDING"));
+		// The first link is lost: the administrator sends a new one, and only that one works.
+		String lost = mailer.lastCode(therapistEmail, Kind.ACTIVATION).orElseThrow();
+		assertEquals(204, administrator.post("/api/admin/therapists/" + therapistId + "/activation-link", "").status());
+		assertNotEquals(lost, mailer.lastCode(therapistEmail, Kind.ACTIVATION).orElseThrow());
 		ApiClient therapist = activateAndLogIn(therapistEmail);
+		assertEquals("NOT_FOUND", administrator.post("/api/admin/therapists/" + therapistId + "/activation-link", "").code(),
+				"an active account has no link to renew");
 
 		// The therapist invites two new patients, who activate their accounts and accept.
 		EmailAddress emailA = freshEmail();

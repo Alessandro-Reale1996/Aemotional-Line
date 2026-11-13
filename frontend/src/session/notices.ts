@@ -7,6 +7,7 @@ export const END_NOTICES: Record<EndReason, string> = {
   inactivity: 'La sessione è stata chiusa dopo 30 minuti di inattività, per proteggere la tua riservatezza.',
   elsewhere: 'La sessione è stata chiusa in un’altra scheda.',
   logout: 'Hai chiuso la sessione.',
+  deleted: 'L’account è stato eliminato.',
 };
 
 export const OVERLAY_NOTICE =

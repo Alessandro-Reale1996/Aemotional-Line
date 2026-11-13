@@ -1,5 +1,5 @@
 /** Why the login page is shown, and where to go back afterwards (CLAUDE.md, frontend point 3). */
-export type EndReason = 'expired' | 'inactivity' | 'elsewhere' | 'logout';
+export type EndReason = 'expired' | 'inactivity' | 'elsewhere' | 'logout' | 'deleted';
 
 export interface LoginState
 {

@@ -31,6 +31,24 @@ export async function logIn(page: Page, email: string, password: string)
   await page.getByRole('button', { name: 'Accedi' }).click();
 }
 
+/** A browser of its own for another person, with its own cookies. */
+export async function anotherPerson(browser: Browser): Promise<Page>
+{
+  const context = await browser.newContext({ baseURL: BASE_URL, locale: 'it-IT', timezoneId: 'Europe/Rome' });
+
+  return context.newPage();
+}
+
+/** Activates an account from the link emailed to it, through the page, then logs in with that password. */
+export async function activateAndLogIn(page: Page, email: string, password: string)
+{
+  await page.goto(await emailedLink(email, '/attiva'));
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Attiva l’account' }).click();
+  await expect(page.getByText('L’account è attivo. Ora puoi accedere.')).toBeVisible();
+  await logIn(page, email, password);
+}
+
 /** Logs out through the menu with the user's name. */
 export async function logOut(page: Page, name: string)
 {

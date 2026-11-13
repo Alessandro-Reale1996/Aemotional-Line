@@ -6,6 +6,13 @@ import type { components, paths } from './schema';
 export type Limits = components['schemas']['LimitsView'];
 export type Account = components['schemas']['AccountView'];
 export type Role = Account['role'];
+export type Person = components['schemas']['PersonView'];
+export type Couple = components['schemas']['CoupleView'];
+export type Summary = components['schemas']['SummaryView'];
+export type CoupleSummary = components['schemas']['CoupleSummary'];
+export type Invitation = components['schemas']['InvitationView'];
+export type Therapist = components['schemas']['TherapistView'];
+export type EndedCouple = components['schemas']['EndedCoupleView'];
 
 /** The cookie the server keeps the CSRF token in; the app reads it and sends it back in a header. */
 export const CSRF_COOKIE = '__Host-XSRF-TOKEN';

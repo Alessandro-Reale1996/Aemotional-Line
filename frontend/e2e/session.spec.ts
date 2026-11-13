@@ -14,8 +14,9 @@ test('logs in and out through the interface', async ({ page }) =>
   await expect(page.getByText('Se usi un dispositivo condiviso, non salvare la password e ricordati di uscire.')).toBeVisible();
 
   await logIn(page, administrator().email, administrator().password);
-  await expect(page.getByRole('heading', { name: `Ciao, ${ADMINISTRATOR}` })).toBeVisible();
-  await expect(page).toHaveURL(/\/$/);
+  // The administrator's home is the administration (F5).
+  await expect(page.getByRole('heading', { name: 'Terapeuti' })).toBeVisible();
+  await expect(page).toHaveURL(/\/amministrazione$/);
 
   await logOut(page, ADMINISTRATOR);
   await page.goto('/');
@@ -49,7 +50,7 @@ test('activates an account from the emailed link, then chooses a new password', 
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(first);
   await page.getByRole('button', { name: 'Accedi' }).click();
-  await expect(page.getByRole('heading', { name: `Ciao, ${name}` })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Coppie' })).toBeVisible();
   await logOut(page, name);
 
   await page.getByRole('link', { name: 'Password dimenticata?' }).click();
@@ -65,14 +66,14 @@ test('activates an account from the emailed link, then chooses a new password', 
   await expect(page.getByText(/^La password è cambiata/)).toBeVisible();
 
   await logIn(page, email, second);
-  await expect(page.getByRole('heading', { name: `Ciao, ${name}` })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Coppie' })).toBeVisible();
 });
 
 test('goes to the login when the session has expired, and comes back to the page', async ({ page, context }) =>
 {
   await page.clock.install();
   await logIn(page, administrator().email, administrator().password);
-  await expect(page.getByRole('heading', { name: `Ciao, ${ADMINISTRATOR}` })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Terapeuti' })).toBeVisible();
   await page.goto('/una-pagina');
   await expect(page.getByRole('heading', { name: 'Pagina non trovata' })).toBeVisible();
 
@@ -94,10 +95,10 @@ test('ends the session after 30 minutes of inactivity', async ({ page }) =>
 {
   await page.clock.install();
   await logIn(page, administrator().email, administrator().password);
-  await expect(page.getByRole('heading', { name: `Ciao, ${ADMINISTRATOR}` })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Terapeuti' })).toBeVisible();
 
   await page.clock.fastForward('29:00');
-  await expect(page.getByRole('heading', { name: `Ciao, ${ADMINISTRATOR}` })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Terapeuti' })).toBeVisible();
   await page.clock.fastForward('01:30');
 
   await expect(page.getByText('La sessione è stata chiusa dopo 30 minuti di inattività, per proteggere la tua riservatezza.')).toBeVisible();
@@ -107,10 +108,10 @@ test('ends the session after 30 minutes of inactivity', async ({ page }) =>
 test('a login or a logout in one tab reaches the others', async ({ page, context }) =>
 {
   await logIn(page, administrator().email, administrator().password);
-  await expect(page.getByRole('heading', { name: `Ciao, ${ADMINISTRATOR}` })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Terapeuti' })).toBeVisible();
   const other = await context.newPage();
   await other.goto('/');
-  await expect(other.getByRole('heading', { name: `Ciao, ${ADMINISTRATOR}` })).toBeVisible();
+  await expect(other.getByRole('heading', { name: 'Terapeuti' })).toBeVisible();
 
   await logOut(page, ADMINISTRATOR);
   await expect(other.getByText('La sessione è stata chiusa in un’altra scheda.')).toBeVisible();
@@ -118,7 +119,7 @@ test('a login or a logout in one tab reaches the others', async ({ page, context
   await other.getByLabel('Email').fill(administrator().email);
   await other.getByLabel('Password', { exact: true }).fill(administrator().password);
   await other.getByRole('button', { name: 'Accedi' }).click();
-  await expect(other.getByRole('heading', { name: `Ciao, ${ADMINISTRATOR}` })).toBeVisible();
+  await expect(other.getByRole('heading', { name: 'Terapeuti' })).toBeVisible();
   await expect(page.getByText(`Hai già effettuato l’accesso con l’account di «${ADMINISTRATOR}».`)).toBeVisible();
   await other.close();
 });
@@ -127,7 +128,7 @@ test('works on a phone-sized screen', async ({ page }) =>
 {
   await page.setViewportSize({ width: 390, height: 844 });
   await logIn(page, administrator().email, administrator().password);
-  await expect(page.getByRole('heading', { name: `Ciao, ${ADMINISTRATOR}` })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Terapeuti' })).toBeVisible();
 
   await expect(page.getByRole('button', { name: ADMINISTRATOR, exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Menu' }).click();

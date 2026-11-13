@@ -3,6 +3,7 @@ package com.aemotionalline.application;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -105,6 +106,40 @@ public class UserServiceTest
 		// The link works once.
 		InvalidRequestException reused = assertThrows(InvalidRequestException.class, () -> userService.activate(code, GOOD_PASSWORD));
 		assertEquals(INVALID_LINK, reused.getMessage());
+	}
+
+	@Test
+	void shouldSendANewActivationLinkToATherapistStillPending()
+	{
+		EmailAddress email = freshEmail();
+		UserId therapist = userService.createTherapist(administrator, email, "Dott.ssa Verdi");
+		String lost = mailer.lastCode(email, Kind.ACTIVATION).orElseThrow();
+
+		userService.sendNewActivationLink(administrator, therapist);
+
+		String renewed = mailer.lastCode(email, Kind.ACTIVATION).orElseThrow();
+		assertNotEquals(lost, renewed);
+		assertEquals(INVALID_LINK, assertThrows(InvalidRequestException.class, () -> userService.activate(lost, GOOD_PASSWORD)).getMessage());
+		userService.activate(renewed, GOOD_PASSWORD);
+		assertEquals(AccountStatus.ACTIVE, users.findById(therapist).orElseThrow().getStatus());
+
+		// An active account has no link to renew.
+		assertThrows(NotFoundException.class, () -> userService.sendNewActivationLink(administrator, therapist));
+	}
+
+	@Test
+	void shouldSendNewActivationLinksOnlyAsAnAdministratorAndOnlyToTherapists()
+	{
+		UserId therapist = userService.createTherapist(administrator, freshEmail(), "Dott. Neri");
+		UserId activeTherapist = UserId.random();
+		TestCouples.activeAccount(users, activeTherapist, Role.THERAPIST);
+		EmailAddress patientEmail = freshEmail();
+		invitationService.invite(activeTherapist, patientEmail, "Anna", freshEmail(), "Bruno");
+		UserId pendingPatient = users.findByEmail(patientEmail).orElseThrow().getId();
+
+		assertThrows(NotFoundException.class, () -> userService.sendNewActivationLink(activeTherapist, therapist));
+		assertThrows(NotFoundException.class, () -> userService.sendNewActivationLink(administrator, pendingPatient));
+		assertThrows(NotFoundException.class, () -> userService.sendNewActivationLink(administrator, UserId.random()));
 	}
 
 	@Test

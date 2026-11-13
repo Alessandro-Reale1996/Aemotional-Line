@@ -64,6 +64,14 @@ class AdministrationController
 		return new Created<>(therapist);
 	}
 
+	/** A new activation link for a therapist still pending, the first one lost or expired; any other account is 404. */
+	@PostMapping("/therapists/{id}/activation-link")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void sendActivationLink(@AuthenticationPrincipal SessionUser administrator, @PathVariable UserId id)
+	{
+		users.sendNewActivationLink(administrator.userId(), id);
+	}
+
 	/** A disabled therapist's ended couples, ids and end dates only: the ones whose data the administrator may delete. */
 	@GetMapping("/therapists/{id}/ended-couples")
 	List<EndedCoupleView> endedCouples(@AuthenticationPrincipal SessionUser administrator, @PathVariable UserId id)

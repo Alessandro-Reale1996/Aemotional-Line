@@ -172,6 +172,14 @@ export class Session
     this.leaveFor('/accedi', { reason: 'logout' });
   }
 
+  /** The account was deleted, and its session with it: the other tabs are told, the page leaves for the login. */
+  accountDeleted(): void
+  {
+    this.ending = true;
+    this.deps.channel.post('logout');
+    this.leaveFor('/accedi', { reason: 'deleted' });
+  }
+
   /** Listens to the page and to the other tabs; returns what stops listening. */
   connect(target: Window): () => void
   {

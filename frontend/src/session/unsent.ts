@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 /**
  * The forms holding text the user hasn't sent yet (CLAUDE.md, frontend point 7). Nothing is saved in the browser, so
@@ -18,9 +18,14 @@ export function discardUnsentText(): void
   holders.clear();
 }
 
-/** Declares that the calling form holds unsent text while `holding` is true. */
-export function useUnsentText(holding: boolean): void
+/**
+ * Declares that the calling form holds unsent text while `holding` is true. Returns what releases it at once: a form calls
+ * it when its text has been sent, before leaving the page, so that nothing asks for a confirmation.
+ */
+export function useUnsentText(holding: boolean): () => void
 {
+  const current = useRef<symbol | null>(null);
+
   useEffect(() =>
   {
     if (!holding)
@@ -30,12 +35,22 @@ export function useUnsentText(holding: boolean): void
 
     const holder = Symbol('unsent text');
     holders.add(holder);
+    current.current = holder;
 
     return () =>
     {
       holders.delete(holder);
+      current.current = null;
     };
   }, [holding]);
+
+  return useCallback(() =>
+  {
+    if (current.current)
+    {
+      holders.delete(current.current);
+    }
+  }, []);
 }
 
 /** Asks the browser to confirm closing or reloading the page while some text is unsent (where the browser allows it). */

@@ -1,6 +1,7 @@
 package com.aemotionalline.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -119,6 +120,57 @@ public class InvitationServiceTest
 		assertEquals(List.of(id), invitationService.pending(one).stream().map(InvitationView::id).toList());
 		assertEquals(List.of(id), invitationService.pending(two).stream().map(InvitationView::id).toList());
 		assertTrue(invitationService.pending(therapist).stream().anyMatch(view -> view.id().equals(id)));
+	}
+
+	@Test
+	void shouldSendANewActivationLinkToAPatientInvitedAgainWhileStillPending()
+	{
+		EmailAddress email = freshEmail();
+		invitationService.invite(therapist, email, "Anna", freshEmail(), "Bruno");
+		String lost = mailer.lastCode(email, Kind.ACTIVATION).orElseThrow();
+
+		invitationService.invite(therapist, email, "Anna Maria", freshEmail(), "Carlo");
+
+		String renewed = mailer.lastCode(email, Kind.ACTIVATION).orElseThrow();
+		assertNotEquals(lost, renewed);
+		assertThrows(InvalidRequestException.class, () -> userService.activate(lost, PASSWORD));
+		userService.activate(renewed, PASSWORD);
+		User account = users.findByEmail(email).orElseThrow();
+		assertEquals(AccountStatus.ACTIVE, account.getStatus());
+		assertEquals("Anna", account.getDisplayName(), "the account keeps its name");
+	}
+
+	@Test
+	void shouldRenewNoLinkWhenTheOtherPersonCantBeInvited()
+	{
+		EmailAddress email = freshEmail();
+		invitationService.invite(therapist, email, "Anna", freshEmail(), "Bruno");
+		String first = mailer.lastCode(email, Kind.ACTIVATION).orElseThrow();
+		UserId anotherTherapist = UserId.random();
+		TestCouples.activeAccount(users, anotherTherapist, Role.THERAPIST);
+
+		assertThrows(DomainException.class, () -> invitationService.invite(therapist, email, "Anna", emailOf(anotherTherapist), "Carlo"));
+
+		assertEquals(first, mailer.lastCode(email, Kind.ACTIVATION).orElseThrow());
+		userService.activate(first, PASSWORD);
+	}
+
+	@Test
+	void shouldEmailNobodyWhenTheInvitationIsRefused()
+	{
+		EmailAddress newPerson = freshEmail();
+		UserId anotherTherapist = UserId.random();
+		TestCouples.activeAccount(users, anotherTherapist, Role.THERAPIST);
+
+		assertThrows(DomainException.class, () -> invitationService.invite(therapist, newPerson, "Anna", emailOf(anotherTherapist), "Carlo"));
+
+		assertTrue(mailer.to(newPerson).isEmpty(), "an email can't be taken back: none for an invitation that didn't happen");
+		assertTrue(users.findByEmail(newPerson).isEmpty());
+
+		// The same when the second person's name is refused.
+		EmailAddress another = freshEmail();
+		assertThrows(DomainException.class, () -> invitationService.invite(therapist, another, "Anna", freshEmail(), " "));
+		assertTrue(mailer.to(another).isEmpty());
 	}
 
 	@Test
