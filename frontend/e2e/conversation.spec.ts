@@ -56,7 +56,11 @@ test('a first message whatever the wait, then a real wait after the opening, ove
   await expect(alex.page.getByText('Da quando lo apri dovrai attendere 3 secondi prima di rispondere.')).toBeVisible();
   await alex.page.getByRole('button', { name: 'Apri' }).click();
   await expect(alex.page.getByText(/^Potrai rispondere dalle /)).toBeVisible();
+  // No writing during the wait (frontend point 6): nothing to write with, until it is over.
+  await expect(alex.page.getByRole('button', { name: 'Scrivi la risposta' })).toHaveCount(0);
+  await expect(alex.page.getByRole('button', { name: 'Rispondi' })).toHaveCount(0);
   await expect(alex.page.getByText('Tocca a te: puoi rispondere.')).toBeVisible({ timeout: 10_000 });
+  await expect(alex.page.getByRole('button', { name: 'Scrivi la risposta' })).toBeVisible();
   await close();
 });
 

@@ -4,8 +4,8 @@ This guide is for whoever installs and runs the application. It holds therapy co
 therapist: treat every part of the installation as handling health data.
 
 The backend is complete, REST API included; the React frontend is in progress (the jar serves it: so far the login,
-the pages opened from the emails, the session handling, the accounts, the administration, the couples, the stipule and the reading
-of the conversation). Sections that depend on it say so.
+the pages opened from the emails, the session handling, the accounts, the administration, the couples, the stipule, the reading and
+the writing of the conversation). Sections that depend on it say so.
 
 ## 1. What you need
 

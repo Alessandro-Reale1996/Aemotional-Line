@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
+import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
 import { Link, useLoaderData, useLocation, useParams } from 'react-router';
 
-import type { Account, Constraint, Conversation, Couple } from '../api/client';
+import type { Account, Constraint, Conversation, Couple, Limits, Negotiation, Paragraph } from '../api/client';
 import { useAccount } from '../app/context';
+import { ErrorText } from '../components/ErrorText';
 import { ButtonLink, Notice } from '../components/frames';
 import { UserText } from '../components/TextField';
 import { partnersOf } from '../couples/CoupleCard';
@@ -11,8 +15,12 @@ import { FROM_A_PARAGRAPH } from '../negotiations/NewNegotiationPages';
 import { nameIn, toWhom } from '../negotiations/words';
 import { ERROR_TEXTS } from '../texts/errors';
 import { formatDate, formatTime } from '../texts/format';
-import { indexParagraphs, Letter, paragraphAddress } from './Letters';
-import { nextChange, placeWords, writeStatus, type WriteStatus } from './rules';
+import { Composer, positionFor } from './Composer';
+import { answeredInDraft, answeringIn, type DraftAction, draftReducer, expandedElsewhere } from './draft';
+import { indexParagraphs, Letter, MAIN_DISCUSSION, ParagraphBlock, paragraphAddress } from './Letters';
+
+export { MAIN_DISCUSSION };
+import { constraintsFor, nextChange, placeWords, writeStatus, type WriteStatus } from './rules';
 
 export interface ConversationData
 {
@@ -23,10 +31,12 @@ export interface ConversationData
 export interface DiscussionData extends ConversationData
 {
   inForce: Constraint[];
+  limits: Limits;
+  /** The stipule in progress: a paragraph whose expansion is requested shows it (F8). */
+  negotiations: Negotiation[];
 }
 
 export const NO_CONVERSATION = 'Non c’è una conversazione in corso.';
-export const MAIN_DISCUSSION = 'Discorso principale';
 
 /** /conversazione, the patient's bar link, when the couple in progress has no conversation (or there is no couple). */
 export function NoConversationPage()
@@ -163,7 +173,7 @@ function useNow(next: (now: Date) => Date | undefined): Date
  */
 export function DiscussionPage()
 {
-  const { conversation, couple, inForce } = useLoaderData() as DiscussionData;
+  const { conversation, couple, inForce, limits, negotiations } = useLoaderData() as DiscussionData;
   const me = useAccount();
   const { hash } = useLocation();
   const number = Number(useParams().n);
@@ -171,6 +181,9 @@ export function DiscussionPage()
   const index = useMemo(() => indexParagraphs(conversation), [conversation]);
   const now = useNow((at) => (discussion && me ? nextChange(writeStatus(discussion, couple, me, inForce, at)) : undefined));
   const [highlighted, setHighlighted] = useState<string>();
+  const [writing, setWriting] = useState(false);
+  const [cards, dispatch] = useReducer(draftReducer, []);
+  const [startProblem, setStartProblem] = useState<string>();
 
   // A link to a paragraph scrolls to it and highlights it for a moment (F7 decision 1).
   useEffect(() =>
@@ -200,6 +213,70 @@ export function DiscussionPage()
 
   const origin = discussion.originParagraphId ? index.get(discussion.originParagraphId) : undefined;
   const status = writeStatus(discussion, couple, me, inForce, now);
+  const answering = answeringIn(discussion, conversation);
+  const canWrite = status.kind === 'can' || status.kind === 'location';
+  const places = constraintsFor(inForce, me.id, 'WRITE').filter((constraint) => constraint.type === 'LOCATION');
+
+  // The writing starts only when every WRITE constraint is satisfied (frontend point 6): a place is checked here, in the
+  // browser, at the click; nothing is sent (F8 decision 2).
+  const startWriting = async (then?: DraftAction) =>
+  {
+    if (!writing)
+    {
+      const { problem } = await positionFor(places, 'scrivere');
+      setStartProblem(problem);
+
+      if (problem)
+      {
+        return;
+      }
+
+      setWriting(true);
+    }
+
+    if (then)
+    {
+      dispatch(then);
+    }
+  };
+
+  const actions = (paragraph: Paragraph) =>
+  {
+    const elsewhere = expandedElsewhere(conversation, paragraph.id, discussion.id);
+
+    if (elsewhere)
+    {
+      return (
+        <div className="small">
+          Se ne parla in <Link to={`/conversazioni/${conversation.id}/discorsi/${elsewhere.id}`}>«{elsewhere.title ?? MAIN_DISCUSSION}»</Link>
+        </div>
+      );
+    }
+
+    if (!canWrite || !answering.paragraphs.some((candidate) => candidate.id === paragraph.id))
+    {
+      return null;
+    }
+
+    const requested = negotiations.some((negotiation) => negotiation.originParagraphId === paragraph.id);
+
+    return (
+      <div className="d-flex flex-wrap align-items-center gap-2 mt-1">
+        {!(paragraph.type === 'QUESTION' && answeredInDraft(cards, paragraph.id)) && (
+          <Button size="sm" variant="outline-primary" onClick={() => void startWriting({ kind: 'reply', to: paragraph, answering })}>
+            Rispondi
+          </Button>
+        )}
+        {!answering.origin && (requested ? (
+          <span className="small text-body-secondary">Richiesta di approfondimento in corso</span>
+        ) : (
+          <ButtonLink to={`/conversazioni/${conversation.id}/nuovo-discorso?paragrafo=${paragraph.id}`} variant="outline-secondary btn-sm">
+            Approfondisci
+          </ButtonLink>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -220,16 +297,35 @@ export function DiscussionPage()
           )}
         </p>
       )}
-      <section className="mt-3">
-        {discussion.messages.length === 0 && <p className="text-body-secondary">Ancora nessun messaggio.</p>}
-        {discussion.messages.map((message) => (
-          <Letter key={message.id} message={message} conversation={conversation} discussion={discussion.id} couple={couple} me={me} index={index}
-            inForce={inForce} now={now} highlighted={highlighted} />
-        ))}
-      </section>
-      <p className="fw-semibold" role="status">
-        {statusText(status, couple)}
-      </p>
+      <Row>
+        <Col lg={writing ? 6 : 12}>
+          <section className="mt-3">
+            {discussion.messages.length === 0 && <p className="text-body-secondary">Ancora nessun messaggio.</p>}
+            {answering.origin && (
+              <Card body className="mb-3">
+                <ParagraphBlock paragraph={answering.origin} conversation={conversation.id} index={index} highlighted={false} actions={actions} />
+              </Card>
+            )}
+            {discussion.messages.map((message) => (
+              <Letter key={message.id} message={message} conversation={conversation} discussion={discussion.id} couple={couple} me={me} index={index}
+                inForce={inForce} now={now} highlighted={highlighted} actions={actions} />
+            ))}
+          </section>
+          <p className="fw-semibold" role="status">
+            {statusText(status, couple)}
+          </p>
+          {canWrite && !writing && (
+            <Button onClick={() => void startWriting()}>{discussion.messages.length === 0 ? 'Scrivi il primo messaggio' : 'Scrivi la risposta'}</Button>
+          )}
+          <ErrorText error={startProblem} />
+        </Col>
+        {writing && (
+          <Col lg={6} className="mt-3">
+            <Composer cards={cards} dispatch={dispatch} answering={answering} conversation={conversation} discussion={discussion.id} couple={couple}
+              me={me} limits={limits} places={places} onClose={() => setWriting(false)} />
+          </Col>
+        )}
+      </Row>
     </>
   );
 }

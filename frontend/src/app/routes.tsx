@@ -194,7 +194,12 @@ export function createRoutes({ api, session }: App): RouteObject[]
                       throw notFound();
                     }
 
-                    return { conversation, couple, inForce: constraints.inForce };
+                    const [negotiations, theLimits] = await Promise.all([
+                      ask(api.GET('/api/couples/{id}/negotiations', { params: { path: { id: couple.id } } })),
+                      limits(),
+                    ]);
+
+                    return { conversation, couple, inForce: constraints.inForce, negotiations, limits: theLimits };
                   }),
                   shouldRevalidate: unlessUnsentText,
                   element: <DiscussionPage />,

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import { Link } from 'react-router';
@@ -12,6 +13,8 @@ import { formatDateTime } from '../texts/format';
 import { PARAGRAPH_TYPE_LABELS } from '../texts/labels';
 import { currentPosition, PositionError } from './position';
 import { type Coordinates, formatDuration, localTime, openingFor, placeWords, satisfiesLocation } from './rules';
+
+export const MAIN_DISCUSSION = 'Discorso principale';
 
 /** Where every visible paragraph of the conversation is, and its title: for the links between paragraphs. */
 export type ParagraphIndex = Map<string, { discussion: number; title: string }>;
@@ -54,6 +57,8 @@ interface LetterProps
   inForce: Constraint[];
   now: Date;
   highlighted?: string;
+  /** What can be done with a paragraph, under it: "Rispondi", "Approfondisci", "Se ne parla in" (F8). */
+  actions?: (paragraph: Paragraph) => ReactNode;
 }
 
 /** A message as a letter (F7 decision 1), or a closed envelope when the user hasn't opened it yet (decision 3). */
@@ -62,7 +67,7 @@ export function Letter(props: LetterProps)
   return props.message.closedEnvelope ? <Envelope {...props} /> : <OpenLetter {...props} />;
 }
 
-function OpenLetter({ message, conversation, couple, me, index, highlighted }: LetterProps)
+function OpenLetter({ message, conversation, couple, me, index, highlighted, actions }: LetterProps)
 {
   const sender = nameIn(couple, message.sender);
   let opened: string | undefined;
@@ -84,7 +89,7 @@ function OpenLetter({ message, conversation, couple, me, index, highlighted }: L
       <Card.Body>
         {message.paragraphs.map((paragraph) => (
           <ParagraphBlock key={paragraph.id} paragraph={paragraph} conversation={conversation.id} index={index}
-            highlighted={paragraph.id === highlighted} />
+            highlighted={paragraph.id === highlighted} actions={actions} />
         ))}
       </Card.Body>
       {opened && <Card.Footer className="small text-body-secondary">{opened}</Card.Footer>}
@@ -97,7 +102,8 @@ function partnerOtherThan(couple: Couple, partner: string): string
   return couple.partnerOne.id === partner ? couple.partnerTwo.id : couple.partnerOne.id;
 }
 
-function ParagraphBlock({ paragraph, conversation, index, highlighted }: { paragraph: Paragraph; conversation: string; index: ParagraphIndex; highlighted: boolean })
+export function ParagraphBlock({ paragraph, conversation, index, highlighted, actions }:
+  { paragraph: Paragraph; conversation: string; index: ParagraphIndex; highlighted: boolean; actions?: (paragraph: Paragraph) => ReactNode })
 {
   const link = (id: string, words: string) =>
   {
@@ -119,6 +125,7 @@ function ParagraphBlock({ paragraph, conversation, index, highlighted }: { parag
       <UserText text={paragraph.body} className="mb-1" />
       {paragraph.references.map((id) => link(id, 'Risponde a'))}
       {paragraph.selfCitations.map((id) => link(id, 'Richiama'))}
+      {actions?.(paragraph)}
     </section>
   );
 }
