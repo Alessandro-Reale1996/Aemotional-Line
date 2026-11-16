@@ -1,0 +1,8 @@
+/* The app's own styles, next to Bootstrap's, loaded as a file: the CSP allows no inline style (frontend point 8). */
+
+/* Users' text is plain text with its own line breaks (frontend point 8): never HTML, never Markdown. */
+.preserve-lines
+{
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

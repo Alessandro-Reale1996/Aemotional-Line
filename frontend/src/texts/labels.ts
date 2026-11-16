@@ -27,6 +27,20 @@ export const INVITATION_STATUS_LABELS: Record<Schemas['InvitationView']['status'
   EXPIRED: 'Scaduto',
 };
 
+export const NEGOTIATION_STATUS_LABELS: Record<Schemas['NegotiationView']['status'], string> = {
+  DRAFT: 'Richiesta in attesa di risposta',
+  ACCEPTED: 'In corso',
+  REFUSED: 'Richiesta rifiutata',
+  ABANDONED: 'Abbandonata',
+};
+
+export const PROPOSAL_STATUS_LABELS: Record<Schemas['ProposalView']['status'], string> = {
+  DRAFT: 'Bozza',
+  WAITING_FOR_RESPONSE: 'In attesa di risposta',
+  REFUSED: 'Rifiutata',
+  ACCEPTED: 'Accettata',
+};
+
 export const PURPOSE_LABELS: Record<Schemas['NegotiationWaiting']['purpose'], string> = {
   STARTED_CONVERSATION: 'Stipula dell’accordo',
   MODIFIED_AGREEMENT: 'Modifica dell’accordo',

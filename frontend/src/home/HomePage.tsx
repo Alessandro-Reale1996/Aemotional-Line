@@ -12,6 +12,7 @@ import { useCommand } from '../components/useCommand';
 import { CoupleCard, partnersOf } from '../couples/CoupleCard';
 import { formatDate, nameOf } from '../texts/format';
 import { NOTHING_TO_DO, todoItems } from './todo';
+import { TodoList } from './TodoList';
 
 export interface HomeData
 {
@@ -62,11 +63,7 @@ function PatientHome({ me, data }: { me: Account; data: HomeData })
           <section className="mb-4">
             <h2 className="h5">Da fare</h2>
             {todo.length > 0 ? (
-              <ul>
-                {todo.map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
+              <TodoList items={todo} />
             ) : (
               <p className="text-body-secondary">{NOTHING_TO_DO}</p>
             )}

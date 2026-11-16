@@ -13,6 +13,9 @@ export type CoupleSummary = components['schemas']['CoupleSummary'];
 export type Invitation = components['schemas']['InvitationView'];
 export type Therapist = components['schemas']['TherapistView'];
 export type EndedCouple = components['schemas']['EndedCoupleView'];
+export type Negotiation = components['schemas']['NegotiationView'];
+export type Proposal = components['schemas']['ProposalView'];
+export type Purpose = Negotiation['purpose'];
 
 /** The cookie the server keeps the CSRF token in; the app reads it and sends it back in a header. */
 export const CSRF_COOKIE = '__Host-XSRF-TOKEN';

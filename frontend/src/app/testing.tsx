@@ -18,7 +18,7 @@ interface Options
   state?: unknown;
   /** Who is logged in: GET /api/auth/me answers with it, or 401. */
   account?: Account | null;
-  /** Answers the requests it knows; undefined leaves the request to the defaults (me, limits, an empty summary, no couples). */
+  /** Answers the requests it knows; undefined leaves the request to the defaults (me, limits, an empty summary, no couples, no stipule). */
   answer?: (request: Request, path: string) => unknown;
   /** The pages; the app's own by default. */
   routes?: (app: App) => RouteObject[];
@@ -56,6 +56,11 @@ export function renderApp({ path = '/', state, account = null, answer = () => un
     }
 
     if (pathname === '/api/me/couples')
+    {
+      return [];
+    }
+
+    if (/^\/api\/couples\/[^/]+\/(negotiations|failed-starts)$/.test(pathname))
     {
       return [];
     }

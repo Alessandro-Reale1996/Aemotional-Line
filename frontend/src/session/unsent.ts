@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import type { ShouldRevalidateFunctionArgs } from 'react-router';
 
 /**
  * The forms holding text the user hasn't sent yet (CLAUDE.md, frontend point 7). Nothing is saved in the browser, so
@@ -67,4 +68,14 @@ export function guardPageExit(target: Window): () => void
   target.addEventListener('beforeunload', guard);
 
   return () => target.removeEventListener('beforeunload', guard);
+}
+
+/**
+ * A route's `shouldRevalidate` for a page with a form (frontend point 4): while the form holds unsent text the data on
+ * screen aren't re-read, so a refusal (409) can't make the form disappear with what was written; the refusal's text says
+ * what happened. A change of address is always read.
+ */
+export function unlessUnsentText({ currentUrl, nextUrl, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs): boolean
+{
+  return currentUrl.href !== nextUrl.href || !hasUnsentText() ? defaultShouldRevalidate : false;
 }

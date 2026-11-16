@@ -3,7 +3,7 @@ import { type LoaderFunctionArgs, redirect, type RouteObject } from 'react-route
 import { AccountPage } from '../account/AccountPage';
 import { AdministrationPage } from '../admin/AdministrationPage';
 import { TherapistPage } from '../admin/TherapistPage';
-import { type Account, ask, type Role } from '../api/client';
+import { type Account, ask, type Couple, type Role } from '../api/client';
 import { ApiError } from '../api/errors';
 import { ForgottenPasswordPage } from '../auth/ForgottenPasswordPage';
 import { LoginPage } from '../auth/LoginPage';
@@ -12,6 +12,9 @@ import { Loading } from '../components/frames';
 import { CouplePage } from '../couples/CouplePage';
 import { HomePage } from '../home/HomePage';
 import { NewInvitationPage } from '../invitations/NewInvitationPage';
+import { NegotiationPage } from '../negotiations/NegotiationPage';
+import { NewAgreementPage, NewDiscussionPage } from '../negotiations/NewNegotiationPages';
+import { unlessUnsentText } from '../session/unsent';
 import type { App, RootData } from './context';
 import { AppLayout, ErrorPage, NotFoundPage, PageError, Root } from './Root';
 
@@ -33,6 +36,19 @@ export function createRoutes({ api, session }: App): RouteObject[]
   const whoAmI = () => (account ??= api.whoIsLoggedIn());
   const limits = () => ask(api.GET('/api/limits'));
   const couples = () => ask(api.GET('/api/me/couples'));
+
+  /** One of the user's couples, or "not found". */
+  async function coupleWhere(matches: (couple: Couple) => boolean): Promise<Couple>
+  {
+    const couple = (await couples()).find(matches);
+
+    if (!couple)
+    {
+      throw notFound();
+    }
+
+    return couple;
+  }
 
   /** The data of a page for the given roles. A page of another role reads as "not found" (F5 decision 2). */
   function page<T>(roles: readonly Role[], load: (me: Account, args: LoaderFunctionArgs) => Promise<T>)
@@ -107,16 +123,45 @@ export function createRoutes({ api, session }: App): RouteObject[]
                   path: 'coppie/:id',
                   loader: page(['PATIENT', 'THERAPIST'], async (_, { params }) =>
                   {
-                    const couple = (await couples()).find((candidate) => candidate.id === params.id);
+                    const couple = await coupleWhere((candidate) => candidate.id === params.id);
+                    const id = { params: { path: { id: couple.id } } };
+                    const [negotiations, failedStarts] = await Promise.all([
+                      ask(api.GET('/api/couples/{id}/negotiations', id)),
+                      couple.conversation ? Promise.resolve([]) : ask(api.GET('/api/couples/{id}/failed-starts', id)),
+                    ]);
 
-                    if (!couple)
-                    {
-                      throw notFound();
-                    }
-
-                    return couple;
+                    return { couple, negotiations, failedStarts };
                   }),
                   element: <CouplePage />,
+                },
+                {
+                  path: 'coppie/:id/nuovo-accordo',
+                  loader: page(['PATIENT'], async (_, { params }) =>
+                    ({ couple: await coupleWhere((candidate) => candidate.id === params.id), limits: await limits() })),
+                  shouldRevalidate: unlessUnsentText,
+                  element: <NewAgreementPage />,
+                },
+                {
+                  path: 'conversazioni/:id/nuovo-discorso',
+                  loader: page(['PATIENT'], async (_, { params }) =>
+                    ({ couple: await coupleWhere((candidate) => candidate.conversation === params.id), limits: await limits() })),
+                  shouldRevalidate: unlessUnsentText,
+                  element: <NewDiscussionPage />,
+                },
+                {
+                  path: 'stipule/:id',
+                  loader: page(['PATIENT', 'THERAPIST'], async (_, { params }) =>
+                  {
+                    const [negotiation, theLimits] = await Promise.all([
+                      ask(api.GET('/api/negotiations/{id}', { params: { path: { id: params.id ?? '' } } })),
+                      limits(),
+                    ]);
+                    const couple = await coupleWhere((candidate) => candidate.id === negotiation.coupleId);
+
+                    return { negotiation, couple, limits: theLimits };
+                  }),
+                  shouldRevalidate: unlessUnsentText,
+                  element: <NegotiationPage />,
                 },
                 {
                   path: 'amministrazione',

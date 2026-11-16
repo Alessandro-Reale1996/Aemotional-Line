@@ -99,7 +99,8 @@ no unopened counts, since they read freely and nothing is recorded.
 An agreement negotiation starts the conversation if the couple has none, otherwise it changes the agreement. A discussion
 negotiation opens a specific discussion, optionally from a paragraph. Accepting the last proposal takes effect at once: the
 answer gives the conversation and the discussion opened, and the negotiation no longer exists. An unsent draft is visible
-only to its author. Every send needs a justification. Concluded negotiations are read from the archive.
+only to its author; `PUT .../draft` saves its text (the app does it on "Salva la bozza", and before sending when the text
+changed), while the justification reaches the server only with `POST .../send`. Every send needs a justification. Concluded negotiations are read from the archive.
 
 ## Closings and constraints
 

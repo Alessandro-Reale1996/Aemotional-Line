@@ -121,3 +121,78 @@ export async function emailedLink(to: string, page: '/attiva' | '/reimposta-pass
 
   throw new Error(`No email with a link to ${page} reached ${to}.`);
 }
+
+/** A call to the API from inside a page of the app, with its cookies and the CSRF token, as the app makes it. */
+export async function call(page: Page, method: string, path: string, body?: object): Promise<{ status: number; json: unknown }>
+{
+  return page.evaluate(async ({ method, path, body }) =>
+  {
+    const token = () => /__Host-XSRF-TOKEN=([^;]+)/.exec(document.cookie)?.[1];
+
+    if (!token())
+    {
+      await fetch('/api/auth/csrf');
+    }
+
+    const answer = await fetch(path, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token() ?? '' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await answer.text();
+
+    return { status: answer.status, json: text ? JSON.parse(text) as unknown : null };
+  }, { method, path, body });
+}
+
+export interface Person
+{
+  name: string;
+  email: string;
+  password: string;
+  page: Page;
+}
+
+/** Activates an account through the API, with the code of the emailed link, and logs it in on its page. */
+async function activateThroughTheApi(person: Omit<Person, 'page'>, page: Page): Promise<Person>
+{
+  const code = new URL(await emailedLink(person.email, '/attiva')).searchParams.get('codice');
+  await page.goto('/accedi');
+  expect((await call(page, 'POST', '/api/auth/activate', { code, password: person.password })).status).toBe(204);
+  expect((await call(page, 'POST', '/api/auth/login', { email: person.email, password: person.password })).status).toBe(200);
+
+  return { ...person, page };
+}
+
+/**
+ * A couple ready to use (CLAUDE.md, F6): a therapist, Alex and Sam, each logged in on a page of their own, set up through
+ * the API (the interface for all of it is tested in couples.spec.ts). Alex's page is the one given, so that the test's own
+ * checks watch it.
+ */
+export async function setUpCouple(browser: Browser, alexPage: Page)
+{
+  const therapist = await activateThroughTheApi(await (async () =>
+  {
+    const person = { name: 'Dott.ssa Rossi', email: freshEmail('terapeuta'), password: freshPassword() };
+    await createTherapist(browser, person.email, person.name);
+
+    return person;
+  })(), await anotherPerson(browser));
+  const alexAccount = { name: 'Alex', email: freshEmail('alex'), password: freshPassword() };
+  const samAccount = { name: 'Sam', email: freshEmail('sam'), password: freshPassword() };
+  const invited = await call(therapist.page, 'POST', '/api/invitations',
+    { emailOne: alexAccount.email, nameOne: alexAccount.name, emailTwo: samAccount.email, nameTwo: samAccount.name });
+  expect(invited.status).toBe(201);
+  const invitation = (invited.json as { id: string }).id;
+  const alex = await activateThroughTheApi(alexAccount, alexPage);
+  const sam = await activateThroughTheApi(samAccount, await anotherPerson(browser));
+
+  for (const partner of [alex, sam])
+  {
+    expect((await call(partner.page, 'POST', `/api/invitations/${invitation}/accept`)).status).toBe(204);
+  }
+
+  const couple = ((await call(alex.page, 'GET', '/api/me/couples')).json as { id: string }[])[0]?.id ?? '';
+
+  return { therapist, alex, sam, couple, close: () => Promise.all([therapist.page.context().close(), sam.page.context().close()]) };
+}

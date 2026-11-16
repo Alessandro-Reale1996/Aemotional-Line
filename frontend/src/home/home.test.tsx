@@ -31,13 +31,13 @@ describe('the "Da fare"', () =>
       outcomesToDeclare: [5],
       constraintRequestsToDecide: [invitation.id],
     })).toEqual([
-      'Stipula dell’accordo: tocca a te.',
-      'Discorso principale: 2 messaggi da aprire.',
-      'Discorso 3: 1 messaggio da aprire.',
-      'Discorso 3: una richiesta di chiusura aspetta la tua risposta.',
-      'Discorso 4: una richiesta di chiusura aspetta la tua decisione.',
-      'Discorso 5: dichiara l’esito.',
-      'Una proposta di vincoli aspetta la tua risposta.',
+      { text: 'Stipula dell’accordo: tocca a te.', to: `/stipule/${invitation.id}` },
+      { text: 'Discorso principale: 2 messaggi da aprire.' },
+      { text: 'Discorso 3: 1 messaggio da aprire.' },
+      { text: 'Discorso 3: una richiesta di chiusura aspetta la tua risposta.' },
+      { text: 'Discorso 4: una richiesta di chiusura aspetta la tua decisione.' },
+      { text: 'Discorso 5: dichiara l’esito.' },
+      { text: 'Una proposta di vincoli aspetta la tua risposta.' },
     ]);
   });
 });
@@ -116,7 +116,7 @@ describe('the patient home', () =>
       {
         if (path === 'GET /api/me/summary')
         {
-          return { pendingInvitations: [], couples: [{ ...nothing, outcomesToDeclare: [2] }] };
+          return { pendingInvitations: [], couples: [{ ...nothing, outcomesToDeclare: [2], negotiationsWaitingForYou: [{ id: invitation.id, purpose: 'MODIFIED_AGREEMENT' }] }] };
         }
 
         return path === 'GET /api/me/couples' ? [activeCouple, endedCouple] : undefined;
@@ -124,6 +124,7 @@ describe('the patient home', () =>
     });
 
     expect(await screen.findByText('Discorso 2: dichiara l’esito.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Modifica dell’accordo: tocca a te.' })).toHaveProperty('pathname', `/stipule/${invitation.id}`);
     const links = screen.getAllByRole('link', { name: /^Alex e / });
     expect(links.map((link) => link.getAttribute('href'))).toEqual([`/coppie/${activeCouple.id}`, `/coppie/${endedCouple.id}`]);
     expect(screen.getByText('Alex e Account eliminato')).toBeTruthy();

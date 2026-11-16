@@ -8,19 +8,28 @@ function discussion(number: number): string
   return number === 0 ? 'Discorso principale' : `Discorso ${number}`;
 }
 
-/**
- * What waits for the user in an active couple, in words (CLAUDE.md, frontend point 5; texts approved with F5). For now
- * only text: each step adds a link when its page exists (F5 decision 1).
- */
-export function todoItems(summary: CoupleSummary): string[]
+/** One thing waiting for the user; `to` is its page, once the page exists. */
+export interface TodoItem
 {
+  text: string;
+  to?: string;
+}
+
+/**
+ * What waits for the user in an active couple, in words (CLAUDE.md, frontend point 5; texts approved with F5). Each step
+ * adds the link of the items whose page it brings (F5 decision 1): the stipule since F6.
+ */
+export function todoItems(summary: CoupleSummary): TodoItem[]
+{
+  const words = (text: string): TodoItem => ({ text });
+
   return [
-    ...summary.negotiationsWaitingForYou.map((waiting) => `${PURPOSE_LABELS[waiting.purpose]}: tocca a te.`),
+    ...summary.negotiationsWaitingForYou.map((waiting) => ({ text: `${PURPOSE_LABELS[waiting.purpose]}: tocca a te.`, to: `/stipule/${waiting.id}` })),
     ...summary.unopenedMessages.map(({ discussion: number, count }) =>
-      `${discussion(number)}: ${count === 1 ? '1 messaggio' : `${count} messaggi`} da aprire.`),
-    ...summary.closingRequestsToAnswer.map((number) => `${discussion(number)}: una richiesta di chiusura aspetta la tua risposta.`),
-    ...summary.therapistRequestsToDecide.map((number) => `${discussion(number)}: una richiesta di chiusura aspetta la tua decisione.`),
-    ...summary.outcomesToDeclare.map((number) => `${discussion(number)}: dichiara l’esito.`),
-    ...summary.constraintRequestsToDecide.map(() => 'Una proposta di vincoli aspetta la tua risposta.'),
+      words(`${discussion(number)}: ${count === 1 ? '1 messaggio' : `${count} messaggi`} da aprire.`)),
+    ...summary.closingRequestsToAnswer.map((number) => words(`${discussion(number)}: una richiesta di chiusura aspetta la tua risposta.`)),
+    ...summary.therapistRequestsToDecide.map((number) => words(`${discussion(number)}: una richiesta di chiusura aspetta la tua decisione.`)),
+    ...summary.outcomesToDeclare.map((number) => words(`${discussion(number)}: dichiara l’esito.`)),
+    ...summary.constraintRequestsToDecide.map(() => words('Una proposta di vincoli aspetta la tua risposta.')),
   ];
 }
