@@ -71,6 +71,10 @@ test('an agreement stipulated with a counter-proposal', async ({ page, browser }
   await expect(alex.page.getByText('Ho bisogno di sapere che ci sentiamo.')).toBeVisible();
   await confirm(alex.page, 'Accetta la proposta');
   await expect(alex.page.getByText('Accordo stipulato: la conversazione è iniziata.')).toBeVisible();
+  // The conversation opens at once (F7), with the agreement in force.
+  await expect(alex.page.getByRole('heading', { name: 'Conversazione' })).toBeVisible();
+  await expect(alex.page.getByText(`${AGREEMENT} Senza fretta, ma ogni settimana.`)).toBeVisible();
+  await alex.page.getByRole('link', { name: 'Torna alla coppia' }).click();
   await expect(alex.page.getByRole('link', { name: 'Proponi una modifica dell’accordo' })).toBeVisible();
   await expect(alex.page.getByText('Nessuna stipula in corso.')).toBeVisible();
   await close();
@@ -128,5 +132,7 @@ test('a specific discussion requested and opened', async ({ page, browser }) =>
   await sam.page.reload();
   await confirm(sam.page, 'Accetta la proposta');
   await expect(sam.page.getByText('Il discorso specifico è aperto.')).toBeVisible();
+  await expect(sam.page.getByRole('heading', { name: 'Le vacanze' })).toBeVisible();
+  await expect(sam.page.getByText('Puoi scrivere il primo messaggio.')).toBeVisible();
   await close();
 });

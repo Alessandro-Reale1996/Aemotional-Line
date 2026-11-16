@@ -32,6 +32,8 @@ export interface NegotiationData
   negotiation: Negotiation;
   couple: Couple;
   limits: Limits;
+  /** The paragraph a discussion expands, when the user can see it (F7): its title and where it is. */
+  origin?: { title: string; address: string };
 }
 
 export const DRAFT_SAVED = 'Bozza salvata.';
@@ -43,7 +45,7 @@ export const DRAFT_SAVED = 'Bozza salvata.';
  */
 export function NegotiationPage()
 {
-  const { negotiation, couple, limits } = useLoaderData() as NegotiationData;
+  const { negotiation, couple, limits, origin } = useLoaderData() as NegotiationData;
   const me = useAccount();
 
   if (!me)
@@ -63,7 +65,17 @@ export function NegotiationPage()
       <p className="text-body-secondary">
         Richiesta da {who(couple, negotiation.request.author, me)} il {formatDate(negotiation.startedAt)} · {NEGOTIATION_STATUS_LABELS[negotiation.status]}
       </p>
-      {negotiation.originParagraphId && <p>{FROM_A_PARAGRAPH}</p>}
+      {negotiation.originParagraphId && (
+        <p>
+          {origin ? (
+            <>
+              Nasce da <Link to={origin.address}>«{origin.title}»</Link>
+            </>
+          ) : (
+            FROM_A_PARAGRAPH
+          )}
+        </p>
+      )}
       <section className="mb-4">
         <h2 className="h5">Richiesta</h2>
         <Card body>
@@ -139,9 +151,15 @@ function Actions({ negotiation, couple, me, phase, limits }: { negotiation: Nego
     onDone: () => leave(ENDED_WITHOUT_AGREEMENT),
   });
   const abandon = useCommand(() => ask(api.POST('/api/negotiations/{id}/abandon', path)), { reread: false, onDone: () => leave(ENDED_WITHOUT_AGREEMENT) });
+  // What took effect opens at once (F7): the conversation, or the discussion just opened.
   const acceptProposal = useCommand(() => ask(api.POST('/api/negotiations/{id}/accept-proposal', path)), {
     reread: false,
-    onDone: () => leave(ACCEPTED_NOTICES[negotiation.purpose]),
+    onDone: (effect) => void navigate(
+      effect.openedDiscussion !== null && negotiation.purpose === 'OPENED_DISCUSSION'
+        ? `/conversazioni/${effect.conversationId}/discorsi/${effect.openedDiscussion}`
+        : `/conversazioni/${effect.conversationId}`,
+      { replace: true, state: { notice: ACCEPTED_NOTICES[negotiation.purpose] } },
+    ),
   });
   const refuseProposal = useCommand(() => ask(api.POST('/api/negotiations/{id}/refuse-proposal', path)));
   const commands = [acceptRequest, refuseRequest, abandon, acceptProposal, refuseProposal];

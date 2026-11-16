@@ -41,6 +41,12 @@ export const PROPOSAL_STATUS_LABELS: Record<Schemas['ProposalView']['status'], s
   ACCEPTED: 'Accettata',
 };
 
+export const PARAGRAPH_TYPE_LABELS: Record<Schemas['ParagraphView']['type'], string> = {
+  SIMPLE: 'Paragrafo',
+  QUESTION: 'Domanda',
+  POINTED: 'Risposta puntuale',
+};
+
 export const PURPOSE_LABELS: Record<Schemas['NegotiationWaiting']['purpose'], string> = {
   STARTED_CONVERSATION: 'Stipula dell’accordo',
   MODIFIED_AGREEMENT: 'Modifica dell’accordo',

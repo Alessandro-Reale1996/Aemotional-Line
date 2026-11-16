@@ -1,4 +1,4 @@
-import type { Account, Couple, Invitation, Limits, Summary, Therapist } from './client';
+import type { Account, Constraint, Conversation, Couple, Invitation, Limits, Message, Summary, Therapist } from './client';
 import type { ErrorCode } from './errors';
 
 /**
@@ -80,6 +80,71 @@ export const endedCouple: Couple = {
   endedAt: '2026-11-13T10:00:00Z',
   conversation: null,
 };
+
+export const CONVERSATION = '0190a7e2-0000-7000-8000-0000000000d1';
+
+/** The couple once its conversation has started. */
+export const talkingCouple: Couple = { ...activeCouple, conversation: CONVERSATION };
+
+/** A message as the API gives it; `closedEnvelope` empties it, as for a partner who hasn't opened it. */
+export function message(id: number, sender: string, paragraphs: Message['paragraphs'], extra: Partial<Message> = {}): Message
+{
+  return {
+    id: `0190a7e2-0000-7000-8000-${String(id).padStart(12, '0')}`,
+    sender,
+    sentAt: '2026-11-16T17:30:00Z',
+    readAt: null,
+    closedEnvelope: false,
+    questionsLeftUnanswered: [],
+    paragraphs,
+    ...extra,
+  };
+}
+
+/** A paragraph as the API gives it. */
+export function paragraph(id: number, title: string, extra: Partial<Message['paragraphs'][number]> = {}): Message['paragraphs'][number]
+{
+  return {
+    id: `0190a7e2-0000-7000-8000-1${String(id).padStart(11, '0')}`,
+    type: 'SIMPLE',
+    title,
+    subtitle: null,
+    body: `Il testo di «${title}».`,
+    references: [],
+    selfCitations: [],
+    ...extra,
+  };
+}
+
+/** A conversation with only its main discussion, holding the messages given. */
+export function conversationWith(messages: Message[], extra: Partial<Conversation> = {}): Conversation
+{
+  return {
+    id: CONVERSATION,
+    coupleId: activeCouple.id,
+    agreement: 'Ci scriviamo con calma.',
+    discussions: [{ id: 0, title: null, subtitle: null, closed: false, originParagraphId: null, lastSender: messages.at(-1)?.sender ?? null, messages }],
+    ...extra,
+  };
+}
+
+/** A constraint in force on a person. */
+export function constraint(user: string, extra: Partial<Constraint>): Constraint
+{
+  return {
+    user,
+    type: 'TIME',
+    scope: 'WRITE',
+    description: 'For developers.',
+    notBefore: null,
+    delay: null,
+    latitude: null,
+    longitude: null,
+    radiusMetres: null,
+    direction: null,
+    ...extra,
+  };
+}
 
 export const invitation: Invitation = {
   id: '0190a7e2-0000-7000-8000-0000000000a1',

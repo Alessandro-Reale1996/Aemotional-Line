@@ -29,6 +29,11 @@ export function CoupleCard({ couple, todo = [] }: { couple: Couple; todo?: TodoI
       <div className="text-body-secondary small">
         Terapeuta: {nameOf(couple.therapist)} · {coupleState(couple)}
       </div>
+      {couple.conversation && (
+        <Link to={`/conversazioni/${couple.conversation}`} className="small">
+          Apri la conversazione
+        </Link>
+      )}
       {todo.length > 0 && <TodoList items={todo} className="mt-2 mb-0" />}
     </Card>
   );

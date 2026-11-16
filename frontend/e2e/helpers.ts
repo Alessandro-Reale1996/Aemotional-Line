@@ -196,3 +196,61 @@ export async function setUpCouple(browser: Browser, alexPage: Page)
 
   return { therapist, alex, sam, couple, close: () => Promise.all([therapist.page.context().close(), sam.page.context().close()]) };
 }
+
+/** The conversation of a couple, started through the API: Alex asks, Sam accepts, Alex sends the text, Sam accepts it. */
+export async function startConversation(alex: Person, sam: Person, couple: string, text = 'Ci scriviamo con calma.'): Promise<string>
+{
+  const started = await call(alex.page, 'POST', `/api/couples/${couple}/agreement-negotiations`, { text });
+  const negotiation = (started.json as { id: string }).id;
+  expect((await call(sam.page, 'POST', `/api/negotiations/${negotiation}/accept-request`)).status).toBe(204);
+  expect((await call(alex.page, 'POST', `/api/negotiations/${negotiation}/send`, { justification: 'Va bene così.' })).status).toBe(204);
+  const accepted = await call(sam.page, 'POST', `/api/negotiations/${negotiation}/accept-proposal`);
+  expect(accepted.status).toBe(200);
+
+  return (accepted.json as { conversationId: string }).conversationId;
+}
+
+/** A message sent through the API (the writing screens are F8's): paragraphs of a type, a title and a body. */
+export async function sendThroughTheApi(person: Person, conversation: string, discussion: number,
+  paragraphs: { type: 'SIMPLE' | 'QUESTION'; title: string; body: string }[])
+{
+  const now = new Date();
+  const answer = await call(person.page, 'POST', `/api/conversations/${conversation}/discussions/${discussion}/messages`, {
+    paragraphs: paragraphs.map((paragraph) => ({ ...paragraph, subtitle: null, references: [], selfCitations: [], question: null })),
+    localTime: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    position: null,
+  });
+  expect(answer.status, 'the message was sent').toBe(201);
+}
+
+/** Constraints proposed by the therapist and approved by both partners, through the API (the screens are F9's). */
+export async function applyConstraints(therapist: Person, partners: Person[], conversation: string, constraints: object[])
+{
+  const proposed = await call(therapist.page, 'POST', `/api/conversations/${conversation}/constraints/requests`, { constraints });
+  expect(proposed.status, 'the constraints were proposed').toBe(201);
+  const request = (proposed.json as { id: string }).id;
+
+  for (const partner of partners)
+  {
+    expect((await call(partner.page, 'POST', `/api/conversations/${conversation}/constraints/requests/${request}/approve`)).status).toBe(204);
+  }
+}
+
+/** The id of a person on the server, read from their own session. */
+export async function idOf(person: Person): Promise<string>
+{
+  return ((await call(person.page, 'GET', '/api/auth/me')).json as { id: string }).id;
+}
+
+/** Opens, through the API, the last message of a discussion, as its recipient. */
+export async function openThroughTheApi(person: Person, conversation: string, discussion: number)
+{
+  const view = (await call(person.page, 'GET', `/api/conversations/${conversation}`)).json as { discussions: { id: number; messages: { id: string }[] }[] };
+  const last = view.discussions.find((candidate) => candidate.id === discussion)?.messages.at(-1)?.id;
+  const now = new Date();
+  const opened = await call(person.page, 'POST', `/api/conversations/${conversation}/discussions/${discussion}/messages/${last}/open`, {
+    localTime: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    position: null,
+  });
+  expect(opened.status, 'the message was opened').toBe(200);
+}

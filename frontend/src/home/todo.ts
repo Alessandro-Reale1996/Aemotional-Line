@@ -17,19 +17,22 @@ export interface TodoItem
 
 /**
  * What waits for the user in an active couple, in words (CLAUDE.md, frontend point 5; texts approved with F5). Each step
- * adds the link of the items whose page it brings (F5 decision 1): the stipule since F6.
+ * adds the link of the items whose page it brings (F5 decision 1): the stipule since F6, the discussions since F7.
  */
 export function todoItems(summary: CoupleSummary): TodoItem[]
 {
   const words = (text: string): TodoItem => ({ text });
+  // A discussion's page, once the conversation exists (F7).
+  const at = (number: number) => (text: string): TodoItem =>
+    (summary.conversation ? { text, to: `/conversazioni/${summary.conversation}/discorsi/${number}` } : words(text));
 
   return [
     ...summary.negotiationsWaitingForYou.map((waiting) => ({ text: `${PURPOSE_LABELS[waiting.purpose]}: tocca a te.`, to: `/stipule/${waiting.id}` })),
     ...summary.unopenedMessages.map(({ discussion: number, count }) =>
-      words(`${discussion(number)}: ${count === 1 ? '1 messaggio' : `${count} messaggi`} da aprire.`)),
-    ...summary.closingRequestsToAnswer.map((number) => words(`${discussion(number)}: una richiesta di chiusura aspetta la tua risposta.`)),
-    ...summary.therapistRequestsToDecide.map((number) => words(`${discussion(number)}: una richiesta di chiusura aspetta la tua decisione.`)),
-    ...summary.outcomesToDeclare.map((number) => words(`${discussion(number)}: dichiara l’esito.`)),
+      at(number)(`${discussion(number)}: ${count === 1 ? '1 messaggio' : `${count} messaggi`} da aprire.`)),
+    ...summary.closingRequestsToAnswer.map((number) => at(number)(`${discussion(number)}: una richiesta di chiusura aspetta la tua risposta.`)),
+    ...summary.therapistRequestsToDecide.map((number) => at(number)(`${discussion(number)}: una richiesta di chiusura aspetta la tua decisione.`)),
+    ...summary.outcomesToDeclare.map((number) => at(number)(`${discussion(number)}: dichiara l’esito.`)),
     ...summary.constraintRequestsToDecide.map(() => words('Una proposta di vincoli aspetta la tua risposta.')),
   ];
 }

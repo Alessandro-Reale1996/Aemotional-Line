@@ -36,7 +36,10 @@ export function PublicFrame({ title, children }: { title: string; children: Reac
 
 /** The bar's links by role (frontend point 5): each step adds its own when its page exists. */
 const LINKS: Record<Role, { to: string; label: string }[]> = {
-  PATIENT: [{ to: '/', label: 'Da fare' }],
+  PATIENT: [
+    { to: '/', label: 'Da fare' },
+    { to: '/conversazione', label: 'Conversazione' },
+  ],
   THERAPIST: [
     { to: '/', label: 'Coppie' },
     { to: '/inviti/nuovo', label: 'Invita' },

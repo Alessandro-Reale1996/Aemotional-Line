@@ -583,6 +583,11 @@ public class Conversation
 	    	
 	    	checkedContext = checkedContext == null ? null : checkedContext.withReadAt(readAt.get());
 	    }
+	    else
+	    {
+	    	// The first message of the discussion answers nothing: a reply delay has nothing to count from (CLAUDE.md, F7).
+	    	checkedContext = checkedContext == null ? null : checkedContext.withNothingToAnswer();
+	    }
 
 	    constraintSet.ensureSatisfiedBy(sender, checkedContext, ConstraintScope.WRITE);
 	    

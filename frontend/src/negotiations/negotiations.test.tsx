@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { Couple, Negotiation, Proposal } from '../api/client';
-import { activeCouple, noContent, partner, patient, problem, therapist } from '../api/testing';
+import { activeCouple, CONVERSATION, conversationWith, noContent, partner, patient, problem, talkingCouple, therapist } from '../api/testing';
 import { renderApp } from '../app/testing';
 import { discardUnsentText } from '../session/unsent';
 import { ERROR_TEXTS } from '../texts/errors';
@@ -197,13 +197,29 @@ describe('the stipula page', () =>
     expect(await server.requests.find((sentRequest) => sentRequest.method === 'PUT')?.json()).toEqual({ text: `${TEXT} E ci rileggiamo.` });
   });
 
-  it('accepts a proposal after saying what happens, then goes to the couple', async () =>
+  it('accepts a proposal after saying what happens, then opens the conversation', async () =>
   {
     const waiting = sent(patient.id, 'Il testo finale.', 'WAITING_FOR_RESPONSE', 1);
+    let started = false;
     const { user, server, router } = renderStipula(
       partner,
       stipula({ status: 'ACCEPTED', currentResponder: partner.id, sentProposals: [sent(patient.id, TEXT, 'REFUSED', 2), waiting] }),
-      (_, path) => (path.endsWith('/accept-proposal') ? { conversationId: activeCouple.id, openedDiscussion: 0 } : undefined),
+      (_, path) =>
+      {
+        if (path.endsWith('/accept-proposal'))
+        {
+          started = true;
+
+          return { conversationId: CONVERSATION, openedDiscussion: 0 };
+        }
+
+        if (path === 'GET /api/me/couples')
+        {
+          return [started ? talkingCouple : activeCouple];
+        }
+
+        return path === `GET /api/conversations/${CONVERSATION}` ? conversationWith([]) : undefined;
+      },
     );
 
     expect(await screen.findByText('Alex ti ha inviato una proposta.')).toBeTruthy();
@@ -217,7 +233,7 @@ describe('the stipula page', () =>
     await user.click(within(dialog).getByRole('button', { name: 'Accetta la proposta' }));
 
     expect(await screen.findByText(ACCEPTED_NOTICES.STARTED_CONVERSATION)).toBeTruthy();
-    expect(router.state.location.pathname).toBe(`/coppie/${activeCouple.id}`);
+    expect(router.state.location.pathname).toBe(`/conversazioni/${CONVERSATION}`);
     expect(server.paths()).toContain(`POST /api/negotiations/${ID}/accept-proposal`);
   });
 

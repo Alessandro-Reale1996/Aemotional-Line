@@ -8,7 +8,8 @@ import com.aemotionalline.domain.common.ErrorCode;
 /**
  * Forbids replying before a delay has passed since the message being answered was first read (spec 1.2:
  * "tra l'apertura di un messaggio e la possibilità di risposta deve passare un lasso di tempo previsto").
- * Without both instants in the context the constraint can't be shown satisfied, so it fails.
+ * A first message answers no message, so there is nothing to wait for (CLAUDE.md, F7); otherwise, without both instants
+ * in the context the constraint can't be shown satisfied, so it fails.
  */
 public class ReplyDelayConstraint implements Constraint
 {
@@ -39,6 +40,11 @@ public class ReplyDelayConstraint implements Constraint
 	@Override
 	public boolean isSatisfied(ConstraintContext context)
 	{
+		if (context.nothingToAnswer())
+		{
+			return true;
+		}
+
 		if (context.now() == null || context.readAt() == null)
 		{
 			return false;

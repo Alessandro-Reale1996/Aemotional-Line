@@ -25,6 +25,8 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: ['src/test-setup.ts'],
+    // Dates and times are shown in the browser's zone: the tests fix it, as the end-to-end tests do.
+    env: { TZ: 'Europe/Rome' },
     restoreMocks: true,
   },
 });

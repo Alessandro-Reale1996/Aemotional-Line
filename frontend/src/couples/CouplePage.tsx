@@ -49,6 +49,11 @@ export function CouplePage()
       <h1 className="h4 mb-3">{partnersOf(couple)}</h1>
       <p className="mb-1">Terapeuta: {nameOf(couple.therapist)}</p>
       <p>{coupleState(couple)}</p>
+      {couple.conversation && (
+        <p>
+          <ButtonLink to={`/conversazioni/${couple.conversation}`}>Apri la conversazione</ButtonLink>
+        </p>
+      )}
       <section className="mb-4">
         <h2 className="h5">Stipule in corso</h2>
         <NegotiationList negotiations={negotiations} couple={couple} me={me} empty="Nessuna stipula in corso." />

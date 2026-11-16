@@ -73,6 +73,17 @@ public class ConversationReadingTest
 		return new ConstraintContext(LocalTime.NOON, position);
 	}
 
+	// A conversation just started: no message yet.
+	private Conversation startedConversation()
+	{
+		Negotiation negotiation = Negotiation.start(Ids.negotiation(60L), COUPLE, new AgreementProposal(Ids.proposal(60L), A, "TEXT"), Clock.systemUTC());
+		negotiation.acceptNegotiation(B);
+		negotiation.sendProposal(A, "JUSTIFICATION TEXT");
+		negotiation.acceptProposal(B);
+
+		return Conversation.start(Ids.conversation(321L), COUPLE, negotiation, clock);
+	}
+
 	// A's first message is sent; B has not read it.
 	private Conversation conversationWithMessageFromA(Message first)
 	{
@@ -271,6 +282,40 @@ public class ConversationReadingTest
 		conversation.readMessage(B, FIRST, first.getId(), at(T0));
 
 		ConstraintContext faked = at(T0.plus(Duration.ofMinutes(1))).withNow(T0.plus(Duration.ofHours(2)));
+
+		assertThrows(DomainException.class, () -> conversation.sendMessage(message(2L, B), FIRST, faked));
+	}
+
+	@Test
+	void shouldLetAFirstMessageBeSentWhateverTheDelayAndHoldTheReplies()
+	{
+		// The delay counts from the opening of the message being answered: a first message answers nothing (CLAUDE.md, F7).
+		Conversation conversation = startedConversation();
+		constrain(conversation, B, new ReplyDelayConstraint(Duration.ofHours(1)));
+		Message first = message(1L, B);
+
+		assertDoesNotThrow(() -> conversation.sendMessage(first, FIRST, at(T0)));
+
+		// The replies still wait.
+		conversation.readMessage(A, FIRST, first.getId(), at(T0));
+		Message reply = message(2L, A);
+		conversation.sendMessage(reply, FIRST, at(T0.plus(Duration.ofMinutes(1))));
+		conversation.readMessage(B, FIRST, reply.getId(), at(T0.plus(Duration.ofMinutes(2))));
+
+		assertThrows(DomainException.class, () -> conversation.sendMessage(message(3L, B), FIRST, at(T0.plus(Duration.ofMinutes(61)))));
+		assertDoesNotThrow(() -> conversation.sendMessage(message(3L, B), FIRST, at(T0.plus(Duration.ofMinutes(62)))));
+	}
+
+	@Test
+	void shouldIgnoreNothingToAnswerSuppliedByTheCaller()
+	{
+		// A client claiming its reply answers nothing can't get around the delay: the conversation decides.
+		Message first = message(1L, A);
+		Conversation conversation = conversationWithMessageFromA(first);
+		constrain(conversation, B, new ReplyDelayConstraint(Duration.ofHours(1)));
+		conversation.readMessage(B, FIRST, first.getId(), at(T0));
+
+		ConstraintContext faked = at(T0.plus(Duration.ofMinutes(1))).withNothingToAnswer();
 
 		assertThrows(DomainException.class, () -> conversation.sendMessage(message(2L, B), FIRST, faked));
 	}

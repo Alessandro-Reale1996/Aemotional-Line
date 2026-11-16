@@ -16,6 +16,12 @@ export type EndedCouple = components['schemas']['EndedCoupleView'];
 export type Negotiation = components['schemas']['NegotiationView'];
 export type Proposal = components['schemas']['ProposalView'];
 export type Purpose = Negotiation['purpose'];
+export type Conversation = components['schemas']['ConversationView'];
+export type Discussion = components['schemas']['DiscussionView'];
+export type Message = components['schemas']['MessageView'];
+export type Paragraph = components['schemas']['ParagraphView'];
+export type Constraint = components['schemas']['ConstraintView'];
+export type Constraints = components['schemas']['ConstraintsView'];
 
 /** The cookie the server keeps the CSRF token in; the app reads it and sends it back in a header. */
 export const CSRF_COOKIE = '__Host-XSRF-TOKEN';

@@ -89,10 +89,14 @@ no unopened counts, since they read freely and nothing is recorded.
   paragraph, is a 400. A message has at most 20 paragraphs.
 - Before sending, call `POST .../previews`. `questionsLeftUnanswered` is a warning: the user may send anyway.
   `blockingDiscussions` means the draft must be written in that discussion instead.
+- A reply delay counts from the opening of the message being answered; the first message of a discussion answers
+  nothing, so it has no wait.
 - Send `localTime` when the user acts. Send `position` **only when a location constraint applies** to that user and action,
   so as not to transmit personal data for nothing: the server uses it for the check and doesn't store it. A constraint that
   needs a missing value refuses the action (`CONSTRAINT_NOT_SATISFIED`).
 - The reported time and position can't be verified by the server: don't describe them to users as proof.
+- The app asks for the position only at the click that needs it, checks it in the browser against the constraint first,
+  and sends it only when it satisfies it: a position outside the place never leaves the browser.
 
 ## Negotiations
 

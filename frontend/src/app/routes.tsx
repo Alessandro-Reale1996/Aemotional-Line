@@ -9,6 +9,8 @@ import { ForgottenPasswordPage } from '../auth/ForgottenPasswordPage';
 import { LoginPage } from '../auth/LoginPage';
 import { NewPasswordPage } from '../auth/NewPasswordPage';
 import { Loading } from '../components/frames';
+import { ConversationPage, DiscussionPage, NoConversationPage } from '../conversation/ConversationPages';
+import { indexParagraphs, paragraphAddress } from '../conversation/Letters';
 import { CouplePage } from '../couples/CouplePage';
 import { HomePage } from '../home/HomePage';
 import { NewInvitationPage } from '../invitations/NewInvitationPage';
@@ -149,6 +151,55 @@ export function createRoutes({ api, session }: App): RouteObject[]
                   element: <NewDiscussionPage />,
                 },
                 {
+                  path: 'conversazione',
+                  loader: page(['PATIENT'], async () =>
+                  {
+                    const current = (await couples()).find((couple) => couple.active && couple.conversation);
+
+                    if (current?.conversation)
+                    {
+                      throw redirect(`/conversazioni/${current.conversation}`);
+                    }
+
+                    return {};
+                  }),
+                  element: <NoConversationPage />,
+                },
+                {
+                  path: 'conversazioni/:id',
+                  loader: page(['PATIENT', 'THERAPIST'], async (_, { params }) =>
+                  {
+                    const [conversation, couple] = await Promise.all([
+                      ask(api.GET('/api/conversations/{id}', { params: { path: { id: params.id ?? '' } } })),
+                      coupleWhere((candidate) => candidate.conversation === params.id),
+                    ]);
+
+                    return { conversation, couple };
+                  }),
+                  element: <ConversationPage />,
+                },
+                {
+                  path: 'conversazioni/:id/discorsi/:n',
+                  loader: page(['PATIENT', 'THERAPIST'], async (_, { params }) =>
+                  {
+                    const id = { params: { path: { id: params.id ?? '' } } };
+                    const [conversation, couple, constraints] = await Promise.all([
+                      ask(api.GET('/api/conversations/{id}', id)),
+                      coupleWhere((candidate) => candidate.conversation === params.id),
+                      ask(api.GET('/api/conversations/{id}/constraints', id)),
+                    ]);
+
+                    if (!conversation.discussions.some((discussion) => String(discussion.id) === params.n))
+                    {
+                      throw notFound();
+                    }
+
+                    return { conversation, couple, inForce: constraints.inForce };
+                  }),
+                  shouldRevalidate: unlessUnsentText,
+                  element: <DiscussionPage />,
+                },
+                {
                   path: 'stipule/:id',
                   loader: page(['PATIENT', 'THERAPIST'], async (_, { params }) =>
                   {
@@ -157,8 +208,19 @@ export function createRoutes({ api, session }: App): RouteObject[]
                       limits(),
                     ]);
                     const couple = await coupleWhere((candidate) => candidate.id === negotiation.coupleId);
+                    let origin;
 
-                    return { negotiation, couple, limits: theLimits };
+                    // The paragraph a discussion expands, from the conversation as this user sees it (F7).
+                    if (negotiation.originParagraphId && couple.conversation)
+                    {
+                      const conversation = await ask(api.GET('/api/conversations/{id}', { params: { path: { id: couple.conversation } } }));
+                      const found = indexParagraphs(conversation).get(negotiation.originParagraphId);
+                      origin = found
+                        ? { title: found.title, address: paragraphAddress(conversation.id, found.discussion, negotiation.originParagraphId) }
+                        : undefined;
+                    }
+
+                    return { negotiation, couple, limits: theLimits, origin };
                   }),
                   shouldRevalidate: unlessUnsentText,
                   element: <NegotiationPage />,
