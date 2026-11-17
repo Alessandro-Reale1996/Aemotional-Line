@@ -71,7 +71,7 @@ public class ConstraintService
 	@ReadOnlyTransaction
 	public ConstraintsView view(UserId viewer, ConversationId id)
 	{
-		return Views.constraints(ConversationAccess.readable(conversations, viewer, id));
+		return Views.constraints(ConversationAccess.readable(conversations, viewer, id), viewer);
 	}
 
 	private void change(UserId user, ConversationId id, Consumer<Conversation> change)

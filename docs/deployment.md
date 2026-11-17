@@ -5,7 +5,7 @@ therapist: treat every part of the installation as handling health data.
 
 The backend is complete, REST API included; the React frontend is in progress (the jar serves it: so far the login,
 the pages opened from the emails, the session handling, the accounts, the administration, the couples, the stipule, the reading and
-the writing of the conversation). Sections that depend on it say so.
+the writing of the conversation, the closings and the constraints). Sections that depend on it say so.
 
 ## 1. What you need
 
@@ -196,6 +196,9 @@ patient still waiting for activation gets a new link with the next invitation.
   codes; at most ids and event types. A test checks it. Keep the log level at INFO in production: DEBUG or TRACE on
   Spring's web or security packages would log request details.
 - The position a client reports for a location constraint is used for that check and never stored.
+- The centre of a location constraint (a place the therapist enters, possibly a partner's home) is stored, and shown only
+  to the therapist and to the partner it binds. The app links to OpenStreetMap to show it: the coordinates reach
+  OpenStreetMap only when a user clicks that link; the app embeds no map and loads nothing from it.
 
 ## 8. Ending couples, deleting data, retention
 
@@ -224,6 +227,8 @@ These are legal and organisational decisions, not technical ones; the applicatio
   active couple; the therapist deletes an ended couple's data).
 - **Breaches**: the procedure for notifying a breach within 72 hours.
 - **Hosting**: where the servers and backups are (inside the EU or with adequate safeguards).
+- **Places**: whether the notices must mention that a location constraint's place opens on OpenStreetMap, a third party,
+  when the therapist or the partner it binds clicks "Apri su OpenStreetMap".
 
 ## 10. Known limits
 

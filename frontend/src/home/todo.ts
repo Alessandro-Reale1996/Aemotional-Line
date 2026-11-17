@@ -17,7 +17,8 @@ export interface TodoItem
 
 /**
  * What waits for the user in an active couple, in words (CLAUDE.md, frontend point 5; texts approved with F5). Each step
- * adds the link of the items whose page it brings (F5 decision 1): the stipule since F6, the discussions since F7.
+ * adds the link of the items whose page it brings (F5 decision 1): the stipule since F6, the discussions since F7, the
+ * constraints since F9.
  */
 export function todoItems(summary: CoupleSummary): TodoItem[]
 {
@@ -33,6 +34,11 @@ export function todoItems(summary: CoupleSummary): TodoItem[]
     ...summary.closingRequestsToAnswer.map((number) => at(number)(`${discussion(number)}: una richiesta di chiusura aspetta la tua risposta.`)),
     ...summary.therapistRequestsToDecide.map((number) => at(number)(`${discussion(number)}: una richiesta di chiusura aspetta la tua decisione.`)),
     ...summary.outcomesToDeclare.map((number) => at(number)(`${discussion(number)}: dichiara l’esito.`)),
-    ...summary.constraintRequestsToDecide.map(() => words('Una proposta di vincoli aspetta la tua risposta.')),
+    ...summary.constraintRequestsToDecide.map(() =>
+    {
+      const text = 'Una proposta di vincoli aspetta la tua risposta.';
+
+      return summary.conversation ? { text, to: `/conversazioni/${summary.conversation}/vincoli` } : words(text);
+    }),
   ];
 }

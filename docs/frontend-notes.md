@@ -112,7 +112,18 @@ changed), while the justification reaches the server only with `POST .../send`. 
 - Asking the therapist to close needs a failed attempt with the other partner first (`THERAPIST_REQUEST_NOT_ALLOWED_YET`).
 - The justification of that request is empty for the other partner. The other's declared outcome stays empty until both have
   declared: don't suggest it is missing by mistake.
-- A constraint proposal holds the whole new set; an empty list lifts them all. They apply at the second approval.
+- A constraint proposal holds the whole new set; an empty list lifts them all. They apply at the second approval. A
+  partner who approved can still reject until the other approves: the consent can be taken back until the constraints
+  take effect.
+- The centre of a location constraint (`latitude`, `longitude`) reaches only the therapist and the partner it binds: for
+  the other partner they are `null` and `description` names no place, since the place may be where that partner lives.
+  The app shows the coordinates to the therapist only; the therapist and the partner the place binds get a link "Apri su
+  OpenStreetMap", opened in a new tab only when clicked (no embedded map: nothing reaches an outside service while the
+  page is shown).
+- The app asks before the steps that close something for good: accepting a closing, the therapist's confirmation,
+  declaring an outcome, approving constraints (the second approval applies them), rejecting or withdrawing a proposal.
+- Closings aren't bound to the writing constraints: a closing request needs the other partner (or the therapist) anyway,
+  and the justification of a special request goes to the therapist, not to the other partner.
 
 ## Archive
 

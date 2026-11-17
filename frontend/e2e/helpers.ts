@@ -223,7 +223,7 @@ export async function sendThroughTheApi(person: Person, conversation: string, di
   expect(answer.status, 'the message was sent').toBe(201);
 }
 
-/** Constraints proposed by the therapist and approved by both partners, through the API (the screens are F9's). */
+/** Constraints proposed by the therapist and approved by both partners, through the API (the screens: constraints.spec.ts). */
 export async function applyConstraints(therapist: Person, partners: Person[], conversation: string, constraints: object[])
 {
   const proposed = await call(therapist.page, 'POST', `/api/conversations/${conversation}/constraints/requests`, { constraints });
@@ -253,4 +253,17 @@ export async function openThroughTheApi(person: Person, conversation: string, di
     position: null,
   });
   expect(opened.status, 'the message was opened').toBe(200);
+}
+
+/** A specific discussion opened through the API: Alex asks, Sam accepts, Alex sends the title, Sam accepts it. Its number. */
+export async function openDiscussionThroughTheApi(alex: Person, sam: Person, conversation: string, title: string, subtitle: string): Promise<number>
+{
+  const started = await call(alex.page, 'POST', `/api/conversations/${conversation}/discussion-negotiations`, { title, subtitle, originParagraphId: null });
+  const negotiation = (started.json as { id: string }).id;
+  expect((await call(sam.page, 'POST', `/api/negotiations/${negotiation}/accept-request`)).status).toBe(204);
+  expect((await call(alex.page, 'POST', `/api/negotiations/${negotiation}/send`, { justification: 'Ne parliamo da mesi.' })).status).toBe(204);
+  const accepted = await call(sam.page, 'POST', `/api/negotiations/${negotiation}/accept-proposal`);
+  expect(accepted.status).toBe(200);
+
+  return (accepted.json as { openedDiscussion: number }).openedDiscussion;
 }

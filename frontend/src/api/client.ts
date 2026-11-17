@@ -22,6 +22,12 @@ export type Message = components['schemas']['MessageView'];
 export type Paragraph = components['schemas']['ParagraphView'];
 export type Constraint = components['schemas']['ConstraintView'];
 export type Constraints = components['schemas']['ConstraintsView'];
+export type ConstraintRequest = components['schemas']['RequestView'];
+export type ConstraintSpec = components['schemas']['ConstraintSpec'];
+export type Closing = components['schemas']['ClosingView'];
+export type ClosingRequest = components['schemas']['ClosingRequestView'];
+export type TherapistRequest = components['schemas']['TherapistRequestView'];
+export type Declaration = components['schemas']['DeclarationView'];
 
 /** The cookie the server keeps the CSRF token in; the app reads it and sends it back in a header. */
 export const CSRF_COOKIE = '__Host-XSRF-TOKEN';

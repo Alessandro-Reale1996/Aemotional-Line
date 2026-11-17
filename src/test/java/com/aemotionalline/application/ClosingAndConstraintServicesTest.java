@@ -1,6 +1,7 @@
 package com.aemotionalline.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Import;
 import com.aemotionalline.application.view.ConstraintType;
 import com.aemotionalline.TestcontainersConfiguration;
 import com.aemotionalline.application.view.ClosingView;
+import com.aemotionalline.application.view.ConstraintView;
 import com.aemotionalline.application.view.ConstraintsView;
 import com.aemotionalline.domain.common.DomainException;
 import com.aemotionalline.domain.constraint.ConstraintChangeRequestId;
@@ -184,6 +186,43 @@ public class ClosingAndConstraintServicesTest
 		MessageDraft draft = new MessageDraft(List.of(new ParagraphDraft(ParagraphType.SIMPLE, "Hi", null, "Hello.", List.of(), List.of(), Optional.empty())));
 		assertThrows(DomainException.class, () -> conversationService.sendMessage(a, conversation, 0, draft, LocalTime.NOON, null));
 		conversationService.sendMessage(a, conversation, 0, draft, LocalTime.of(18, 30), null);
+	}
+
+	@Test
+	void shouldShowAPlaceOnlyToTheTherapistAndThePartnerItBinds()
+	{
+		ConstraintSpec place = new ConstraintSpec(b, ConstraintType.LOCATION, null, null, null, 45.4642, 9.19, 200.0, LocationConstraint.Direction.BEYOND);
+		ConstraintChangeRequestId request = constraints.proposeConstraints(therapist, conversation, List.of(place));
+		constraints.approveConstraints(a, conversation, request);
+		constraints.approveConstraints(b, conversation, request);
+		ConstraintChangeRequestId lifting = constraints.proposeConstraints(therapist, conversation, List.of());
+		constraints.approveConstraints(a, conversation, lifting);
+		constraints.approveConstraints(b, conversation, lifting);
+		ConstraintChangeRequestId again = constraints.proposeConstraints(therapist, conversation, List.of(place));
+		constraints.approveConstraints(a, conversation, again);
+		constraints.approveConstraints(b, conversation, again);
+
+		for (UserId seesIt : List.of(b, therapist))
+		{
+			ConstraintsView view = constraints.view(seesIt, conversation);
+			assertEquals(45.4642, view.inForce().getFirst().latitude());
+			assertEquals(9.19, view.requests().getFirst().assignments().getFirst().longitude());
+			assertEquals(45.4642, view.requests().get(1).previousAssignments().orElseThrow().getFirst().latitude());
+		}
+
+		// Anna sees what binds Bruno, not where: in force, in what a request proposed, in what it replaced.
+		ConstraintsView seenByA = constraints.view(a, conversation);
+		List<ConstraintView> hidden = List.of(seenByA.inForce().getFirst(), seenByA.requests().getFirst().assignments().getFirst(),
+				seenByA.requests().get(1).previousAssignments().orElseThrow().getFirst());
+
+		for (ConstraintView constraint : hidden)
+		{
+			assertNull(constraint.latitude());
+			assertNull(constraint.longitude());
+			assertEquals(200.0, constraint.radiusMetres());
+			assertEquals(LocationConstraint.Direction.BEYOND, constraint.direction());
+			assertEquals("Allowed beyond 200.0 m of the agreed place", constraint.description());
+		}
 	}
 
 	@Test

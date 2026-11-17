@@ -1,4 +1,4 @@
-import type { Account, Constraint, Conversation, Couple, Invitation, Limits, Message, Summary, Therapist } from './client';
+import type { Account, Closing, Constraint, Conversation, Couple, Invitation, Limits, Message, Summary, Therapist } from './client';
 import type { ErrorCode } from './errors';
 
 /**
@@ -144,6 +144,12 @@ export function constraint(user: string, extra: Partial<Constraint>): Constraint
     direction: null,
     ...extra,
   };
+}
+
+/** The closing of a specific discussion nobody has asked to close yet. */
+export function openClosing(discussion: number, extra: Partial<Closing> = {}): Closing
+{
+  return { discussionId: discussion, closed: false, way: null, closedAt: null, requests: [], therapistRequests: [], declarations: [], ...extra };
 }
 
 export const invitation: Invitation = {

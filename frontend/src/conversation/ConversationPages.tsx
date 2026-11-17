@@ -5,8 +5,9 @@ import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import { Link, useLoaderData, useLocation, useParams } from 'react-router';
 
-import type { Account, Constraint, Conversation, Couple, Limits, Negotiation, Paragraph } from '../api/client';
+import type { Account, Closing, Constraint, Conversation, Couple, Limits, Negotiation, Paragraph } from '../api/client';
 import { useAccount } from '../app/context';
+import { ClosingPanel } from '../closings/ClosingPanel';
 import { ErrorText } from '../components/ErrorText';
 import { ButtonLink, Notice } from '../components/frames';
 import { UserText } from '../components/TextField';
@@ -34,6 +35,8 @@ export interface DiscussionData extends ConversationData
   limits: Limits;
   /** The stipule in progress: a paragraph whose expansion is requested shows it (F8). */
   negotiations: Negotiation[];
+  /** The closing of a specific discussion (F9); the main one has none. */
+  closing?: Closing;
 }
 
 export const NO_CONVERSATION = 'Non c’è una conversazione in corso.';
@@ -107,11 +110,16 @@ export function ConversationPage()
           );
         })}
       </section>
-      {isPartner(couple, me) && couple.active && (
-        <ButtonLink to={`/conversazioni/${conversation.id}/nuovo-discorso`} variant="outline-primary">
-          Proponi un discorso specifico
+      <div className="d-flex flex-wrap gap-2">
+        {isPartner(couple, me) && couple.active && (
+          <ButtonLink to={`/conversazioni/${conversation.id}/nuovo-discorso`} variant="outline-primary">
+            Proponi un discorso specifico
+          </ButtonLink>
+        )}
+        <ButtonLink to={`/conversazioni/${conversation.id}/vincoli`} variant="outline-secondary">
+          Vincoli
         </ButtonLink>
-      )}
+      </div>
     </>
   );
 }
@@ -173,7 +181,7 @@ function useNow(next: (now: Date) => Date | undefined): Date
  */
 export function DiscussionPage()
 {
-  const { conversation, couple, inForce, limits, negotiations } = useLoaderData() as DiscussionData;
+  const { conversation, couple, inForce, limits, negotiations, closing } = useLoaderData() as DiscussionData;
   const me = useAccount();
   const { hash } = useLocation();
   const number = Number(useParams().n);
@@ -318,6 +326,7 @@ export function DiscussionPage()
             <Button onClick={() => void startWriting()}>{discussion.messages.length === 0 ? 'Scrivi il primo messaggio' : 'Scrivi la risposta'}</Button>
           )}
           <ErrorText error={startProblem} />
+          {closing && <ClosingPanel closing={closing} couple={couple} me={me} limits={limits} conversation={conversation.id} number={discussion.id} />}
         </Col>
         {writing && (
           <Col lg={6} className="mt-3">

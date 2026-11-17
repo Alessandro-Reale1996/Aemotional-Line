@@ -52,3 +52,45 @@ export const PURPOSE_LABELS: Record<Schemas['NegotiationWaiting']['purpose'], st
   MODIFIED_AGREEMENT: 'Modifica dell’accordo',
   OPENED_DISCUSSION: 'Richiesta di un discorso specifico',
 };
+
+export const CLOSING_REQUEST_STATUS_LABELS: Record<Schemas['ClosingRequestView']['status'], string> = {
+  PENDING: 'In attesa di risposta',
+  ACCEPTED: 'Accettata',
+  REFUSED: 'Rifiutata',
+  WITHDRAWN: 'Ritirata',
+};
+
+export const THERAPIST_REQUEST_STATUS_LABELS: Record<Schemas['TherapistRequestView']['status'], string> = {
+  PENDING: 'In attesa della decisione',
+  CONFIRMED: 'Accolta',
+  REFUSED: 'Non accolta',
+};
+
+export const OUTCOME_LABELS: Record<Schemas['Declaration']['outcome'], string> = {
+  RESOLVED: 'Risolto',
+  STALLED: 'Arenato',
+};
+
+export const CONSTRAINT_TYPE_LABELS: Record<Schemas['ConstraintView']['type'], string> = {
+  TIME: 'Orario',
+  REPLY_DELAY: 'Attesa prima di rispondere',
+  LOCATION: 'Luogo',
+};
+
+export const SCOPE_LABELS: Record<Schemas['ConstraintView']['scope'], string> = {
+  READ: 'Lettura',
+  WRITE: 'Scrittura',
+  BOTH: 'Lettura e scrittura',
+};
+
+export const DIRECTION_LABELS: Record<NonNullable<Schemas['ConstraintView']['direction']>, string> = {
+  WITHIN: 'Entro il raggio',
+  BEYOND: 'Oltre il raggio',
+};
+
+export const CONSTRAINT_REQUEST_STATUS_LABELS: Record<Schemas['RequestView']['status'], string> = {
+  PENDING: 'In attesa di approvazione',
+  REJECTED: 'Rifiutata',
+  WITHDRAWN: 'Ritirata',
+  APPLIED: 'Applicata',
+};

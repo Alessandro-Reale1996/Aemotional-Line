@@ -252,6 +252,14 @@ public class ClosingAndConstraintsHttpTest
 		assertEquals(200.0, location.path("radiusMetres").asDouble());
 		assertEquals("WITHIN", location.path("direction").asString());
 
+		// The place is Bruno's: Anna sees the radius and the direction, never the centre, not even in the description.
+		JsonNode seenByAnna = anna.get(constraints).json().path("requests").get(0).path("assignments").get(2);
+		assertTrue(seenByAnna.path("latitude").isNull());
+		assertTrue(seenByAnna.path("longitude").isNull());
+		assertEquals(200.0, seenByAnna.path("radiusMetres").asDouble());
+		assertEquals("Allowed within 200.0 m of the agreed place", seenByAnna.path("description").asString());
+		assertEquals(9.19, therapist.get(constraints).json().path("requests").get(0).path("assignments").get(2).path("longitude").asDouble());
+
 		// The second approval applies them at once.
 		assertEquals(204, anna.post(requests + "/" + request + "/approve", "").status());
 		JsonNode halfApproved = therapist.get(constraints).json();

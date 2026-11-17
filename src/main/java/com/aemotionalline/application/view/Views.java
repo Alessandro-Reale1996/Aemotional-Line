@@ -154,23 +154,31 @@ public final class Views
 
 	// CONSTRAINTS
 
-	public static ConstraintsView constraints(Conversation conversation)
+	/**
+	 * The constraints as one viewer sees them: the place of a location constraint (its centre) only for the therapist and the
+	 * partner it binds, since it may be where that partner lives (CLAUDE.md, F9 decision 1); the other partner sees its
+	 * radius and direction only.
+	 */
+	public static ConstraintsView constraints(Conversation conversation, UserId viewer)
 	{
+		Couple couple = conversation.getCouple();
 		List<ConstraintsView.RequestView> requests = conversation.getConstraintRequestHistory().stream()
-				.map(request -> new ConstraintsView.RequestView(request.id(), request.proposedBy(), constraints(request.assignments()), request.status(),
-						request.approvals(), request.proposedAt(), request.closedAt(), request.rejectedBy(),
-						request.previousAssignments().map(Views::constraints)))
+				.map(request -> new ConstraintsView.RequestView(request.id(), request.proposedBy(), constraints(request.assignments(), couple, viewer),
+						request.status(), request.approvals(), request.proposedAt(), request.closedAt(), request.rejectedBy(),
+						request.previousAssignments().map(previous -> constraints(previous, couple, viewer))))
 				.toList();
 
-		return new ConstraintsView(constraints(conversation.getConstraintAssignments()), requests);
+		return new ConstraintsView(constraints(conversation.getConstraintAssignments(), couple, viewer), requests);
 	}
 
-	private static List<ConstraintView> constraints(List<ConstraintAssignment> assignments)
+	private static List<ConstraintView> constraints(List<ConstraintAssignment> assignments, Couple couple, UserId viewer)
 	{
-		return assignments.stream().map(Views::constraint).toList();
+		return assignments.stream()
+				.map(assignment -> constraint(assignment, couple.isTherapist(viewer) || assignment.getUserId().equals(viewer)))
+				.toList();
 	}
 
-	private static ConstraintView constraint(ConstraintAssignment assignment)
+	private static ConstraintView constraint(ConstraintAssignment assignment, boolean seesThePlace)
 	{
 		Constraint constraint = assignment.getConstraint();
 
@@ -180,9 +188,14 @@ public final class Views
 					null, time.getDescription());
 			case ReplyDelayConstraint delay -> new ConstraintView(assignment.getUserId(), ConstraintType.REPLY_DELAY, delay.getScope(), null, delay.getDelay(), null,
 					null, null, null, delay.getDescription());
-			case LocationConstraint location -> new ConstraintView(assignment.getUserId(), ConstraintType.LOCATION, location.getScope(), null, null,
-					location.getCenter().latitude(), location.getCenter().longitude(), location.getRadiusMetres(), location.getDirection(),
+			case LocationConstraint location when seesThePlace -> new ConstraintView(assignment.getUserId(), ConstraintType.LOCATION, location.getScope(), null,
+					null, location.getCenter().latitude(), location.getCenter().longitude(), location.getRadiusMetres(), location.getDirection(),
 					location.getDescription());
+			// The domain's description names the centre too.
+			case LocationConstraint location -> new ConstraintView(assignment.getUserId(), ConstraintType.LOCATION, location.getScope(), null, null, null,
+					null, location.getRadiusMetres(), location.getDirection(),
+					(location.getDirection() == LocationConstraint.Direction.WITHIN ? "Allowed within " : "Allowed beyond ") + location.getRadiusMetres()
+							+ " m of the agreed place");
 			default -> throw new IllegalStateException("No view for constraint type " + constraint.getClass().getName());
 		};
 	}

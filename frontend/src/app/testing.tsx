@@ -4,7 +4,7 @@ import { createMemoryRouter, type RouteObject } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 
 import { type Account, createApi } from '../api/client';
-import { emptySummary, fakeServer, limits, problem } from '../api/testing';
+import { emptySummary, fakeServer, limits, openClosing, problem } from '../api/testing';
 import { Session } from '../session/session';
 import { fakeSessionDeps } from '../session/testing';
 import { type App, AppContext } from './context';
@@ -18,7 +18,10 @@ interface Options
   state?: unknown;
   /** Who is logged in: GET /api/auth/me answers with it, or 401. */
   account?: Account | null;
-  /** Answers the requests it knows; undefined leaves the request to the defaults (me, limits, an empty summary, no couples, no stipule). */
+  /**
+   * Answers the requests it knows; undefined leaves the request to the defaults (me, limits, an empty summary, no couples,
+   * no stipule, a closing nobody asked for).
+   */
   answer?: (request: Request, path: string) => unknown;
   /** The pages; the app's own by default. */
   routes?: (app: App) => RouteObject[];
@@ -63,6 +66,13 @@ export function renderApp({ path = '/', state, account = null, answer = () => un
     if (/^\/api\/couples\/[^/]+\/(negotiations|failed-starts)$/.test(pathname))
     {
       return [];
+    }
+
+    const closing = /^\/api\/conversations\/[^/]+\/discussions\/(\d+)\/closing$/.exec(pathname);
+
+    if (closing && request.method === 'GET')
+    {
+      return openClosing(Number(closing[1]));
     }
 
     throw new Error(`The test doesn't answer ${request.method} ${pathname}.`);

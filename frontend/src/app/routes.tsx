@@ -9,6 +9,7 @@ import { ForgottenPasswordPage } from '../auth/ForgottenPasswordPage';
 import { LoginPage } from '../auth/LoginPage';
 import { NewPasswordPage } from '../auth/NewPasswordPage';
 import { Loading } from '../components/frames';
+import { ConstraintsPage } from '../constraints/ConstraintsPage';
 import { ConversationPage, DiscussionPage, NoConversationPage } from '../conversation/ConversationPages';
 import { indexParagraphs, paragraphAddress } from '../conversation/Letters';
 import { CouplePage } from '../couples/CouplePage';
@@ -194,15 +195,35 @@ export function createRoutes({ api, session }: App): RouteObject[]
                       throw notFound();
                     }
 
-                    const [negotiations, theLimits] = await Promise.all([
+                    const number = Number(params.n);
+                    // The main discussion has no closing (CLAUDE.md, gap 4).
+                    const [negotiations, theLimits, closing] = await Promise.all([
                       ask(api.GET('/api/couples/{id}/negotiations', { params: { path: { id: couple.id } } })),
                       limits(),
+                      number === 0
+                        ? Promise.resolve(undefined)
+                        : ask(api.GET('/api/conversations/{id}/discussions/{number}/closing', { params: { path: { id: conversation.id, number } } })),
                     ]);
 
-                    return { conversation, couple, inForce: constraints.inForce, negotiations, limits: theLimits };
+                    return { conversation, couple, inForce: constraints.inForce, negotiations, limits: theLimits, closing };
                   }),
                   shouldRevalidate: unlessUnsentText,
                   element: <DiscussionPage />,
+                },
+                {
+                  path: 'conversazioni/:id/vincoli',
+                  loader: page(['PATIENT', 'THERAPIST'], async (_, { params }) =>
+                  {
+                    const [constraints, couple, theLimits] = await Promise.all([
+                      ask(api.GET('/api/conversations/{id}/constraints', { params: { path: { id: params.id ?? '' } } })),
+                      coupleWhere((candidate) => candidate.conversation === params.id),
+                      limits(),
+                    ]);
+
+                    return { conversation: params.id ?? '', couple, constraints, limits: theLimits };
+                  }),
+                  shouldRevalidate: unlessUnsentText,
+                  element: <ConstraintsPage />,
                 },
                 {
                   path: 'stipule/:id',
