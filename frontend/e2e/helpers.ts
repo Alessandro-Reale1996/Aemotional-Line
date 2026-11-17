@@ -255,10 +255,14 @@ export async function openThroughTheApi(person: Person, conversation: string, di
   expect(opened.status, 'the message was opened').toBe(200);
 }
 
-/** A specific discussion opened through the API: Alex asks, Sam accepts, Alex sends the title, Sam accepts it. Its number. */
-export async function openDiscussionThroughTheApi(alex: Person, sam: Person, conversation: string, title: string, subtitle: string): Promise<number>
+/**
+ * A specific discussion opened through the API, optionally from a paragraph: Alex asks, Sam accepts, Alex sends the title,
+ * Sam accepts it. Its number.
+ */
+export async function openDiscussionThroughTheApi(alex: Person, sam: Person, conversation: string, title: string, subtitle: string,
+  originParagraphId: string | null = null): Promise<number>
 {
-  const started = await call(alex.page, 'POST', `/api/conversations/${conversation}/discussion-negotiations`, { title, subtitle, originParagraphId: null });
+  const started = await call(alex.page, 'POST', `/api/conversations/${conversation}/discussion-negotiations`, { title, subtitle, originParagraphId });
   const negotiation = (started.json as { id: string }).id;
   expect((await call(sam.page, 'POST', `/api/negotiations/${negotiation}/accept-request`)).status).toBe(204);
   expect((await call(alex.page, 'POST', `/api/negotiations/${negotiation}/send`, { justification: 'Ne parliamo da mesi.' })).status).toBe(204);

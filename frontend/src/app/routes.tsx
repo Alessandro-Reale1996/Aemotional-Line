@@ -3,6 +3,17 @@ import { type LoaderFunctionArgs, redirect, type RouteObject } from 'react-route
 import { AccountPage } from '../account/AccountPage';
 import { AdministrationPage } from '../admin/AdministrationPage';
 import { TherapistPage } from '../admin/TherapistPage';
+import { defaultPeriod, periodInstants, periodProblem } from '../archive/archive';
+import {
+  ARCHIVE_ROUTE,
+  ArchiveLayout,
+  ConcludedNegotiationsPage,
+  NoArchivePage,
+  PeriodPage,
+  QuestionsPage,
+  SearchPage,
+  TopicPage,
+} from '../archive/ArchivePages';
 import { type Account, ask, type Couple, type Role } from '../api/client';
 import { ApiError } from '../api/errors';
 import { ForgottenPasswordPage } from '../auth/ForgottenPasswordPage';
@@ -224,6 +235,82 @@ export function createRoutes({ api, session }: App): RouteObject[]
                   }),
                   shouldRevalidate: unlessUnsentText,
                   element: <ConstraintsPage />,
+                },
+                {
+                  path: 'archivio',
+                  // The archive of the couple in progress, otherwise of the latest ended one (F10 decision 5).
+                  loader: page(['PATIENT'], async () =>
+                  {
+                    const found = (await couples()).find((couple) => couple.conversation);
+
+                    if (found?.conversation)
+                    {
+                      throw redirect(`/conversazioni/${found.conversation}/archivio`);
+                    }
+
+                    return {};
+                  }),
+                  element: <NoArchivePage />,
+                },
+                {
+                  id: ARCHIVE_ROUTE,
+                  path: 'conversazioni/:id/archivio',
+                  loader: page(['PATIENT', 'THERAPIST'], async (_, { params }) =>
+                  {
+                    const [conversation, couple] = await Promise.all([
+                      ask(api.GET('/api/conversations/{id}', { params: { path: { id: params.id ?? '' } } })),
+                      coupleWhere((candidate) => candidate.conversation === params.id),
+                    ]);
+
+                    return { conversation, couple };
+                  }),
+                  element: <ArchiveLayout />,
+                  children: [
+                    { index: true, element: <SearchPage /> },
+                    {
+                      path: 'periodo',
+                      loader: page(['PATIENT', 'THERAPIST'], async (_, { params, request }) =>
+                      {
+                        const search = new URL(request.url).searchParams;
+                        const fallback = defaultPeriod(new Date());
+                        const dal = search.get('dal') ?? fallback.dal;
+                        const al = search.get('al') ?? fallback.al;
+                        const problem = periodProblem(dal, al);
+
+                        if (problem)
+                        {
+                          return { dal, al, problem, entries: [] };
+                        }
+
+                        const entries = await ask(api.GET('/api/conversations/{id}/archive/messages', {
+                          params: { path: { id: params.id ?? '' }, query: periodInstants(dal, al) },
+                        }));
+
+                        return { dal, al, entries };
+                      }),
+                      element: <PeriodPage />,
+                    },
+                    {
+                      path: 'domande',
+                      loader: page(['PATIENT', 'THERAPIST'], (_, { params }) =>
+                        ask(api.GET('/api/conversations/{id}/archive/unanswered-questions', { params: { path: { id: params.id ?? '' } } }))),
+                      element: <QuestionsPage />,
+                    },
+                    {
+                      path: 'stipule',
+                      loader: page(['PATIENT', 'THERAPIST'], (_, { params }) =>
+                        ask(api.GET('/api/conversations/{id}/archive/negotiations', { params: { path: { id: params.id ?? '' } } }))),
+                      element: <ConcludedNegotiationsPage />,
+                    },
+                    {
+                      path: 'argomenti/:paragrafo',
+                      loader: page(['PATIENT', 'THERAPIST'], (_, { params }) =>
+                        ask(api.GET('/api/conversations/{id}/archive/topics/{paragraphId}', {
+                          params: { path: { id: params.id ?? '', paragraphId: params.paragrafo ?? '' } },
+                        }))),
+                      element: <TopicPage />,
+                    },
+                  ],
                 },
                 {
                   path: 'stipule/:id',

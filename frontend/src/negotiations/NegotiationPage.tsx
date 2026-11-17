@@ -112,7 +112,7 @@ function ProposalContent({ proposal }: { proposal: Proposal })
   );
 }
 
-function ProposalCard({ proposal, couple, me, latest }: { proposal: Proposal; couple: Couple; me: Account; latest: boolean })
+export function ProposalCard({ proposal, couple, me, latest }: { proposal: Proposal; couple: Couple; me: Account; latest: boolean })
 {
   const author = proposal.author === me.id ? 'La tua proposta' : `Proposta di ${nameIn(couple, proposal.author)}`;
 

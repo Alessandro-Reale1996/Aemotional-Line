@@ -39,6 +39,7 @@ const LINKS: Record<Role, { to: string; label: string }[]> = {
   PATIENT: [
     { to: '/', label: 'Da fare' },
     { to: '/conversazione', label: 'Conversazione' },
+    { to: '/archivio', label: 'Archivio' },
   ],
   THERAPIST: [
     { to: '/', label: 'Coppie' },

@@ -28,6 +28,12 @@ export type Closing = components['schemas']['ClosingView'];
 export type ClosingRequest = components['schemas']['ClosingRequestView'];
 export type TherapistRequest = components['schemas']['TherapistRequestView'];
 export type Declaration = components['schemas']['DeclarationView'];
+export type ArchiveEntry = components['schemas']['ArchiveEntry'];
+export type ArchiveSearchResult = components['schemas']['ArchiveSearchResult'];
+export type ArchiveProposal = components['schemas']['ArchiveProposal'];
+export type TopicHistory = components['schemas']['TopicHistoryView'];
+export type UnansweredQuestions = components['schemas']['UnansweredQuestionsView'];
+export type NegotiationHistory = components['schemas']['NegotiationHistoryView'];
 
 /** The cookie the server keeps the CSRF token in; the app reads it and sends it back in a header. */
 export const CSRF_COOKIE = '__Host-XSRF-TOKEN';

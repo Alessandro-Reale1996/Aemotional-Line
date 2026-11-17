@@ -125,6 +125,9 @@ export function ParagraphBlock({ paragraph, conversation, index, highlighted, ac
       <UserText text={paragraph.body} className="mb-1" />
       {paragraph.references.map((id) => link(id, 'Risponde a'))}
       {paragraph.selfCitations.map((id) => link(id, 'Richiama'))}
+      <div className="small">
+        <Link to={`/conversazioni/${conversation}/archivio/argomenti/${paragraph.id}`}>Storia dell’argomento</Link>
+      </div>
       {actions?.(paragraph)}
     </section>
   );

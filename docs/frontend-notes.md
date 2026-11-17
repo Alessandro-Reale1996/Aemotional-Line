@@ -135,6 +135,12 @@ Everything under `/archive` stays readable after the couple has ended.
   is one closed envelope, which hides how many paragraphs it has.
 - `GET /archive/topics/{paragraphId}` shows unopened messages as closed envelopes in their place. A paragraph that doesn't
   exist and one the user hasn't opened get the same 404.
+- The app keeps the last search of the tab in memory only (a module variable), so that coming back from a topic history
+  finds it again: never in the address, the history's state (which the browser may save to disk) or any storage; a
+  reload or a logout forgets it. The period's days, which reveal nothing written, are in the address
+  (`…/archivio/periodo?dal=2026-11-01&al=2026-11-17`), the last seven days by default.
+- Matches are marked ignoring capitals and accents, as the database's collation finds them; the text stays plain text.
+- `stillOpen` also holds the questions of `leftUnanswered`: the app shows the questions still waiting as the difference.
 
 ## Irreversible actions
 

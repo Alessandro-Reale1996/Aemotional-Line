@@ -119,6 +119,9 @@ export function ConversationPage()
         <ButtonLink to={`/conversazioni/${conversation.id}/vincoli`} variant="outline-secondary">
           Vincoli
         </ButtonLink>
+        <ButtonLink to={`/conversazioni/${conversation.id}/archivio`} variant="outline-secondary">
+          Archivio
+        </ButtonLink>
       </div>
     </>
   );

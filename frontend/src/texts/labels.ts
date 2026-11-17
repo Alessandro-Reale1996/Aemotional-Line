@@ -94,3 +94,13 @@ export const CONSTRAINT_REQUEST_STATUS_LABELS: Record<Schemas['RequestView']['st
   WITHDRAWN: 'Ritirata',
   APPLIED: 'Applicata',
 };
+
+export const FAILED_OUTCOME_LABELS: Record<Schemas['Failed']['outcome'], string> = {
+  REFUSED: 'Rifiutata',
+  ABANDONED: 'Abbandonata',
+};
+
+export const ARCHIVE_SECTION_LABELS: Record<Schemas['ArchiveProposal']['section'], string> = {
+  TOOK_EFFECT: 'Con effetto',
+  FAILED: 'Non riuscita',
+};

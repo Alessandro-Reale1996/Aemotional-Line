@@ -5,7 +5,7 @@ therapist: treat every part of the installation as handling health data.
 
 The backend is complete, REST API included; the React frontend is in progress (the jar serves it: so far the login,
 the pages opened from the emails, the session handling, the accounts, the administration, the couples, the stipule, the reading and
-the writing of the conversation, the closings and the constraints). Sections that depend on it say so.
+the writing of the conversation, the closings, the constraints and the archive). Sections that depend on it say so.
 
 ## 1. What you need
 
