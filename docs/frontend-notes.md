@@ -1,7 +1,7 @@
 # Notes for the frontend
 
-What the React app needs to know about the REST API, beyond the types generated from the OpenAPI spec. `CLAUDE.md` records
-why each choice was made.
+What the React app (`frontend/`) relies on in the REST API, beyond the types generated from the OpenAPI spec, and how the
+app applies it. `CLAUDE.md` records why each choice was made.
 
 ## The contract
 
@@ -155,6 +155,16 @@ The compiled app is inside the jar, and Spring serves it on the API's own host: 
 for every other address outside `/api` whose last part has no extension, so that the app's pages open from an email's
 link or on a reload, and the app shows its own "not found" page. A missing file is a 404. Outside `/api` only GET is
 accepted.
+
+Caching: the files under `/assets/` carry a hash of their content in their name (Vite's build), so they are sent with
+`Cache-Control: max-age=31536000, public, immutable` and downloaded once; a new version has new names. Everything else
+keeps `no-store`: `index.html` and the pages (a new version reaches the browser at once) and every API answer (therapy
+content must not land in the browser's disk cache on a shared device). The app is one bundle on purpose (about 530 KB,
+160 KB compressed), so that a new version never leaves an open tab asking for pieces that no longer exist.
+
+Phones: every page works at a phone's width with no sideways scrolling, a word too long for its line included (the
+end-to-end test `journey.spec.ts` walks the whole path on a phone-sized Chromium). The bar's links sit behind the
+"Menu" button there.
 
 Every answer carries this Content-Security-Policy:
 

@@ -3,9 +3,8 @@
 This guide is for whoever installs and runs the application. It holds therapy conversations between couples and their
 therapist: treat every part of the installation as handling health data.
 
-The backend is complete, REST API included; the React frontend is in progress (the jar serves it: so far the login,
-the pages opened from the emails, the session handling, the accounts, the administration, the couples, the stipule, the reading and
-the writing of the conversation, the closings, the constraints and the archive). Sections that depend on it say so.
+The backend, REST API included, and the React frontend are complete: the jar serves both, the app and its API on one
+host.
 
 ## 1. What you need
 
@@ -124,6 +123,14 @@ requests, `Referrer-Policy: no-referrer`, a `Content-Security-Policy` and a `Per
 `docs/frontend-notes.md`) and Spring Security's other default headers. Don't add a second copy of any of them in the
 proxy: a browser applies every Content-Security-Policy it receives, so a second one could only break the app.
 
+The application also says what may be cached: the app's files under `/assets/` for a year (their names change with
+their content), everything else never (`no-store`), the API's answers above all, which carry therapy content. Leave
+`Cache-Control` as it comes, and don't put a caching layer in the proxy.
+
+Compression belongs to the proxy, and only for the app's files: JavaScript, CSS and SVG (about 760 KB, 190 KB
+compressed). Don't compress the API's JSON: compressing over HTTPS answers that mix personal text with what someone else
+can influence opens the way to the BREACH attack, for little gain on such small answers.
+
 A minimal nginx example (adapt names, certificates and limits):
 
 ```nginx
@@ -145,6 +152,10 @@ server {
     access_log /var/log/nginx/aemotional.log no_query;
     # The largest valid request is a message of 20 full paragraphs: about 130 KB in the worst case.
     client_max_body_size 256k;
+    # The app's files only: application/json and application/problem+json (the API) are left out on purpose.
+    gzip on;
+    gzip_proxied any;
+    gzip_types text/css application/javascript image/svg+xml;
 
     location ~ ^/api/auth/(login|password-reset) {
         limit_req zone=login burst=5 nodelay;

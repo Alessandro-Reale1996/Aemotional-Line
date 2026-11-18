@@ -7,10 +7,10 @@ when and where they read and write, and keep a consultable archive of everything
 ## State
 
 Done: the domain model, persistence on MariaDB, the application services, the security layer (accounts, couple
-invitations, login with sessions in the database) and the REST API. In progress: the React frontend (`frontend/`), which
-the jar already serves; so far the login, the pages opened from the emails, the session handling,
-the accounts, the administration, the couples, the stipule, the reading and the writing of
-the conversation, the closings, the constraints and the archive. `CLAUDE.md` records the detailed state and every design decision.
+invitations, login with sessions in the database), the REST API and the React frontend (`frontend/`), which the jar
+serves: accounts and administration, couples and invitations, the stipule, the conversation read as letters and written
+in paragraphs, closings, constraints and the archive, on a computer or a phone. `CLAUDE.md` records the detailed state
+and every design decision.
 
 ## Build and test
 
@@ -33,4 +33,5 @@ administrator, data retention, and what to check with a privacy advisor before g
 
 ## Building the frontend
 
-See [docs/frontend-notes.md](docs/frontend-notes.md): the API's conventions and what the generated types can't say.
+See [docs/frontend-notes.md](docs/frontend-notes.md): the API's conventions, what the generated types can't say, and
+how the app is served (security policies, caching, phones).

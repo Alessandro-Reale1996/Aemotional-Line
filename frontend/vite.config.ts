@@ -20,6 +20,10 @@ export default defineConfig({
     emptyOutDir: true,
     // No file turned into a data: address: the CSP allows data: only for Bootstrap's own icons (frontend point 8).
     assetsInlineLimit: 0,
+    // One bundle on purpose (CLAUDE.md, F11 decision 3): downloaded once and kept a year, and a new version never leaves
+    // an open tab asking for pieces that no longer exist. It is about 530 KB (160 KB compressed): the warning comes back
+    // only if it really grows.
+    chunkSizeWarningLimit: 800,
   },
   test: {
     environment: 'jsdom',

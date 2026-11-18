@@ -21,8 +21,10 @@ export default defineConfig({
     trace: 'off',
     screenshot: 'only-on-failure',
   },
+  // The whole path on a phone (F11) runs on its own project; every other test on the two desktop browsers.
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /journey\.spec\.ts/ },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testIgnore: /journey\.spec\.ts/ },
+    { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: /journey\.spec\.ts/ },
   ],
 });

@@ -13,3 +13,18 @@
   background-color: var(--bs-warning-bg-subtle);
   transition: background-color 1s ease-out;
 }
+
+/*
+ * A word too long for its line is broken where it would overflow, everywhere (F11): a title of 100 characters with no
+ * space or hyphen must not make a phone's page scroll sideways. Words are never broken when they fit.
+ */
+body
+{
+  overflow-wrap: break-word;
+}
+
+/* A searched word, marked in the archive (F10): no padding of its own, which would look like spaces in the text. */
+mark
+{
+  padding: 0;
+}
