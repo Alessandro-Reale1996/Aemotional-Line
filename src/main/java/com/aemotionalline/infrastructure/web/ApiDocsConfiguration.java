@@ -20,6 +20,7 @@ import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.MethodParameter;
@@ -57,8 +58,10 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
  * AEMOTIONAL_API_DOCS): it describes the JSON as the API writes it (ids as UUID strings, a DiscussionId as its number),
  * which fields are required and which may be null (frontend point 2), and every error as a Problem with the full list of
  * codes, so the frontend can generate its types from it. frontend/openapi.json is a copy of it, kept current by a test.
+ * Only in the web application: the first-administrator command runs without it, also where the docs are on.
  */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(name = "springdoc.api-docs.enabled", havingValue = "true")
 public class ApiDocsConfiguration
 {

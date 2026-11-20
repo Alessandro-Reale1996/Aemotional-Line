@@ -1,6 +1,7 @@
 package com.aemotionalline.infrastructure.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,7 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
+import org.springframework.web.context.WebApplicationContext;
 
 import com.aemotionalline.CapturingMailer;
 import com.aemotionalline.TestcontainersConfiguration;
@@ -24,12 +28,18 @@ import com.aemotionalline.domain.user.UserRepository;
 
 /**
  * The first-administrator command (CLAUDE.md, S4 decision 3). The property gives this class a Spring context, hence a
- * MariaDB container, of its own: the shared test database already has administrators.
+ * MariaDB container, of its own: the shared test database already has administrators. The context is the one the
+ * command really runs in: no web server (see AemotionalLineApplication), and the API docs on, as in development
+ * (dev/application.properties), where a web-only configuration once stopped the command from starting.
  */
-@SpringBootTest(properties = "aemotional.test.database=without-administrators")
+@SpringBootTest(webEnvironment = WebEnvironment.NONE, properties = { "aemotional.test.database=without-administrators",
+		"springdoc.api-docs.enabled=true", "springdoc.swagger-ui.enabled=true" })
 @Import(TestcontainersConfiguration.class)
 public class FirstAdministratorCommandTest
 {
+	@Autowired
+	private ApplicationContext context;
+
 	private static final EmailAddress EMAIL = new EmailAddress("admin@example.org");
 	private static final String PASSWORD = "un cavallo sul tetto blu";
 
@@ -44,6 +54,12 @@ public class FirstAdministratorCommandTest
 
 	@Autowired
 	private CapturingMailer mailer;
+
+	@Test
+	void shouldStartWithoutTheWebServer()
+	{
+		assertFalse(context instanceof WebApplicationContext);
+	}
 
 	@Test
 	void shouldCreateTheFirstAdministratorOnlyWhileThereIsNone()
